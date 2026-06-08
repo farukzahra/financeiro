@@ -1,0 +1,21 @@
+node_modules
+dist
+.env
+.env.local
+*.log
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# IDE / editor
+.history/
+.vscode/
+.idea/
+
+# Local artefatos
+output/
+sheets/
+*.sqlite

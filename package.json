@@ -1,0 +1,15 @@
+{
+  "name": "financeiro",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "build": "pnpm -r run build",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "db:generate": "pnpm --filter @financeiro/api db:generate",
+    "db:migrate": "pnpm --filter @financeiro/api db:migrate",
+    "db:seed": "pnpm --filter @financeiro/api db:seed"
+  }
+}
