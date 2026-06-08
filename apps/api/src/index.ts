@@ -1,0 +1,30 @@
+import "dotenv/config";
+import Fastify from "fastify";
+import cors from "@fastify/cors";
+import multipart from "@fastify/multipart";
+import { registerImportsRoutes } from "./routes/imports.js";
+import { registerTransactionsRoutes } from "./routes/transactions.js";
+import { registerCategoriesRoutes } from "./routes/categories.js";
+import { registerRulesRoutes } from "./routes/rules.js";
+
+async function main() {
+  const app = Fastify({ logger: true });
+
+  await app.register(cors, { origin: true });
+  await app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } });
+
+  app.get("/health", async () => ({ ok: true }));
+
+  await registerImportsRoutes(app);
+  await registerTransactionsRoutes(app);
+  await registerCategoriesRoutes(app);
+  await registerRulesRoutes(app);
+
+  const port = Number(process.env.PORT ?? 3001);
+  await app.listen({ port, host: "0.0.0.0" });
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
