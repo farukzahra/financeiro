@@ -1,0 +1,187 @@
+tipo_predominante,ocorrencias,total,total_abs,entradas,saidas,exemplos,detalhe_normalizado,categoria
+Resgate RDB,4,"43.412,81","43.412,81","43.412,81",0,Resgate RDB,RESGATE RDB,RESGATE RDB
+Compra no débito,110,"-11.404,69","11.404,69",0,"-11.404,69",Compra no débito - SUPERMERCADO CRUZ | Compra no débito - Supermercado Cruz,SUPERMERCADO CRUZ,ALIMENTACAO
+Aplicação RDB,1,"-5.000,00","5.000,00",0,"-5.000,00",Aplicação RDB,APLICACAO RDB,APLICACAO RDB
+Pagamento de boleto efetuado,3,"-4.499,27","4.499,27",0,"-4.499,27",Pagamento de boleto efetuado - UNIMED CURITIBA SOC COOP DE MEDICOS,UNIMED CURITIBA SOC COOP DE MEDICOS,SAUDE
+Pagamento de boleto efetuado,2,"-2.929,30","2.929,30",0,"-2.929,30",Pagamento de boleto efetuado - UNIMED CURITIBA - SOCIEDADE COOPERATIVAD,UNIMED CURITIBA - SOCIEDADE COOPERATIVAD,SAUDE
+Pagamento de fatura,4,"-2.873,23","2.873,23",0,"-2.873,23",Pagamento de fatura,PAGAMENTO DE FATURA,FATURA GENERICA
+Compra no débito,5,"-2.500,00","2.500,00",0,"-2.500,00",Compra no débito - Ortosorriso,ORTOSORRISO,SAUDE
+Compra no débito,2,"-2.451,80","2.451,80",0,"-2.451,80",Compra no débito - DAJU TECIDOS,DAJU TECIDOS,COMPRAS
+Compra no débito,9,"-2.363,18","2.363,18",0,"-2.363,18",Compra no débito - POSTO PELANDA 3,POSTO PELANDA,TRANSPORTE
+Débito em conta,13,"-2.246,82","2.246,82",0,"-2.246,82",Débito em conta,DEBITO EM CONTA,
+Compra no débito,8,"-2.109,19","2.109,19",0,"-2.109,19",Compra no débito - JACOMAR SAO MARCOS,JACOMAR SAO MARCOS,ALIMENTACAO
+Saque,2,"-2.013,00","2.013,00",0,"-2.013,00",Saque,SAQUE,SAQUE
+Compra no débito,3,"-1.730,94","1.730,94",0,"-1.730,94",Compra no débito - CONDOR SJ BRAGA LJ33,CONDOR SJ BRAGA LJ,ALIMENTACAO
+Compra no débito,7,"-1.720,83","1.720,83",0,"-1.720,83",Compra no débito - AUTO POSTO PELANDA LT,AUTO POSTO PELANDA LT,TRANSPORTE
+Pagamento de boleto efetuado,1,"-1.595,29","1.595,29",0,"-1.595,29",Pagamento de boleto efetuado - UNIMED CURITIBA   SOCIEDADE COOPERATIVA,UNIMED CURITIBA SOCIEDADE COOPERATIVA,SAUDE
+Compra no débito,17,"-1.105,86","1.105,86",0,"-1.105,86",Compra no débito - BURGER KING,BURGER KING,ALIMENTACAO
+Compra no débito,1,"-1.035,89","1.035,89",0,"-1.035,89",Compra no débito - HERING STORE,HERING STORE,COMPRAS
+Compra no débito,7,"-921,5","921,5",0,"-921,5",Compra no débito - AGROTOPEE PRODUTOS AGR,AGROTOPEE PRODUTOS AGR,AGRO
+Compra no débito,3,"-906,93","906,93",0,"-906,93",Compra no débito - FESTVAL SAO JOSE,FESTVAL SAO JOSE,ALIMENTACAO
+Compra no débito,6,"-837,78","837,78",0,"-837,78",Compra no débito - LOJAS AMERICANAS 344 | Compra no débito - LOJAS AMERICANAS 1358 | Compra no débito - Lojas Americanas,LOJAS AMERICANAS,ALIMENTACAO
+Compra no débito,3,"-738,62","738,62",0,"-738,62",Compra no débito - ASSB COMERCIO VAREJIS,ASSB COMERCIO VAREJIS,ALIMENTACAO
+Reembolso recebido pelo Pix,1,"584,42","584,42","584,42",0,Reembolso recebido pelo Pix - AIRBNB PLATAFORMA DIGITAL LTDA - 36.297.602/0001-08 - ADYEN DO BRASIL IP LTDA. Agência: 1 Conta: 100000108-0,AIRBNB PLATAFORMA DIGITAL LTDA,VIAGEM
+Compra no débito,2,"-582,81","582,81",0,"-582,81",Compra no débito - AUTO POSTO PELANDA LTD,AUTO POSTO PELANDA LTD,TRANSPORTE
+Compra no débito,1,"-571,6","571,6",0,"-571,6",Compra no débito - CONDOR SJ DOS PINHAIS,CONDOR SJ DOS PINHAIS,ALIMENTACAO
+Compra no débito,4,"-568,19","568,19",0,"-568,19",Compra no débito - CASA CHINA,CASA CHINA,COMPRAS
+Compra no débito,6,"-533,19","533,19",0,"-533,19",Compra no débito - GULA GULA SAO MARCOS,GULA GULA SAO MARCOS,ALIMENTACAO
+Compra no débito,16,"-500,43","500,43",0,"-500,43",Compra no débito - CASA DE PAO BETHELEM L,CASA DE PAO BETHELEM L,ALIMENTACAO
+Compra no débito,1,"-496,98","496,98",0,"-496,98",Compra no débito - ATACADAO 222 AS,ATACADAO 222 AS,ALIMENTACAO
+Compra no débito,5,-496,496,0,-496,Compra no débito - AGRO 90,AGRO,AGRO
+Compra no débito,5,"-460,7","460,7",0,"-460,7",Compra no débito - KA RU,KA RU,ALIMENTACAO
+Compra no débito,1,"-458,45","458,45",0,"-458,45",Compra no débito - POPHOUSE,POPHOUSE,ALIMENTACAO
+Compra no débito,5,"-437,61","437,61",0,"-437,61",Compra no débito - RESTAURANTE JA,RESTAURANTE JA,ALIMENTACAO
+Compra no débito,3,"-430,61","430,61",0,"-430,61",Compra no débito - GULA SAO MARCOS,GULA SAO MARCOS,ALIMENTACAO
+Compra no débito,1,"-427,5","427,5",0,"-427,5",Compra no débito - NTR SERVICOS,NTR SERVICOS,
+Compra no débito,1,"-416,35","416,35",0,"-416,35",Compra no débito - CAFE DOCELANDIA,CAFE DOCELANDIA,ALIMENTACAO
+Compra no débito,2,"-393,14","393,14",0,"-393,14",Compra no débito - WINTARUS BAR E GRILL,WINTARUS BAR E GRILL,ALIMENTACAO
+Compra no débito,1,"-385,63","385,63",0,"-385,63",Compra no débito - RECANTO GAUCHO TORRES,RECANTO GAUCHO TORRES,ALIMENTACAO
+Compra no débito,1,"-373,2","373,2",0,"-373,2",Compra no débito - SUL MINAS QUEIJOS E FR,SUL MINAS QUEIJOS E FR,ALIMENTACAO
+Compra no débito,4,-370,370,0,-370,Compra no débito - RafaelDaCruz,RAFAELDACRUZ,ACADEMIA
+Compra no débito,1,"-360,24","360,24",0,"-360,24",Compra no débito - RAIA DROGASIL SA,RAIA DROGASIL SA,FARMACIA
+Compra no débito,5,"-353,85","353,85",0,"-353,85",Compra no débito - PARADA PEDRO PELANDA 2,PARADA PEDRO PELANDA,TRANSPORTE
+Compra no débito,1,"-349,96","349,96",0,"-349,96",Compra no débito - CA MODAS LTDA GRL 374,CA MODAS LTDA GRL,COMPRAS
+Compra no débito,1,"-340,56","340,56",0,"-340,56",Compra no débito - 52971877Gabriel,52971877GABRIEL,
+Compra no débito,1,"-340,2","340,2",0,"-340,2",Compra no débito - CHURRASCARIA BRESCOVIT,CHURRASCARIA BRESCOVIT,ALIMENTACAO
+Compra no débito,4,"-330,04","330,04",0,"-330,04",Compra no débito - RAIA3243 | Compra no débito - RAIA143 | Compra no débito - RAIA1621,RAIA,FARMACIA
+Compra no débito,1,"-315,34","315,34",0,"-315,34",Compra no débito - AUTO POSTO CASIL,AUTO POSTO CASIL,GASOLINA
+Compra no débito,2,"-284,15","284,15",0,"-284,15",Compra no débito - ARMAZEM SAO GONCALO P,ARMAZEM SAO GONCALO P,ALIMENTACAO
+Compra no débito,3,"-272,45","272,45",0,"-272,45",Compra no débito - RestauranteELava,RESTAURANTEELAVA,ALIMENTACAO
+Compra no débito,2,"-269,87","269,87",0,"-269,87",Compra no débito - NANQUIM LOJAS DE DEPAR,NANQUIM LOJAS DE DEPAR,COMPRAS
+Compra no débito,2,-267,267,0,-267,Compra no débito - EPOCA UNIFORMES,EPOCA UNIFORMES,COMPRAS
+Compra no débito,1,"-257,76","257,76",0,"-257,76",Compra no débito - PANDA AUTO POSTO LTDA,PANDA AUTO POSTO LTDA,GASOLINA
+Compra no débito,3,"-256,02","256,02",0,"-256,02",Compra no débito - HORTIFRUTRI,HORTIFRUTRI,ALIMENTACAO
+Compra no débito,2,"-251,55","251,55",0,"-251,55",Compra no débito - POSTO TIO ZICO,POSTO TIO ZICO,GASOLINA
+Compra no débito,1,-251,251,0,-251,Compra no débito - GERY COMERCIO DE UNIFO,GERY COMERCIO DE UNIFO,COMPRAS
+Compra no débito,1,"-247,82","247,82",0,"-247,82",Compra no débito - RANCHO SUPERMERCADOS L,RANCHO SUPERMERCADOS L,ALIMENTACAO
+Compra no débito,1,"-227,12","227,12",0,"-227,12",Compra no débito - POSTO VIA SUL,POSTO VIA SUL,GASOLINA
+Compra no débito,5,"-218,8","218,8",0,"-218,8",Compra no débito - Portal Point Super la | Compra no débito - PORTAL POINT SUPER LA,PORTAL POINT SUPER LA,ALIMENTACAO
+Compra no débito,5,"-209,4","209,4",0,"-209,4",Compra no débito - POPEYES,POPEYES,ALIMENTACAO
+Compra no débito,1,-205,205,0,-205,Compra no débito - JhOliveiraDoceria,JHOLIVEIRADOCERIA,ALIMENTACAO
+Compra no débito,1,"-203,9","203,9",0,"-203,9",Compra no débito - CamposMaterialDe,CAMPOSMATERIALDE,COMPRAS
+Compra no débito,3,"-188,5","188,5",0,"-188,5",Compra no débito - COMERCIO DE BEBIDAS E,COMERCIO DE BEBIDAS E,ALIMENTACAO
+Compra no débito,1,"-181,81","181,81",0,"-181,81",Compra no débito - MALCA COMERCIO DE COMB,MALCA COMERCIO DE COMB,GASOLINA
+Compra no débito,1,"-180,43","180,43",0,"-180,43",Compra no débito - GULA MUNDO MIX COMERCI,GULA MUNDO MIX COMERCI,ALIMENTACAO
+Compra no débito,1,"-179,8","179,8",0,"-179,8",Compra no débito - ARAUCARIA PARQUE DE L,ARAUCARIA PARQUE DE L,
+Compra no débito,1,"-167,96","167,96",0,"-167,96",Compra no débito - CHINA WOK,CHINA WOK,ALIMENTACAO
+Compra no débito,1,"-158,29","158,29",0,"-158,29",Compra no débito - BRINCA PIZZA,BRINCA PIZZA,ALIMENTACAO
+Compra no débito,1,"-155,71","155,71",0,"-155,71",Compra no débito - SUPER LIDER,SUPER LIDER,ALIMENTACAO
+Compra no débito,1,-144,144,0,-144,Compra no débito - LUCIANO MARANHAO TREVI,LUCIANO MARANHAO TREVI,
+Compra no débito,3,"-143,8","143,8",0,"-143,8",Compra no débito - CAMPOS MATERIAIS DE CO,CAMPOS MATERIAIS DE CO,
+Reembolso recebido pelo Pix,1,"136,83","136,83","136,83",0,Reembolso recebido pelo Pix - Robson Martins Ishimi - •••.830.018-•• - MERCADO PAGO IP LTDA. (0323) Agência: 1 Conta: 1384654402-6,ROBSON MARTINS ISHIMI,
+Compra no débito,3,"-136,5","136,5",0,"-136,5",Compra no débito - BELA FARMA FILIAL,BELA FARMA FILIAL,FARMACIA
+Compra no débito,1,"-132,4","132,4",0,"-132,4",Compra no débito - GEORGES,GEORGES,
+Compra no débito,4,-131,131,0,-131,Compra no débito - FERREIRA DISTRIBUIDORA,FERREIRA DISTRIBUIDORA,AGRO
+Compra no débito,1,-130,130,0,-130,Compra no débito - TorcidaFuriaIndep,TORCIDAFURIAINDEP,
+Compra no débito,2,-130,130,0,-130,Compra no débito - EspetariaDu,ESPETARIADU,ALIMENTACAO
+Compra no débito,2,-125,125,0,-125,Compra no débito - POINT LANCHONETE LTDA,POINT LANCHONETE LTDA,ALIMENTACAO
+Compra no débito,1,-125,125,0,-125,Compra no débito - TemploDoRock,TEMPLODOROCK,
+Compra no débito,2,"-122,59","122,59",0,"-122,59",Compra no débito - SACOLAO SAO MARCOS,SACOLAO SAO MARCOS,ALIMENTACAO
+Compra no débito,2,-121,121,0,-121,Compra no débito - LANCHES COME COME,LANCHES COME COME,ALIMENTACAO
+Compra no débito,1,"-119,99","119,99",0,"-119,99",Compra no débito - CENTAURO CE54,CENTAURO CE,
+Compra no débito,1,"-119,4","119,4",0,"-119,4",Compra no débito - POSTO MANTRA CONTORNO,POSTO MANTRA CONTORNO,GASOLINA
+Compra no débito,1,-114,114,0,-114,Compra no débito - MP *TOUCASEFIOS,MP *TOUCASEFIOS,COMPRAS
+Compra no débito,1,-112,112,0,-112,Compra no débito - PALACIO DOS DOCES,PALACIO DOS DOCES,ALIMENTACAO
+Compra no débito,1,-112,112,0,-112,Compra no débito - IJF LANCHES LTDA,IJF LANCHES LTDA,ALIMENTACAO
+Compra no débito,1,-111,111,0,-111,Compra no débito - KaruRestaurante,KARURESTAURANTE,ALIMENTACAO
+Compra no débito,1,-110,110,0,-110,Compra no débito - BIBI BRINDES,BIBI BRINDES,COMPRAS
+Compra no débito,1,-104,104,0,-104,Compra no débito - EMPORIO SALAM,EMPORIO SALAM,ALIMENTACAO
+Compra no débito,1,"-100,82","100,82",0,"-100,82",Compra no débito - HIPERFARMA BETA PAROLI,HIPERFARMA BETA PAROLI,FARMACIA
+Compra no débito,6,-100,100,0,-100,Compra no débito - ESTACIONAMENTO SAO JOS | Compra no débito - Estacionamento Sao Jos,ESTACIONAMENTO SAO JOS,TRANSPORTE
+Compra no débito,1,-100,100,0,-100,Compra no débito - DON HIPOLITO GRILL E C,DON HIPOLITO GRILL E C,ALIMENTACAO
+Compra no débito,1,"-99,84","99,84",0,"-99,84",Compra no débito - EMPORIO NATURAL,EMPORIO NATURAL,ALIMENTACAO
+Compra no débito,2,-98,98,0,-98,Compra no débito - PIXEL,PIXEL,COMPRAS
+Compra no débito,1,-95,95,0,-95,Compra no débito - Williansantos,WILLIANSANTOS,
+Compra no débito,3,"-93,6","93,6",0,"-93,6",Compra no débito - BVL MATERIAIS DE CONST,BVL MATERIAIS DE CONST,COMPRAS
+Compra no débito,3,-88,88,0,-88,Compra no débito - FRANCISCO ATHAYDE DE O,FRANCISCO ATHAYDE DE O,
+Compra no débito,1,"-87,97","87,97",0,"-87,97",Compra no débito - SJP FESTVAL 75,SJP FESTVAL,ALIMENTACAO
+Compra no débito,1,"-85,4","85,4",0,"-85,4",Compra no débito - CALLFARMA,CALLFARMA,FARMACIA
+Compra no débito,1,-85,85,0,-85,Compra no débito - RIBEIRO E SARINHO LTD,RIBEIRO E SARINHO LTD,
+Compra no débito,1,-82,82,0,-82,Compra no débito - DAMASQUINO,DAMASQUINO,
+Compra no débito,2,"-80,95","80,95",0,"-80,95",Compra no débito - SJ ACESSORIOS,SJ ACESSORIOS,COMPRAS
+Compra no débito,1,-78,78,0,-78,Compra no débito - GvEventos,GVEVENTOS,
+Compra no débito,1,"-76,47","76,47",0,"-76,47",Compra no débito - Guloso,GULOSO,ALIMENTACAO
+Compra no débito,1,-74,74,0,-74,Compra no débito - BIBLOS FOZ,BIBLOS FOZ,ALIMENTACAO
+Compra no débito,1,"-73,7","73,7",0,"-73,7",Compra no débito - CONFEITARIA DOIS CORA,CONFEITARIA DOIS CORA,ALIMENTACAO
+Compra no débito,1,-73,73,0,-73,Compra no débito - CasaDePaoBethelem,CASADEPAOBETHELEM,ALIMENTACAO
+Compra no débito,1,-70,70,0,-70,Compra no débito - AssociacaoCultura,ASSOCIACAOCULTURA,
+Compra no débito,1,-70,70,0,-70,Compra no débito - CANTINHO DO YAKISSOBA,CANTINHO DO YAKISSOBA,ALIMENTACAO
+Compra no débito,1,"-69,7","69,7",0,"-69,7",Compra no débito - CENTER PANOS CURITIBA,CENTER PANOS CURITIBA,COMPRAS
+Estorno,1,"67,97","67,97","67,97",0,Estorno - Compra no débito - BURGER KING,COMPRA NO DEBITO - BURGER KING,ALIMENTACAO
+Compra no débito,2,"-66,96","66,96",0,"-66,96",Compra no débito - SENA E GOBBO COMERCIO,SENA E GOBBO COMERCIO,
+Compra no débito,1,"-66,25","66,25",0,"-66,25",Compra no débito - MERCADO ANDRADE LTDA,MERCADO ANDRADE LTDA,ALIMENTACAO
+Compra no débito,1,"-62,75","62,75",0,"-62,75",Compra no débito - SANTPAR SC,SANTPAR SC,
+Compra no débito,2,"-62,38","62,38",0,"-62,38",Compra no débito - ALBAYAN DOCERIA ARABE,ALBAYAN DOCERIA ARABE,ALIMENTACAO
+Compra no débito,1,"-60,49","60,49",0,"-60,49",Compra no débito - PRONTOFARMA,PRONTOFARMA,FARMACIA
+Compra no débito,1,-60,60,0,-60,Compra no débito - BOLOS CURITIBA LTDA,BOLOS CURITIBA LTDA,ALIMENTACAO
+Compra no débito,2,-60,60,0,-60,Compra no débito - CAMARAO EXPRESS,CAMARAO EXPRESS,ALIMENTACAO
+Compra no débito,1,"-59,99","59,99",0,"-59,99",Compra no débito - Tonitoys,TONITOYS,COMPRAS
+Compra no débito,1,-57,57,0,-57,Compra no débito - RESTAURANTE CHENG LTDA,RESTAURANTE CHENG LTDA,ALIMENTACAO
+Compra no débito,1,"-54,78","54,78",0,"-54,78",Compra no débito - FARMACIA NISSEI,FARMACIA NISSEI,FARMACIA
+Compra no débito,2,"-53,8","53,8",0,"-53,8",Compra no débito - Sucao,SUCAO,ALIMENTACAO
+Compra no débito,1,-51,51,0,-51,Compra no débito - REMIAUGUSTO CAVALHEIRO,REMIAUGUSTO CAVALHEIRO,
+Compra no débito,1,-50,50,0,-50,Compra no débito - DIRCEU MARTINELLI CABE,DIRCEU MARTINELLI CABE,
+Compra no débito,1,-48,48,0,-48,Compra no débito - 56964978Marcelli,56964978MARCELLI,
+Compra no débito,3,-47,47,0,-47,Compra no débito - JoseAdilson,JOSEADILSON,
+Compra no débito,1,"-46,3","46,3",0,"-46,3",Compra no débito - JIM.COM* WILSON PERESS,JIM.COM* WILSON PERESS,COMPRAS
+Compra no débito,1,"-44,98","44,98",0,"-44,98",Compra no débito - REINO ACUCARADO,REINO ACUCARADO,ALIMENTACAO
+Compra no débito,3,-44,44,0,-44,Compra no débito - ASSOCIACAO DE PAIS E M,ASSOCIACAO DE PAIS E M,
+Compra no débito,1,-42,42,0,-42,Compra no débito - YUZER TECNOLOGIA DA IN,YUZER TECNOLOGIA DA IN,
+Compra no débito,1,"-40,5","40,5",0,"-40,5",Compra no débito - POSTO SANTA CRUZ,POSTO SANTA CRUZ,GASOLINA
+Compra no débito,1,-40,40,0,-40,Compra no débito - CENTRAL GLORIA,CENTRAL GLORIA,
+Compra no débito,2,-40,40,0,-40,Compra no débito - MarcioShimada,MARCIOSHIMADA,
+Compra no débito,1,-40,40,0,-40,Compra no débito - Correia10MaisLtda,CORREIA10MAISLTDA,
+Compra no débito,1,"-39,9","39,9",0,"-39,9",Compra no débito - THE CHURRAS,THE CHURRAS,ALIMENTACAO
+Compra no débito,1,"-39,8","39,8",0,"-39,8",Compra no débito - TORRES,TORRES,
+Compra no débito,1,"-39,5","39,5",0,"-39,5",Compra no débito - BIG REAL,BIG REAL,ALIMENTACAO
+Compra no débito,1,"-39,28","39,28",0,"-39,28",Compra no débito - GOBBO COMERCIO DE ALIM,GOBBO COMERCIO DE ALIM,ALIMENTACAO
+Compra no débito,3,-38,38,0,-38,Compra no débito - JOSIANE DA SILVA BLOC,JOSIANE DA SILVA BLOC,
+Compra no débito,1,-35,35,0,-35,Compra no débito - SECULO 21 UTILIDADES E,SECULO 21 UTILIDADES E,COMPRAS
+Compra no débito,2,"-34,8","34,8",0,"-34,8",Compra no débito - MACHADOMATERIASDECONST,MACHADOMATERIASDECONST,COMPRAS
+Compra no débito,1,"-33,8","33,8",0,"-33,8",Compra no débito - CHEF VERGE ESTACAO,CHEF VERGE ESTACAO,
+Compra no débito,1,"-31,88","31,88",0,"-31,88",Compra no débito - VHBT FARMA,VHBT FARMA,FARMACIA
+Compra no débito,1,-31,31,0,-31,Compra no débito - CHOCOSENSE,CHOCOSENSE,ALIMENTACAO
+Compra no débito,2,-30,30,0,-30,Compra no débito - SUSY YUKIE FUJIBAYASHI,SUSY YUKIE FUJIBAYASHI,
+Compra no débito,1,-30,30,0,-30,Compra no débito - SeithyHanda,SEITHYHANDA,
+Compra no débito,2,-30,30,0,-30,Compra no débito - PARK PLATZ ESTACIONAME,PARK PLATZ ESTACIONAME,TRANSPORTE
+Compra no débito,2,"-29,9","29,9",0,"-29,9",Compra no débito - TROPICAL BANANA - SAO,TROPICAL BANANA - SAO,ALIMENTACAO
+Compra no débito,1,"-29,9","29,9",0,"-29,9",Compra no débito - RIMINI INDUSTRIA COMER,RIMINI INDUSTRIA COMER,
+Compra no débito,1,"-29,9","29,9",0,"-29,9",Compra no débito - FINI,FINI,ALIMENTACAO
+Compra no débito,1,-25,25,0,-25,Compra no débito - PDVS,PDVS,
+Compra no débito,1,-24,24,0,-24,Compra no débito - MILKY MOO SAO JOSE DO,MILKY MOO SAO JOSE DO,ALIMENTACAO
+Compra no débito,1,"-23,9","23,9",0,"-23,9",Compra no débito - MKR,MKR,
+Compra no débito,1,"-21,96","21,96",0,"-21,96",Compra no débito - FESTVAL HAUER,FESTVAL HAUER,ALIMENTACAO
+Compra no débito,1,-21,21,0,-21,Compra no débito - CAFE DA ESQUINA,CAFE DA ESQUINA,ALIMENTACAO
+Compra no débito,2,"-20,25","20,25",0,"-20,25",Compra no débito - REDE STOP 24,REDE STOP,
+Compra no débito,1,-20,20,0,-20,Compra no débito - FABRICA DI CHOCOLATE,FABRICA DI CHOCOLATE,ALIMENTACAO
+Compra no débito,1,"-19,3","19,3",0,"-19,3",Compra no débito - Cybernet,CYBERNET,COMPRAS
+Compra no débito,1,-18,18,0,-18,Compra no débito - PET MARC,PET MARC,
+Compra no débito,1,"-17,97","17,97",0,"-17,97",Compra no débito - AUTO POSTO COASUL - LA,AUTO POSTO COASUL - LA,GASOLINA
+Compra no débito,1,"-16,9","16,9",0,"-16,9",Compra no débito - FARMACIA E DROGARIA NI,FARMACIA E DROGARIA NI,FARMACIA
+Compra no débito,1,"-16,38","16,38",0,"-16,38",Compra no débito - PANVEL FILIAL 538,PANVEL FILIAL,FARMACIA
+Compra no débito,1,-16,16,0,-16,Compra no débito - TABACARIA TREVO,TABACARIA TREVO,COMPRAS
+Compra no débito,1,"-15,08","15,08",0,"-15,08",Compra no débito - KRILL ALIMENTOS,KRILL ALIMENTOS,ALIMENTACAO
+Compra no débito,2,-15,15,0,-15,Compra no débito - HOTEL SLIM GUARAPUAVA,HOTEL SLIM GUARAPUAVA,VIAGEM
+Compra no débito,1,-14,14,0,-14,Compra no débito - ESTACIONAMENTO LICO,ESTACIONAMENTO LICO,TRANSPORTE
+Compra no débito,1,"-12,98","12,98",0,"-12,98",Compra no débito - AUTO POSTO PARANA,AUTO POSTO PARANA,GASOLINA
+Compra no débito,1,-12,12,0,-12,Compra no débito - RESTAURANTE OLIVEIRA,RESTAURANTE OLIVEIRA,ALIMENTACAO
+Compra no débito,1,-12,12,0,-12,Compra no débito - CRIS PRESENTES SAO M,CRIS PRESENTES SAO M,COMPRAS
+Compra no débito,1,-12,12,0,-12,Compra no débito - CASA DO CAFE,CASA DO CAFE,ALIMENTACAO
+Compra no débito,1,-12,12,0,-12,Compra no débito - PParkingValet,PPARKINGVALET,TRANSPORTE
+Compra no débito,1,-12,12,0,-12,Compra no débito - SETE FLECHAS VALET LTD,SETE FLECHAS VALET LTD,TRANSPORTE
+Compra no débito,2,-11,11,0,-11,Compra no débito - SGP SHOP GUARAPUAVA,SGP SHOP GUARAPUAVA,
+Compra no débito,1,-10,10,0,-10,Compra no débito - AgrComercioDe,AGRCOMERCIODE,AGRO
+Compra no débito,2,"-9,5","9,5",0,"-9,5",Compra no débito - OLIVEIRA MERCEARIA E F,OLIVEIRA MERCEARIA E F,ALIMENTACAO
+Compra no débito,1,-9,9,0,-9,Compra no débito - AGRODELAS,AGRODELAS,AGRO
+Compra no débito,1,-7,7,0,-7,Compra no débito - CAFETERIA SABOR DO CAF,CAFETERIA SABOR DO CAF,ALIMENTACAO
+Compra no débito,1,"-6,5","6,5",0,"-6,5",Compra no débito - AVIPEC FILIAL SJP,AVIPEC FILIAL SJP,AGRO
+Compra no débito,1,-6,6,0,-6,Compra no débito - CRIMSON ESTACIONAMENTO,CRIMSON ESTACIONAMENTO,TRANSPORTE
+Compra no débito,1,-6,6,0,-6,Compra no débito - 31308765DalvaKruk,31308765DALVAKRUK,
+Compra no débito,1,-6,6,0,-6,Compra no débito - NIL PARK ESTACIONAMENT,NIL PARK ESTACIONAMENT,TRANSPORTE
+Compra no débito,1,-6,6,0,-6,Compra no débito - PetMarc,PETMARC,
+Compra no débito,1,-5,5,0,-5,Compra no débito - MarceloDo,MARCELODO,
+Compra no débito,1,-5,5,0,-5,Compra no débito - CAFE CAHUE LTDA,CAFE CAHUE LTDA,ALIMENTACAO
+Compra no débito,1,-4,4,0,-4,Compra no débito - SUELI BERLEZE,SUELI BERLEZE,
+Compra no débito,1,-4,4,0,-4,Compra no débito - SAVI PAPELARIA E INFOC,SAVI PAPELARIA E INFOC,COMPRAS
+Compra no débito,1,-3,3,0,-3,Compra no débito - ESTACAO PLAZA SHOW,ESTACAO PLAZA SHOW,
+Compra no débito,1,"-2,5","2,5",0,"-2,5",Compra no débito - EDILEUSA DE OLIVEIRA G,EDILEUSA DE OLIVEIRA G,
