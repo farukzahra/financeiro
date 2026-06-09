@@ -8,13 +8,20 @@ import ConfirmDialog from "primevue/confirmdialog";
   <Toast />
   <ConfirmDialog />
   <header class="app-header">
-    <div style="display: flex; align-items: center; gap: 1rem">
-      <strong>Financeiro</strong>
-      <nav style="display: flex; gap: 0.75rem">
-        <RouterLink to="/">Transacoes</RouterLink>
-        <RouterLink to="/configuracoes">Configuracoes</RouterLink>
-      </nav>
+    <div class="app-header-brand">
+      <span class="app-header-logo">₢</span>
+      <span class="app-header-title">Financeiro</span>
     </div>
+    <nav class="app-header-nav">
+      <RouterLink to="/" class="app-nav-link">
+        <i class="pi pi-list" />
+        Transações
+      </RouterLink>
+      <RouterLink to="/configuracoes" class="app-nav-link">
+        <i class="pi pi-cog" />
+        Configurações
+      </RouterLink>
+    </nav>
   </header>
   <main class="app-shell">
     <RouterView />
