@@ -8,6 +8,13 @@
       "when": 1780956858380,
       "tag": "0000_glorious_the_renegades",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781007654435,
+      "tag": "0001_magenta_titania",
+      "breakpoints": true
     }
   ]
 }

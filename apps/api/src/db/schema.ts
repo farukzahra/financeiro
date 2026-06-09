@@ -76,3 +76,13 @@ export const transactions = pgTable(
     chaveIdx: index("idx_tx_chave").on(t.chaveNormalizada),
   }),
 );
+
+export const budgetItems = pgTable("budget_item", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  descricao: text("descricao").notNull(),
+  categoriaId: text("categoria_id").references(() => categories.id),
+  diaVencimento: integer("dia_vencimento"),
+  valorMensal: numeric("valor_mensal", { precision: 14, scale: 2 }).notNull(),
+  ativo: boolean("ativo").notNull().default(true),
+  criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+});

@@ -184,3 +184,51 @@ export async function previewRule(padrao: string, tipo: "substring" | "regex") {
   );
   return data;
 }
+
+// ---------------------------------------------------------------------------
+// Orcamento previsto
+// ---------------------------------------------------------------------------
+
+export type BudgetItem = {
+  id: string;
+  descricao: string;
+  categoriaId: string | null;
+  diaVencimento: number | null;
+  valorMensal: string;
+  ativo: boolean;
+  criadoEm: string;
+};
+
+export async function listBudget(): Promise<BudgetItem[]> {
+  const { data } = await api.get<BudgetItem[]>("/budget");
+  return data;
+}
+
+export async function createBudgetItem(body: {
+  descricao: string;
+  categoriaId?: string | null;
+  diaVencimento?: number | null;
+  valorMensal: string;
+  ativo?: boolean;
+}): Promise<BudgetItem> {
+  const { data } = await api.post<BudgetItem>("/budget", body);
+  return data;
+}
+
+export async function patchBudgetItem(
+  id: string,
+  body: Partial<{
+    descricao: string;
+    categoriaId: string | null;
+    diaVencimento: number | null;
+    valorMensal: string;
+    ativo: boolean;
+  }>,
+): Promise<BudgetItem> {
+  const { data } = await api.patch<BudgetItem>(`/budget/${id}`, body);
+  return data;
+}
+
+export async function deleteBudgetItem(id: string): Promise<void> {
+  await api.delete(`/budget/${id}`);
+}

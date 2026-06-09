@@ -157,3 +157,30 @@ export const TransactionsQuerySchema = z.object({
   maxValue: z.string().optional(),
 });
 export type TransactionsQuery = z.infer<typeof TransactionsQuerySchema>;
+
+// ---------------------------------------------------------------------------
+// Orcamento previsto
+// ---------------------------------------------------------------------------
+
+export const BudgetItemSchema = z.object({
+  id: z.string().uuid(),
+  descricao: z.string().min(1),
+  categoriaId: z.string().nullable(),
+  diaVencimento: z.number().int().min(1).max(31).nullable(),
+  valorMensal: z.string().regex(/^-?\d+(\.\d{1,2})?$/),
+  ativo: z.boolean(),
+  criadoEm: z.string(),
+});
+export type BudgetItem = z.infer<typeof BudgetItemSchema>;
+
+export const BudgetItemCreateSchema = z.object({
+  descricao: z.string().min(1),
+  categoriaId: z.string().nullable().optional(),
+  diaVencimento: z.number().int().min(1).max(31).nullable().optional(),
+  valorMensal: z.string().regex(/^-?\d+(\.\d{1,2})?$/),
+  ativo: z.boolean().optional().default(true),
+});
+export type BudgetItemCreate = z.infer<typeof BudgetItemCreateSchema>;
+
+export const BudgetItemUpdateSchema = BudgetItemCreateSchema.partial();
+export type BudgetItemUpdate = z.infer<typeof BudgetItemUpdateSchema>;

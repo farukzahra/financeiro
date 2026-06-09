@@ -15,7 +15,9 @@ import {
   listTransactions,
   patchTransaction,
   deleteTransaction,
+  listBudget,
   type Transaction,
+  type BudgetItem,
 } from "../lib/api";
 import { fmtMoneyBR, fmtDateBR, classMoney } from "../lib/format";
 import ImportModal from "../components/ImportModal.vue";
@@ -39,6 +41,41 @@ const selectedCategories = ref<string[]>([]);
 const search = ref("");
 const showImport = ref(false);
 const showManual = ref(false);
+
+type ActivityPanel = "filters" | "cats" | "budget" | null;
+function loadActivePanel(): ActivityPanel {
+  const v = localStorage.getItem("tx.activePanel");
+  if (v === "filters" || v === "cats" || v === "budget") return v;
+  if (v === "" || v === "null") return null;
+  return "filters";
+}
+const activePanel = ref<ActivityPanel>(loadActivePanel());
+
+const budgetItems = ref<BudgetItem[]>([]);
+async function loadBudgetItems() {
+  try { budgetItems.value = await listBudget(); } catch { /* ignore */ }
+}
+
+const totalPrevisto = computed(() =>
+  budgetItems.value.filter((b) => b.ativo).reduce((s, b) => s + Number(b.valorMensal), 0),
+);
+const saldoLiquido = computed(() =>
+  Number(resumo.value.saldo) - totalPrevisto.value,
+);
+
+const budgetByCategoria = computed(() => {
+  const m = new Map<string, number>();
+  for (const b of budgetItems.value) {
+    if (b.ativo && b.categoriaId) {
+      m.set(b.categoriaId, (m.get(b.categoriaId) ?? 0) + Number(b.valorMensal));
+    }
+  }
+  return m;
+});
+function togglePanel(p: Exclude<ActivityPanel, null>) {
+  activePanel.value = activePanel.value === p ? null : p;
+  localStorage.setItem("tx.activePanel", activePanel.value ?? "");
+}
 
 function toIso(d: Date | null | undefined): string | undefined {
   if (!d) return undefined;
@@ -66,7 +103,7 @@ async function load() {
 
 onMounted(async () => {
   if (!ref_.loaded) await ref_.load();
-  await load();
+  await Promise.all([load(), loadBudgetItems()]);
 });
 
 function clearPeriod() {
@@ -232,7 +269,7 @@ const letraByCategoria = computed(() => {
 function colorForCategoria(id: string): string {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return `hsl(${h % 360} 65% 45%)`;
+  return `hsl(${h % 360} 45% 82%)`;
 }
 
 type EditField = "data" | "tipo" | "valor";
@@ -291,8 +328,44 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
 
 <template>
   <section>
-    <div class="main-grid">
-      <aside class="filters-card">
+    <div
+      class="tx-shell"
+      :class="{ 'tx-shell--no-panel': activePanel === null }"
+    >
+      <nav class="activity-bar" aria-label="Painéis">
+        <button
+          type="button"
+          class="activity-item"
+          :class="{ 'activity-item--active': activePanel === 'filters' }"
+          :title="activePanel === 'filters' ? 'Ocultar filtros' : 'Mostrar filtros'"
+          aria-label="Filtros"
+          @click="togglePanel('filters')"
+        >
+          <i class="pi pi-filter" />
+        </button>
+        <button
+          type="button"
+          class="activity-item"
+          :class="{ 'activity-item--active': activePanel === 'cats' }"
+          :title="activePanel === 'cats' ? 'Ocultar resumo por categoria' : 'Mostrar resumo por categoria'"
+          aria-label="Resumo por categoria"
+          @click="togglePanel('cats')"
+        >
+          <i class="pi pi-tags" />
+        </button>
+        <button
+          type="button"
+          class="activity-item"
+          :class="{ 'activity-item--active': activePanel === 'budget' }"
+          :title="activePanel === 'budget' ? 'Ocultar orcamento' : 'Mostrar orcamento'"
+          aria-label="Orcamento previsto"
+          @click="togglePanel('budget')"
+        >
+          <i class="pi pi-wallet" />
+        </button>
+      </nav>
+
+      <aside v-if="activePanel === 'filters'" class="side-panel filters-card">
         <div class="filters-card-header">
           <span>Filtros</span>
         </div>
@@ -363,6 +436,83 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
         </div>
       </aside>
 
+      <aside v-else-if="activePanel === 'cats'" class="side-panel side-card">
+        <div class="side-card-header">Por categoria</div>
+        <div v-if="categoriasResumo.length === 0" class="side-empty">
+          Sem transacoes no filtro atual.
+        </div>
+        <ul v-else class="cat-list">
+          <li
+            v-for="c in categoriasResumo"
+            :key="c.id"
+            class="cat-item"
+            :class="{ 'cat-item--active': selectedCategories.includes(c.id) }"
+            :style="{ borderLeftColor: colorForCategoria(c.id) }"
+            @click="filtrarPorCategoria(c.id)"
+          >
+            <div class="cat-id">
+              <span
+                class="cat-letra"
+                :style="{ background: colorForCategoria(c.id) }"
+              >{{ c.letra }}</span>
+              <span class="cat-nome">{{ c.id }}</span>
+              <span class="cat-qtd">{{ c.qtd }}</span>
+            </div>
+            <div class="cat-valor" :class="classMoney(c.total)">
+              {{ fmtMoneyBR(c.total) }}
+            </div>
+          </li>
+        </ul>
+      </aside>
+
+      <aside v-else-if="activePanel === 'budget'" class="side-panel side-card">
+        <div class="side-card-header">Orcamento previsto</div>
+        <div class="budget-summary">
+          <span class="budget-label">Previsto</span>
+          <span class="budget-total">{{ fmtMoneyBR(-totalPrevisto) }}</span>
+        </div>
+        <ul class="cat-list">
+          <li
+            v-for="b in budgetItems.filter(b => b.ativo)"
+            :key="b.id"
+            class="budget-item"
+          >
+            <template v-if="b.categoriaId">
+              <div class="budget-item-top">
+                <span class="budget-item-nome">{{ b.descricao }}</span>
+                <span
+                  class="budget-item-val"
+                  :class="(Number(b.valorMensal) - Math.abs(categoriasResumo.find(c => c.id === b.categoriaId)?.total ?? 0)) >= 0 ? 'money-pos' : 'money-neg'"
+                >
+                  {{ fmtMoneyBR(Number(b.valorMensal) - Math.abs(categoriasResumo.find(c => c.id === b.categoriaId)?.total ?? 0)) }}
+                </span>
+              </div>
+              <div class="budget-progress-wrap">
+                <div
+                  class="budget-progress-bar"
+                  :style="{
+                    width: Math.min(100, Math.abs(
+                      (categoriasResumo.find(c => c.id === b.categoriaId)?.total ?? 0)
+                    ) / Number(b.valorMensal) * 100) + '%',
+                    background: colorForCategoria(b.categoriaId),
+                  }"
+                />
+              </div>
+              <div class="budget-item-rest">
+                <span>Gasto: {{ fmtMoneyBR(Math.abs(categoriasResumo.find(c => c.id === b.categoriaId)?.total ?? 0)) }}</span>
+                <span>de {{ fmtMoneyBR(b.valorMensal) }}</span>
+              </div>
+            </template>
+            <template v-else>
+              <div class="budget-item-top">
+                <span class="budget-item-nome">{{ b.descricao }}</span>
+                <span class="budget-item-val">{{ fmtMoneyBR(b.valorMensal) }}</span>
+              </div>
+            </template>
+          </li>
+        </ul>
+      </aside>
+
       <div class="center-col">
         <div class="actions-bar">
           <Button
@@ -396,6 +546,16 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
           <div class="summary-card">
             <div class="label">Transacoes</div>
             <div class="value">{{ resumo.qtd }}</div>
+          </div>
+          <div class="summary-card">
+            <div class="label">Saldo Liquido</div>
+            <div class="value" :class="classMoney(saldoLiquido)">
+              {{ fmtMoneyBR(saldoLiquido) }}
+            </div>
+          </div>
+          <div class="summary-card">
+            <div class="label">Previsto/mes</div>
+            <div class="value money-neg">{{ fmtMoneyBR(-totalPrevisto) }}</div>
           </div>
         </div>
 
@@ -557,31 +717,6 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
         </Column>
       </DataTable>
       </div>
-
-      <aside class="side-card">
-        <div class="side-card-header">Por categoria</div>
-        <div v-if="categoriasResumo.length === 0" class="side-empty">
-          Sem transacoes no filtro atual.
-        </div>
-        <ul v-else class="cat-list">
-          <li
-            v-for="c in categoriasResumo"
-            :key="c.id"
-            class="cat-item"
-            :class="{ 'cat-item--active': selectedCategories.includes(c.id) }"
-            @click="filtrarPorCategoria(c.id)"
-          >
-            <div class="cat-id">
-              <span class="cat-letra">{{ c.letra }}</span>
-              <span class="cat-nome">{{ c.id }}</span>
-              <span class="cat-qtd">{{ c.qtd }}</span>
-            </div>
-            <div class="cat-valor" :class="classMoney(c.total)">
-              {{ fmtMoneyBR(c.total) }}
-            </div>
-          </li>
-        </ul>
-      </aside>
     </div>
 
     <ImportModal v-model:visible="showImport" @imported="onImportFinished" />
@@ -590,26 +725,68 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
 </template>
 
 <style scoped>
-.main-grid {
+.tx-shell {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr) 320px;
-  gap: 1rem;
-  align-items: start;
+  grid-template-columns: 48px 280px minmax(0, 1fr);
+  gap: 0;
+  align-items: stretch;
+  min-height: calc(100vh - 100px);
+  margin: -1rem -1.5rem;
 }
 
-@media (max-width: 1280px) {
-  .main-grid {
-    grid-template-columns: 240px minmax(0, 1fr);
-  }
-  .side-card {
-    grid-column: 1 / -1;
-  }
+.tx-shell--no-panel {
+  grid-template-columns: 48px minmax(0, 1fr);
 }
 
-@media (max-width: 900px) {
-  .main-grid {
-    grid-template-columns: 1fr;
-  }
+.activity-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0;
+  border-right: 1px solid var(--p-content-border-color);
+  background: var(--p-content-background);
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--p-text-muted-color, #6b7280);
+  cursor: pointer;
+  position: relative;
+  font-size: 1.1rem;
+  transition: color 120ms, background 120ms;
+}
+
+.activity-item:hover {
+  color: var(--p-text-color);
+}
+
+.activity-item--active {
+  color: var(--p-primary-color);
+}
+
+.activity-item--active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--p-primary-color);
+  border-radius: 0 2px 2px 0;
+}
+
+.side-panel {
+  border-right: 1px solid var(--p-content-border-color);
+  background: var(--p-content-background);
+  overflow: hidden;
 }
 
 .center-col {
@@ -617,21 +794,19 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
   flex-direction: column;
   gap: 1rem;
   min-width: 0;
+  padding: 1rem 1.5rem;
 }
 
 .actions-bar {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
   gap: 0.5rem;
 }
 
 .filters-card {
-  border: 1px solid var(--p-content-border-color);
-  border-radius: 0.5rem;
   background: var(--p-content-background);
   overflow: hidden;
-  position: sticky;
-  top: 1rem;
+  height: 100%;
 }
 
 .filters-card-header {
@@ -683,12 +858,11 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
 }
 
 .side-card {
-  border: 1px solid var(--p-content-border-color);
-  border-radius: 0.5rem;
   background: var(--p-content-background);
   overflow: hidden;
-  position: sticky;
-  top: 1rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .side-card-header {
@@ -718,6 +892,7 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
   padding: 0.5rem 1rem;
   cursor: pointer;
   border-bottom: 1px solid var(--p-content-border-color);
+  border-left: 3px solid transparent;
   transition: background 120ms;
 }
 
@@ -744,6 +919,7 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
   height: 1.5rem;
   border-radius: 0.25rem;
   background: var(--p-highlight-background, rgba(59, 130, 246, 0.15));
+  color: #1f2937;
   font-weight: 700;
   font-size: 0.75rem;
 }
@@ -764,6 +940,65 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
   font-variant-numeric: tabular-nums;
   font-size: 0.9rem;
   white-space: nowrap;
+}
+
+/* Budget panel */
+.budget-summary {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+
+.budget-label { opacity: 0.7; }
+.budget-total { font-weight: 600; }
+
+.budget-item {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--p-content-border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.budget-item-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+}
+
+.budget-item-nome {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 55%;
+}
+
+.budget-item-val {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.budget-progress-wrap {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--p-content-border-color);
+  overflow: hidden;
+}
+
+.budget-progress-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 400ms;
+}
+
+.budget-item-rest {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
 }
 
 .editable-cell {
@@ -804,7 +1039,7 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
   padding: 0.2rem 0.55rem 0.2rem 0.3rem;
   border-radius: 999px;
   border: 0;
-  color: #fff;
+  color: #1f2937;
   cursor: pointer;
   font: inherit;
   font-size: 0.8rem;
@@ -814,7 +1049,7 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
 }
 
 .cat-pill:hover {
-  filter: brightness(1.1);
+  filter: brightness(0.95);
   transform: translateY(-1px);
 }
 
@@ -825,7 +1060,7 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
   width: 1.25rem;
   height: 1.25rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.12);
   font-weight: 700;
   font-size: 0.7rem;
 }
