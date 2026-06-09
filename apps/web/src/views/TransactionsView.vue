@@ -16,6 +16,7 @@ import {
   patchTransaction,
   deleteTransaction,
   listBudget,
+  patchBudgetItem,
   type Transaction,
   type BudgetItem,
 } from "../lib/api";
@@ -324,6 +325,28 @@ async function commitValor(row: Transaction) {
 }
 
 const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t })));
+
+// budget inline edit
+const editingBudgetId = ref<string | null>(null);
+const budgetValorDraft = ref<number | null>(null);
+
+function startEditBudgetValor(b: BudgetItem) {
+  editingBudgetId.value = b.id;
+  budgetValorDraft.value = Number(b.valorMensal);
+}
+
+async function commitBudgetValor(b: BudgetItem) {
+  const v = budgetValorDraft.value;
+  editingBudgetId.value = null;
+  if (v == null || Number(v).toFixed(2) === Number(b.valorMensal).toFixed(2)) return;
+  try {
+    const updated = await patchBudgetItem(b.id, { valorMensal: String(Number(v).toFixed(2)) });
+    const idx = budgetItems.value.findIndex(x => x.id === b.id);
+    if (idx !== -1) budgetItems.value[idx] = updated;
+  } catch {
+    toast.add({ severity: 'error', summary: 'Erro', detail: 'Não foi possível salvar.', life: 3000 });
+  }
+}
 </script>
 
 <template>
@@ -499,13 +522,52 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
               </div>
               <div class="budget-item-rest">
                 <span>Gasto: {{ fmtMoneyBR(Math.abs(categoriasResumo.find(c => c.id === b.categoriaId)?.total ?? 0)) }}</span>
-                <span>de {{ fmtMoneyBR(b.valorMensal) }}</span>
+                <span>
+                  de
+                  <InputNumber
+                    v-if="editingBudgetId === b.id"
+                    v-model="budgetValorDraft"
+                    mode="decimal"
+                    locale="pt-BR"
+                    :minFractionDigits="2"
+                    :maxFractionDigits="2"
+                    autofocus
+                    :inputStyle="{ width: '90px', padding: '1px 4px', fontSize: '0.72rem' }"
+                    @blur="commitBudgetValor(b)"
+                    @keydown.enter.prevent="commitBudgetValor(b)"
+                    @keydown.esc.prevent="editingBudgetId = null"
+                  />
+                  <span
+                    v-else
+                    class="budget-edit-val"
+                    title="Clique para editar o previsto"
+                    @click="startEditBudgetValor(b)"
+                  >{{ fmtMoneyBR(b.valorMensal) }}</span>
+                </span>
               </div>
             </template>
             <template v-else>
               <div class="budget-item-top">
                 <span class="budget-item-nome">{{ b.descricao }}</span>
-                <span class="budget-item-val">{{ fmtMoneyBR(b.valorMensal) }}</span>
+                <InputNumber
+                  v-if="editingBudgetId === b.id"
+                  v-model="budgetValorDraft"
+                  mode="decimal"
+                  locale="pt-BR"
+                  :minFractionDigits="2"
+                  :maxFractionDigits="2"
+                  autofocus
+                  :inputStyle="{ width: '100px', padding: '2px 6px', fontSize: '0.85rem' }"
+                  @blur="commitBudgetValor(b)"
+                  @keydown.enter.prevent="commitBudgetValor(b)"
+                  @keydown.esc.prevent="editingBudgetId = null"
+                />
+                <span
+                  v-else
+                  class="budget-item-val budget-edit-val"
+                  title="Clique para editar o previsto"
+                  @click="startEditBudgetValor(b)"
+                >{{ fmtMoneyBR(b.valorMensal) }}</span>
               </div>
             </template>
           </li>
@@ -877,7 +939,7 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: calc(100vh - 360px);
+  flex: 1;
   overflow-y: auto;
 }
 
@@ -995,6 +1057,16 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
   font-size: 0.72rem;
   opacity: 0.8;
   font-variant-numeric: tabular-nums;
+}
+
+.budget-edit-val {
+  cursor: pointer;
+  border-bottom: 1px dashed var(--p-text-muted-color, #9ca3af);
+  transition: border-color 120ms;
+}
+
+.budget-edit-val:hover {
+  border-bottom-color: var(--p-primary-color);
 }
 
 .tx-footer {
