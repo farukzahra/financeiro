@@ -2,6 +2,7 @@
 import { ref, computed } from "vue";
 import Dialog from "primevue/dialog";
 import Button from "primevue/button";
+import Checkbox from "primevue/checkbox";
 import FileUpload, { type FileUploadSelectEvent } from "primevue/fileupload";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
@@ -29,6 +30,7 @@ const toast = useToast();
 const step = ref<"upload" | "preview" | "confirming">("upload");
 const loading = ref(false);
 const preview = ref<PreviewResponse | null>(null);
+const selectedIds = ref(new Set<string>());
 
 const visibleProxy = computed({
   get: () => props.visible,
@@ -39,6 +41,7 @@ function reset() {
   step.value = "upload";
   preview.value = null;
   loading.value = false;
+  selectedIds.value = new Set();
 }
 
 function removeItem(id: string) {
@@ -54,6 +57,8 @@ async function onSelect(e: FileUploadSelectEvent) {
     if (!ref_.loaded) await ref_.load();
     const data = await previewImport(file);
     preview.value = data;
+    // Começa com tudo desmarcado
+    selectedIds.value = new Set();
     step.value = "preview";
   } catch (err) {
     toast.add({
@@ -71,7 +76,9 @@ async function onConfirm() {
   if (!preview.value) return;
   step.value = "confirming";
   try {
-    const novos = preview.value.itens.filter((i) => !i.jaExistente);
+    const novos = preview.value.itens.filter(
+      (i) => !i.jaExistente && selectedIds.value.has(i.identificador),
+    );
     const result = await confirmImport({
       metadata: preview.value.metadata,
       itens: novos.map((i) => ({
@@ -112,6 +119,33 @@ const novosCount = computed(
 const dupCount = computed(
   () => preview.value?.itens.filter((i) => i.jaExistente).length ?? 0,
 );
+
+const novosDisponiveis = computed(
+  () => preview.value?.itens.filter((i) => !i.jaExistente) ?? [],
+);
+const selectedCount = computed(
+  () => novosDisponiveis.value.filter((i) => selectedIds.value.has(i.identificador)).length,
+);
+const allSelected = computed(
+  () => novosDisponiveis.value.length > 0 && selectedCount.value === novosDisponiveis.value.length,
+);
+const someSelected = computed(
+  () => selectedCount.value > 0 && !allSelected.value,
+);
+
+function toggleItem(id: string) {
+  if (selectedIds.value.has(id)) selectedIds.value.delete(id);
+  else selectedIds.value.add(id);
+  selectedIds.value = new Set(selectedIds.value); // trigger reactivity
+}
+
+function toggleAll() {
+  if (allSelected.value) {
+    selectedIds.value = new Set();
+  } else {
+    selectedIds.value = new Set(novosDisponiveis.value.map((i) => i.identificador));
+  }
+}
 </script>
 
 <template>
@@ -150,6 +184,7 @@ const dupCount = computed(
         <div><strong>Total:</strong> {{ preview.metadata.totalLinhas }}</div>
         <Tag severity="success" :value="`Novas: ${novosCount}`" />
         <Tag severity="warn" :value="`Duplicadas: ${dupCount}`" />
+        <Tag severity="secondary" :value="`Selecionadas: ${selectedCount}`" />
         <Tag
           v-if="preview.metadata.jaImportadoEm"
           severity="info"
@@ -164,15 +199,29 @@ const dupCount = computed(
         scrollHeight="55vh"
         stripedRows
       >
-        <Column header="" :style="{ width: '40px' }">
-          <template #body="{ data }">
-            <i
-              v-if="data.jaExistente"
-              class="pi pi-clone"
-              style="color: #ca8a04"
-              title="Ja existe"
+        <Column header="" :style="{ width: '44px' }">
+          <template #header>
+            <Checkbox
+              :modelValue="allSelected"
+              :indeterminate="someSelected"
+              binary
+              @change="toggleAll"
+              title="Selecionar todos"
             />
-            <i v-else class="pi pi-plus" style="color: #16a34a" title="Nova" />
+          </template>
+          <template #body="{ data }">
+            <Checkbox
+              v-if="!data.jaExistente"
+              :modelValue="selectedIds.has(data.identificador)"
+              binary
+              @change="toggleItem(data.identificador)"
+            />
+            <i
+              v-else
+              class="pi pi-clone"
+              style="color: #ca8a04; font-size: 0.85rem"
+              title="Já existe"
+            />
           </template>
         </Column>
         <Column field="data" header="Data" :style="{ width: '100px' }">
@@ -221,8 +270,8 @@ const dupCount = computed(
       <Button label="Cancelar" severity="secondary" @click="visibleProxy = false" />
       <Button
         v-if="step === 'preview'"
-        :label="`Confirmar (${novosCount})`"
-        :disabled="novosCount === 0"
+        :label="selectedCount === 0 ? 'Confirmar' : `Confirmar (${selectedCount})`"
+        :disabled="selectedCount === 0"
         @click="onConfirm"
       />
     </template>
