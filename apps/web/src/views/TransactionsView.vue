@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, nextTick } from "vue";
 import Button from "primevue/button";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import InputText from "primevue/inputtext";
+import InputNumber from "primevue/inputnumber";
 import Select from "primevue/select";
 import MultiSelect from "primevue/multiselect";
 import DatePicker from "primevue/datepicker";
@@ -38,7 +39,6 @@ const selectedCategories = ref<string[]>([]);
 const search = ref("");
 const showImport = ref(false);
 const showManual = ref(false);
-const editingTransaction = ref<Transaction | null>(null);
 
 function toIso(d: Date | null | undefined): string | undefined {
   if (!d) return undefined;
@@ -89,7 +89,7 @@ const hasFilter = computed(
 
 async function onEditField(
   row: Transaction,
-  field: "categoriaId" | "detalhe" | "observacao",
+  field: "categoriaId" | "detalhe" | "observacao" | "data" | "tipo" | "valor",
   value: unknown,
 ) {
   try {
@@ -155,20 +155,6 @@ function onManualCreated() {
   load();
 }
 
-function openEdit(row: Transaction) {
-  editingTransaction.value = row;
-  showManual.value = true;
-}
-
-function onModalVisibilityChange(v: boolean) {
-  showManual.value = v;
-  if (!v) editingTransaction.value = null;
-}
-
-function onManualUpdated() {
-  load();
-}
-
 const categoryOptions = computed(() => ref_.categoryOptions);
 
 type CategoriaResumo = {
@@ -218,6 +204,89 @@ async function commitDetalhe(row: Transaction) {
 function cancelDetalhe() {
   editingDetalheId.value = null;
 }
+
+const editingCategoriaId = ref<string | null>(null);
+const categoriaSelectRef = ref<{ show?: () => void } | null>(null);
+
+function startEditCategoria(row: Transaction) {
+  editingCategoriaId.value = row.identificador;
+  nextTick(() => categoriaSelectRef.value?.show?.());
+}
+
+async function commitCategoria(row: Transaction, novoId: string) {
+  editingCategoriaId.value = null;
+  if (novoId === row.categoriaId) return;
+  await onEditField(row, "categoriaId", novoId);
+}
+
+function cancelCategoria() {
+  editingCategoriaId.value = null;
+}
+
+const letraByCategoria = computed(() => {
+  const m = new Map<string, string>();
+  for (const c of ref_.categories) m.set(c.id, c.letra);
+  return m;
+});
+
+function colorForCategoria(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return `hsl(${h % 360} 65% 45%)`;
+}
+
+type EditField = "data" | "tipo" | "valor";
+const editingCell = ref<{ id: string; field: EditField } | null>(null);
+const dataDraft = ref<Date | null>(null);
+const tipoDraft = ref<string>("");
+const valorDraft = ref<number | null>(null);
+
+function isEditing(row: Transaction, field: EditField): boolean {
+  return editingCell.value?.id === row.identificador && editingCell.value.field === field;
+}
+
+function parseIso(s: string): Date {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function startEditCell(row: Transaction, field: EditField) {
+  editingCell.value = { id: row.identificador, field };
+  if (field === "data") dataDraft.value = parseIso(row.data);
+  else if (field === "tipo") tipoDraft.value = row.tipo;
+  else if (field === "valor") valorDraft.value = Number(row.valor);
+}
+
+function cancelEditCell() {
+  editingCell.value = null;
+}
+
+async function commitData(row: Transaction) {
+  const d = dataDraft.value;
+  editingCell.value = null;
+  if (!d) return;
+  const iso = toIso(d);
+  if (!iso || iso === row.data) return;
+  await onEditField(row, "data", iso);
+}
+
+async function commitTipo(row: Transaction) {
+  const novo = tipoDraft.value.trim();
+  editingCell.value = null;
+  if (!novo || novo === row.tipo) return;
+  await onEditField(row, "tipo", novo);
+}
+
+async function commitValor(row: Transaction) {
+  const v = valorDraft.value;
+  editingCell.value = null;
+  if (v == null) return;
+  const formatted = v.toFixed(2);
+  if (formatted === Number(row.valor).toFixed(2)) return;
+  await onEditField(row, "valor", formatted);
+}
+
+const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t })));
 </script>
 
 <template>
@@ -338,18 +407,9 @@ function cancelDetalhe() {
         scrollable
         scrollHeight="calc(100vh - 320px)"
       >
-        <Column header="" :style="{ width: '90px' }">
+        <Column header="" :style="{ width: '50px' }">
           <template #body="{ data }">
             <div class="row-actions">
-              <Button
-                icon="pi pi-pencil"
-                severity="secondary"
-                text
-                rounded
-                size="small"
-                aria-label="Editar"
-                @click="openEdit(data)"
-              />
               <Button
                 icon="pi pi-trash"
                 severity="danger"
@@ -362,10 +422,58 @@ function cancelDetalhe() {
             </div>
           </template>
         </Column>
-        <Column field="data" header="Data" :style="{ width: '110px' }">
-          <template #body="{ data }">{{ fmtDateBR(data.data) }}</template>
+        <Column field="data" header="Data" :style="{ width: '130px' }">
+          <template #body="{ data }">
+            <DatePicker
+              v-if="isEditing(data, 'data')"
+              v-model="dataDraft"
+              dateFormat="dd/mm/yy"
+              autofocus
+              fluid
+              @update:modelValue="commitData(data)"
+              @hide="cancelEditCell"
+            />
+            <span
+              v-else
+              class="editable-cell"
+              role="button"
+              tabindex="0"
+              title="Clique para editar"
+              @click="startEditCell(data, 'data')"
+              @keydown.enter.prevent="startEditCell(data, 'data')"
+            >
+              {{ fmtDateBR(data.data) }}
+            </span>
+          </template>
         </Column>
-        <Column field="tipo" header="Tipo" :style="{ width: '180px' }" />
+        <Column field="tipo" header="Tipo" :style="{ width: '200px' }">
+          <template #body="{ data }">
+            <Select
+              v-if="isEditing(data, 'tipo')"
+              v-model="tipoDraft"
+              :options="tipoOptions"
+              optionLabel="label"
+              optionValue="value"
+              editable
+              filter
+              autofocus
+              @change="commitTipo(data)"
+              @hide="commitTipo(data)"
+              :pt="{ root: { style: 'width: 100%' } }"
+            />
+            <span
+              v-else
+              class="editable-cell"
+              role="button"
+              tabindex="0"
+              title="Clique para editar"
+              @click="startEditCell(data, 'tipo')"
+              @keydown.enter.prevent="startEditCell(data, 'tipo')"
+            >
+              {{ data.tipo || "—" }}
+            </span>
+          </template>
+        </Column>
         <Column field="detalhe" header="Detalhe">
           <template #body="{ data }">
             <InputText
@@ -393,19 +501,58 @@ function cancelDetalhe() {
         <Column field="categoriaId" header="Categoria" :style="{ width: '200px' }">
           <template #body="{ data }">
             <Select
+              v-if="editingCategoriaId === data.identificador"
+              ref="categoriaSelectRef"
               :modelValue="data.categoriaId"
               :options="categoryOptions"
               optionLabel="label"
               optionValue="value"
               filter
-              @update:modelValue="(v) => onEditField(data, 'categoriaId', v)"
+              autofocus
+              @update:modelValue="(v) => commitCategoria(data, v as string)"
+              @hide="cancelCategoria"
               :pt="{ root: { style: 'width: 100%' } }"
             />
+            <button
+              v-else
+              type="button"
+              class="cat-pill"
+              :style="{ background: colorForCategoria(data.categoriaId) }"
+              :title="'Clique para trocar (' + data.categoriaId + ')'"
+              @click="startEditCategoria(data)"
+            >
+              <span class="cat-pill-letra">{{ letraByCategoria.get(data.categoriaId) ?? "?" }}</span>
+              <span class="cat-pill-nome">{{ data.categoriaId }}</span>
+            </button>
           </template>
         </Column>
-        <Column field="valor" header="Valor" :style="{ width: '140px' }">
+        <Column field="valor" header="Valor" :style="{ width: '160px' }">
           <template #body="{ data }">
-            <span :class="classMoney(data.valor)">{{ fmtMoneyBR(data.valor) }}</span>
+            <InputNumber
+              v-if="isEditing(data, 'valor')"
+              v-model="valorDraft"
+              mode="decimal"
+              locale="pt-BR"
+              :minFractionDigits="2"
+              :maxFractionDigits="2"
+              autofocus
+              fluid
+              @blur="commitValor(data)"
+              @keydown.enter.prevent="commitValor(data)"
+              @keydown.esc.prevent="cancelEditCell"
+            />
+            <span
+              v-else
+              class="editable-cell money-cell"
+              :class="classMoney(data.valor)"
+              role="button"
+              tabindex="0"
+              title="Clique para editar"
+              @click="startEditCell(data, 'valor')"
+              @keydown.enter.prevent="startEditCell(data, 'valor')"
+            >
+              {{ fmtMoneyBR(data.valor) }}
+            </span>
           </template>
         </Column>
       </DataTable>
@@ -438,13 +585,7 @@ function cancelDetalhe() {
     </div>
 
     <ImportModal v-model:visible="showImport" @imported="onImportFinished" />
-    <ManualTransactionModal
-      :visible="showManual"
-      :editing="editingTransaction"
-      @update:visible="onModalVisibilityChange"
-      @created="onManualCreated"
-      @updated="onManualUpdated"
-    />
+    <ManualTransactionModal v-model:visible="showManual" @created="onManualCreated" />
   </section>
 </template>
 
@@ -654,5 +795,44 @@ function cancelDetalhe() {
 }
 .row-actions :deep(.p-button-icon) {
   font-size: 0.85rem;
+}
+
+.cat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.55rem 0.2rem 0.3rem;
+  border-radius: 999px;
+  border: 0;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1;
+  max-width: 100%;
+  transition: transform 120ms, filter 120ms;
+}
+
+.cat-pill:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.cat-pill-letra {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+
+.cat-pill-nome {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>
