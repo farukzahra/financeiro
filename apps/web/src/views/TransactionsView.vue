@@ -466,10 +466,9 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
       </aside>
 
       <aside v-else-if="activePanel === 'budget'" class="side-panel side-card">
-        <div class="side-card-header">Orçamento previsto</div>
-        <div class="budget-summary">
-          <span class="budget-label">Previsto</span>
-          <span class="budget-total">{{ fmtMoneyBR(-totalPrevisto) }}</span>
+        <div class="side-card-header">
+          <span>Orçamento previsto</span>
+          <span class="budget-header-total">{{ fmtMoneyBR(-totalPrevisto) }}</span>
         </div>
         <ul class="cat-list">
           <li
@@ -853,9 +852,19 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
 }
 
 .side-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 0.75rem 1rem;
   font-weight: 600;
   border-bottom: 1px solid var(--p-content-border-color);
+}
+
+.budget-header-total {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--p-text-muted-color, #6b7280);
+  font-variant-numeric: tabular-nums;
 }
 
 .side-empty {
