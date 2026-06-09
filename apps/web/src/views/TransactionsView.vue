@@ -771,6 +771,10 @@ async function commitBudgetValor(b: BudgetItem) {
 </template>
 
 <style scoped>
+section {
+  height: 100%;
+}
+
 .tx-shell {
   display: grid;
   grid-template-columns: 48px 280px minmax(0, 1fr);

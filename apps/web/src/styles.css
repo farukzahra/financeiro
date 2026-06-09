@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   font-family: system-ui, -apple-system, Segoe UI, sans-serif;
   color-scheme: light dark;
 }
@@ -10,10 +10,21 @@
 body {
   margin: 0;
   padding: 0;
+  height: 100vh;
+  overflow: hidden;
 }
 
 #app {
-  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
 }
 
 .money-pos {
@@ -31,18 +42,13 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.app-shell {
-  height: calc(100vh - 52px);
-  overflow: hidden;
-  padding: 0;
-}
-
 .app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 1.5rem;
   height: 52px;
+  flex-shrink: 0;
   border-bottom: 1px solid var(--p-content-border-color);
   background: var(--p-content-background);
 }
@@ -106,39 +112,4 @@ body {
 
 .app-nav-link .pi {
   font-size: 0.85rem;
-}
-
-.filters-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: end;
-  margin-bottom: 1rem;
-}
-
-.summary-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.summary-card {
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  background: var(--p-content-background);
-  border: 1px solid var(--p-content-border-color);
-}
-
-.summary-card .label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.7;
-}
-
-.summary-card .value {
-  font-size: 1.5rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
 }
