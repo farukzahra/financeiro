@@ -357,8 +357,8 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
           type="button"
           class="activity-item"
           :class="{ 'activity-item--active': activePanel === 'budget' }"
-          :title="activePanel === 'budget' ? 'Ocultar orcamento' : 'Mostrar orcamento'"
-          aria-label="Orcamento previsto"
+          :title="activePanel === 'budget' ? 'Ocultar orçamento' : 'Mostrar orçamento'"
+          aria-label="Orçamento previsto"
           @click="togglePanel('budget')"
         >
           <i class="pi pi-wallet" />
@@ -371,7 +371,7 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
         </div>
         <div class="filters-body">
           <div class="filter-group">
-            <label class="filter-label">Periodo</label>
+            <label class="filter-label">Período</label>
             <div class="filter-row">
               <DatePicker
                 v-model="period"
@@ -390,7 +390,7 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
                 severity="secondary"
                 text
                 rounded
-                aria-label="Limpar periodo"
+                aria-label="Limpar período"
                 @click="clearPeriod"
               />
             </div>
@@ -412,7 +412,7 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
             <label class="filter-label">Buscar</label>
             <InputText
               v-model="search"
-              placeholder="descricao ou detalhe"
+              placeholder="descrição ou detalhe"
               fluid
               @keydown.enter="load"
             />
@@ -439,7 +439,7 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
       <aside v-else-if="activePanel === 'cats'" class="side-panel side-card">
         <div class="side-card-header">Por categoria</div>
         <div v-if="categoriasResumo.length === 0" class="side-empty">
-          Sem transacoes no filtro atual.
+          Sem transações no filtro atual.
         </div>
         <ul v-else class="cat-list">
           <li
@@ -466,7 +466,7 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
       </aside>
 
       <aside v-else-if="activePanel === 'budget'" class="side-panel side-card">
-        <div class="side-card-header">Orcamento previsto</div>
+        <div class="side-card-header">Orçamento previsto</div>
         <div class="budget-summary">
           <span class="budget-label">Previsto</span>
           <span class="budget-total">{{ fmtMoneyBR(-totalPrevisto) }}</span>
@@ -516,7 +516,7 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
       <div class="center-col">
         <div class="actions-bar">
           <Button
-            label="Nova transacao"
+            label="Nova transação"
             icon="pi pi-plus"
             severity="success"
             @click="showManual = true"
@@ -530,32 +530,16 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
         </div>
         <div class="summary-cards">
           <div class="summary-card">
-            <div class="label">Entradas</div>
-            <div class="value money-pos">{{ fmtMoneyBR(resumo.totalEntradas) }}</div>
-          </div>
-          <div class="summary-card">
-            <div class="label">Saidas</div>
-            <div class="value money-neg">{{ fmtMoneyBR(resumo.totalSaidas) }}</div>
-          </div>
-          <div class="summary-card">
-            <div class="label">Saldo</div>
+            <div class="label">Saldo atual</div>
             <div class="value" :class="classMoney(resumo.saldo)">
               {{ fmtMoneyBR(resumo.saldo) }}
             </div>
           </div>
           <div class="summary-card">
-            <div class="label">Transacoes</div>
-            <div class="value">{{ resumo.qtd }}</div>
-          </div>
-          <div class="summary-card">
-            <div class="label">Saldo Liquido</div>
+            <div class="label">Saldo líquido</div>
             <div class="value" :class="classMoney(saldoLiquido)">
               {{ fmtMoneyBR(saldoLiquido) }}
             </div>
-          </div>
-          <div class="summary-card">
-            <div class="label">Previsto/mes</div>
-            <div class="value money-neg">{{ fmtMoneyBR(-totalPrevisto) }}</div>
           </div>
         </div>
 
@@ -716,6 +700,9 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
           </template>
         </Column>
       </DataTable>
+      <div class="tx-footer">
+        <span class="tx-count">{{ resumo.qtd }} {{ resumo.qtd === 1 ? 'transação' : 'transações' }}</span>
+      </div>
       </div>
     </div>
 
@@ -999,6 +986,18 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t }
   font-size: 0.72rem;
   opacity: 0.8;
   font-variant-numeric: tabular-nums;
+}
+
+.tx-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.35rem 0.75rem;
+}
+
+.tx-count {
+  font-size: 0.75rem;
+  color: var(--p-text-muted-color, #9ca3af);
+  font-style: italic;
 }
 
 .editable-cell {
