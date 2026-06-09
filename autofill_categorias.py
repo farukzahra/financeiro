@@ -13,6 +13,36 @@ from pathlib import Path
 # (categoria, lista de keywords). Ordem importa: primeira que casar vence.
 # Keywords sao casadas como substring na coluna `detalhe_normalizado` ja em maiusculas.
 REGRAS: list[tuple[str, list[str]]] = [
+    ("UNIMED", [
+        "UNIMED",
+    ]),
+    ("CELULAR", [
+        "VIVO ", "TIM ", "CLARO ", "OI MOVEL", "NEXTEL", "CLARO MOVEL",
+        "VIVO MOVEL", "TIM CELULAR",
+    ]),
+    ("INTERNET", [
+        "NET SERVICOS", "CLARO NET", "VIVO FIBRA", "OI FIBRA",
+        "COPEL TELECOM", "SERCOMTEL", "DIRECTV GO",
+    ]),
+    ("LUZ", [
+        "COPEL ", "CEMIG", "CPFL", "ENEL", "COCEL", "CELESC",
+        "ENERGISA", "ELEKTRO", "EQUATORIAL",
+    ]),
+    ("GAS", [
+        "COMGAS", "ULTRAGAZ", "LIQUIGAS", "CONSIGAZ", "SUPERGASBRÁS",
+        "SUPERGASBRAS", "GAS NATURAL",
+    ]),
+    ("IMPOSTO", [
+        "RECEITA FEDERAL", "SEFAZ", "PREFEITURA", "IPTU", "IPVA",
+        "DETRAN", "DARF", "DAS SIMPLES",
+    ]),
+    ("DENTISTA", [
+        "ORTOSORRISO", "ODONTO", "CLINICA DENTAL", "DENTAL", "DENTIST",
+        "ORTODON",
+    ]),
+    ("EMPREGADA", [
+        "EDILEUSA", "EMPREGADA",
+    ]),
     ("FARMACIA", [
         "FARMA", "DROGA", "DROGASIL", "PANVEL", "NISSEI",
         "HIPERFARMA", "PRONTOFARMA", "CALLFARMA", "RAIA",
