@@ -609,8 +609,6 @@ async function commitBudgetValor(b: BudgetItem) {
         :loading="loading"
         stripedRows
         size="small"
-        scrollable
-        scrollHeight="calc(100vh - 320px)"
       >
         <Column header="" :style="{ width: '50px' }">
           <template #body="{ data }">
@@ -778,8 +776,7 @@ async function commitBudgetValor(b: BudgetItem) {
   grid-template-columns: 48px 280px minmax(0, 1fr);
   gap: 0;
   align-items: stretch;
-  min-height: calc(100vh - 100px);
-  margin: -1rem -1.5rem;
+  height: 100%;
 }
 
 .tx-shell--no-panel {
@@ -843,6 +840,8 @@ async function commitBudgetValor(b: BudgetItem) {
   gap: 1rem;
   min-width: 0;
   padding: 1rem 1.5rem;
+  overflow-y: auto;
+  height: 100%;
 }
 
 .actions-bar {
