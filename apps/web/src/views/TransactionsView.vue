@@ -832,6 +832,7 @@ async function commitBudgetValor(b: BudgetItem) {
   border-right: 1px solid var(--p-content-border-color);
   background: var(--p-content-background);
   overflow: hidden;
+  min-height: 0;
 }
 
 .center-col {
@@ -839,6 +840,7 @@ async function commitBudgetValor(b: BudgetItem) {
   flex-direction: column;
   gap: 1rem;
   min-width: 0;
+  min-height: 0;
   padding: 1rem 1.5rem;
   overflow-y: auto;
   height: 100%;
