@@ -88,7 +88,8 @@ mesmo assunto; crie um arquivo novo quando for um plano diferente.
 
 ## Organizacao de Markdown
 
-Nao crie arquivos `.md` na raiz do repositorio. Use sempre uma pasta adequada:
+Nao crie arquivos `.md` na raiz do repositorio, com excecao de `README.md`.
+Use sempre uma pasta adequada:
 
 - `docs/`: documentacao tecnica, guias operacionais, notas de arquitetura e
   contexto duradouro.
