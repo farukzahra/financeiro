@@ -1,27 +1,32 @@
 import type { FastifyInstance } from "fastify";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { budgetItems } from "../db/schema.js";
 import {
   BudgetItemCreateSchema,
   BudgetItemUpdateSchema,
 } from "@financeiro/shared";
+import { requireUser } from "../auth.js";
 
 export async function registerBudgetRoutes(app: FastifyInstance) {
-  app.get("/budget", async () => {
+  app.get("/budget", async (req, reply) => {
+    const user = await requireUser(req, reply);
     return db
       .select()
       .from(budgetItems)
+      .where(eq(budgetItems.userId, user.id))
       .orderBy(budgetItems.descricao);
   });
 
   app.post("/budget", async (req, reply) => {
+    const user = await requireUser(req, reply);
     const parsed = BudgetItemCreateSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
     const data = parsed.data;
     const [row] = await db
       .insert(budgetItems)
       .values({
+        userId: user.id,
         descricao: data.descricao,
         categoriaId: data.categoriaId ?? null,
         diaVencimento: data.diaVencimento ?? null,
@@ -33,6 +38,7 @@ export async function registerBudgetRoutes(app: FastifyInstance) {
   });
 
   app.patch<{ Params: { id: string } }>("/budget/:id", async (req, reply) => {
+    const user = await requireUser(req, reply);
     const parsed = BudgetItemUpdateSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
     const set: Record<string, unknown> = {};
@@ -46,16 +52,17 @@ export async function registerBudgetRoutes(app: FastifyInstance) {
     const [row] = await db
       .update(budgetItems)
       .set(set)
-      .where(eq(budgetItems.id, req.params.id))
+      .where(and(eq(budgetItems.userId, user.id), eq(budgetItems.id, req.params.id)))
       .returning();
     if (!row) return reply.code(404).send({ error: "Nao encontrado" });
     return row;
   });
 
   app.delete<{ Params: { id: string } }>("/budget/:id", async (req, reply) => {
+    const user = await requireUser(req, reply);
     const [row] = await db
       .delete(budgetItems)
-      .where(eq(budgetItems.id, req.params.id))
+      .where(and(eq(budgetItems.userId, user.id), eq(budgetItems.id, req.params.id)))
       .returning();
     if (!row) return reply.code(404).send({ error: "Nao encontrado" });
     return { ok: true };

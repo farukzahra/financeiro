@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from "vue";
+import { ref, onMounted, computed, nextTick, watch } from "vue";
 import Button from "primevue/button";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
@@ -11,12 +11,14 @@ import DatePicker from "primevue/datepicker";
 import { useToast } from "primevue/usetoast";
 import { useConfirm } from "primevue/useconfirm";
 import { useReferenceStore } from "../stores/reference";
+import { useAuthStore } from "../stores/auth";
 import {
   listTransactions,
   patchTransaction,
   deleteTransaction,
   listBudget,
   patchBudgetItem,
+  createRule,
   type Transaction,
   type BudgetItem,
 } from "../lib/api";
@@ -25,6 +27,7 @@ import ImportModal from "../components/ImportModal.vue";
 import ManualTransactionModal from "../components/ManualTransactionModal.vue";
 
 const ref_ = useReferenceStore();
+const auth = useAuthStore();
 const toast = useToast();
 const confirm = useConfirm();
 
@@ -37,20 +40,25 @@ const resumo = ref({
 });
 const loading = ref(false);
 
-const period = ref<Date[] | null>(null);
+type PeriodValue = Array<Date | null> | null;
+const period = ref<PeriodValue>(null);
 const selectedCategories = ref<string[]>([]);
 const search = ref("");
 const showImport = ref(false);
 const showManual = ref(false);
+const categoryFilterRef = ref<{ hide?: () => void } | null>(null);
 
 type ActivityPanel = "filters" | "cats" | "budget" | null;
-function loadActivePanel(): ActivityPanel {
-  const v = localStorage.getItem("tx.activePanel");
-  if (v === "filters" || v === "cats" || v === "budget") return v;
-  if (v === "" || v === "null") return null;
-  return "filters";
-}
-const activePanel = ref<ActivityPanel>(loadActivePanel());
+type TransactionSortField = "data" | "tipo" | "detalhe" | "categoriaId" | "valor";
+const activePanel = ref<ActivityPanel>("filters");
+const sortField = ref<TransactionSortField>("data");
+const sortOrder = ref<1 | -1>(1);
+const budgetOrder = ref<string[]>([]);
+const draggingBudgetId = ref<string | null>(null);
+const dragOverBudgetId = ref<string | null>(null);
+let restoringSettings = true;
+let saveFiltersTimer: ReturnType<typeof setTimeout> | null = null;
+let applyFiltersTimer: ReturnType<typeof setTimeout> | null = null;
 
 const budgetItems = ref<BudgetItem[]>([]);
 async function loadBudgetItems() {
@@ -73,9 +81,25 @@ const budgetByCategoria = computed(() => {
   }
   return m;
 });
+
+const activeBudgetItems = computed(() => {
+  const order = new Map(budgetOrder.value.map((id, index) => [id, index]));
+  const originalIndex = new Map(budgetItems.value.map((item, index) => [item.id, index]));
+  return budgetItems.value
+    .filter((b) => b.ativo)
+    .slice()
+    .sort((a, b) => {
+      const ai = order.get(a.id);
+      const bi = order.get(b.id);
+      if (ai !== undefined && bi !== undefined) return ai - bi;
+      if (ai !== undefined) return -1;
+      if (bi !== undefined) return 1;
+      return (originalIndex.get(a.id) ?? 0) - (originalIndex.get(b.id) ?? 0);
+    });
+});
+
 function togglePanel(p: Exclude<ActivityPanel, null>) {
   activePanel.value = activePanel.value === p ? null : p;
-  localStorage.setItem("tx.activePanel", activePanel.value ?? "");
 }
 
 function toIso(d: Date | null | undefined): string | undefined {
@@ -86,12 +110,85 @@ function toIso(d: Date | null | undefined): string | undefined {
   return `${y}-${m}-${dd}`;
 }
 
+function periodBounds() {
+  const start = Array.isArray(period.value) ? period.value[0] : null;
+  const end = Array.isArray(period.value) ? period.value[1] : null;
+  return {
+    from: toIso(start),
+    to: toIso(end),
+  };
+}
+
+function parseIsoDate(s: string | null | undefined): Date | null {
+  if (!s) return null;
+  const [y, m, d] = s.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
+}
+
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function normalizeText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function restoreSavedFilters() {
+  const saved = auth.user?.settings.transactionsFilters;
+  budgetOrder.value = auth.user?.settings.budgetOrder ?? [];
+  if (!saved) return;
+
+  const from = parseIsoDate(saved.from);
+  const to = parseIsoDate(saved.to);
+  period.value = from || to ? [from, to] : null;
+  selectedCategories.value = saved.categories ?? [];
+  search.value = saved.search ?? "";
+  activePanel.value = saved.activePanel ?? null;
+  sortField.value = saved.sortField ?? "data";
+  sortOrder.value = saved.sortOrder ?? 1;
+}
+
+function onPeriodModelUpdate(value: Date | Array<Date | null> | null | undefined) {
+  period.value = Array.isArray(value) ? value : value ? [value, null] : null;
+}
+
+function scheduleSaveFilters() {
+  if (restoringSettings) return;
+  if (saveFiltersTimer) clearTimeout(saveFiltersTimer);
+  saveFiltersTimer = setTimeout(() => {
+    auth.saveSettings({
+      transactionsFilters: {
+        from: periodBounds().from ?? null,
+        to: periodBounds().to ?? null,
+        categories: selectedCategories.value,
+        search: search.value,
+        activePanel: activePanel.value,
+        sortField: sortField.value,
+        sortOrder: sortOrder.value,
+      },
+    }).catch(() => {
+      // Preferimos nao interromper a tela por falha de persistencia de preferencia.
+    });
+  }, 400);
+}
+
 async function load() {
   loading.value = true;
   try {
+    const { from, to } = periodBounds();
     const r = await listTransactions({
-      from: toIso(period.value?.[0]),
-      to: toIso(period.value?.[1]),
+      from,
+      to,
       category: selectedCategories.value.length ? selectedCategories.value : undefined,
       q: search.value || undefined,
     });
@@ -102,20 +199,108 @@ async function load() {
   }
 }
 
+function applyFilters() {
+  if (applyFiltersTimer) {
+    clearTimeout(applyFiltersTimer);
+    applyFiltersTimer = null;
+  }
+  categoryFilterRef.value?.hide?.();
+  load();
+  scheduleSaveFilters();
+}
+
+function scheduleApplyFilters() {
+  if (restoringSettings) return;
+  if (applyFiltersTimer) clearTimeout(applyFiltersTimer);
+  applyFiltersTimer = setTimeout(() => {
+    applyFiltersTimer = null;
+    load();
+  }, 250);
+}
+
+function onCategoryFilterChange() {
+  nextTick(() => {
+    setTimeout(() => categoryFilterRef.value?.hide?.(), 0);
+  });
+}
+
+function onSort(event: {
+  sortField?: string | ((item: Transaction) => unknown);
+  sortOrder?: 1 | -1 | 0 | null;
+}) {
+  if (typeof event.sortField === "string") {
+    sortField.value = event.sortField as TransactionSortField;
+  }
+  sortOrder.value = event.sortOrder === -1 ? -1 : 1;
+  scheduleSaveFilters();
+}
+
+function saveBudgetOrder() {
+  auth.saveSettings({
+    budgetOrder: budgetOrder.value,
+  }).catch(() => {
+    toast.add({
+      severity: "error",
+      summary: "Erro",
+      detail: "Nao foi possivel salvar a ordem do orcamento.",
+      life: 3000,
+    });
+  });
+}
+
+function onBudgetDragStart(event: DragEvent, id: string) {
+  draggingBudgetId.value = id;
+  event.dataTransfer?.setData("text/plain", id);
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+}
+
+function onBudgetDrop(targetId: string) {
+  const sourceId = draggingBudgetId.value;
+  draggingBudgetId.value = null;
+  dragOverBudgetId.value = null;
+  if (!sourceId || sourceId === targetId) return;
+
+  const visibleIds = activeBudgetItems.value.map((item) => item.id);
+  const from = visibleIds.indexOf(sourceId);
+  const to = visibleIds.indexOf(targetId);
+  if (from === -1 || to === -1) return;
+
+  visibleIds.splice(from, 1);
+  visibleIds.splice(to, 0, sourceId);
+
+  const hiddenIds = budgetItems.value
+    .map((item) => item.id)
+    .filter((id) => !visibleIds.includes(id));
+  budgetOrder.value = [...visibleIds, ...hiddenIds];
+  saveBudgetOrder();
+}
+
+function onBudgetDragEnd() {
+  draggingBudgetId.value = null;
+  dragOverBudgetId.value = null;
+}
+
 onMounted(async () => {
   if (!ref_.loaded) await ref_.load();
+  restoreSavedFilters();
+  restoringSettings = false;
   await Promise.all([load(), loadBudgetItems()]);
 });
 
+watch([period, selectedCategories, search], scheduleApplyFilters, { deep: true });
+watch([period, selectedCategories, search, activePanel, sortField, sortOrder], scheduleSaveFilters, { deep: true });
+
 function clearPeriod() {
   period.value = null;
+  applyFilters();
 }
 
 function limparFiltros() {
   period.value = null;
   selectedCategories.value = [];
   search.value = "";
-  load();
+  categoryFilterRef.value?.hide?.();
+  applyFilters();
 }
 
 const hasFilter = computed(
@@ -179,6 +364,43 @@ function onDelete(row: Transaction) {
   });
 }
 
+async function onCreateRuleFromRow(row: Transaction) {
+  const padrao = (row.chaveNormalizada || row.detalhe || row.descricaoRaw).trim();
+  if (!padrao) {
+    toast.add({
+      severity: "warn",
+      summary: "Sem padrao",
+      detail: "Esta transacao nao tem texto suficiente para gerar regra.",
+      life: 2500,
+    });
+    return;
+  }
+
+  try {
+    await createRule({
+      categoriaId: row.categoriaId,
+      tipoPadrao: "substring",
+      padrao,
+      prioridade: 100,
+      ativa: true,
+    });
+    await ref_.reloadRules();
+    toast.add({
+      severity: "success",
+      summary: "Regra criada",
+      detail: `${padrao} -> ${row.categoriaId}`,
+      life: 2500,
+    });
+  } catch (err) {
+    toast.add({
+      severity: "error",
+      summary: "Erro ao gerar regra",
+      detail: (err as Error).message,
+      life: 3000,
+    });
+  }
+}
+
 function onImportFinished(stats: { totalImportadas: number; totalDuplicadas: number }) {
   toast.add({
     severity: "success",
@@ -221,7 +443,7 @@ const categoriasResumo = computed<CategoriaResumo[]>(() => {
 
 function filtrarPorCategoria(id: string) {
   selectedCategories.value = selectedCategories.value.includes(id) ? [] : [id];
-  load();
+  applyFilters();
 }
 
 const editingDetalheId = ref<string | null>(null);
@@ -272,6 +494,43 @@ function colorForCategoria(id: string): string {
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
   return `hsl(${h % 360} 45% 82%)`;
 }
+
+function spentByCategoria(id: string): number {
+  return Math.abs(categoriasResumo.value.find((c) => c.id === id)?.total ?? 0);
+}
+
+function budgetPercent(b: BudgetItem): number {
+  if (!b.categoriaId) return 0;
+  const planned = Number(b.valorMensal);
+  if (planned <= 0) return 0;
+  return Math.min(999, Math.round((spentByCategoria(b.categoriaId) / planned) * 100));
+}
+
+const salaryCycle = computed(() => {
+  const salaryRows = rows.value
+    .map((row) => ({ row, date: parseIsoDate(row.data) }))
+    .filter(({ row, date }) => date && normalizeText(row.detalhe).includes("salario"))
+    .sort((a, b) => b.date!.getTime() - a.date!.getTime());
+
+  const start = salaryRows[0]?.date;
+  if (!start) return null;
+
+  const end = addDays(start, 30);
+  const today = startOfDay(new Date());
+  const elapsedMs = today.getTime() - startOfDay(start).getTime();
+  const totalMs = end.getTime() - start.getTime();
+  const elapsedDays = Math.max(0, Math.floor(elapsedMs / 86_400_000));
+  const remainingDays = Math.max(0, Math.ceil((end.getTime() - today.getTime()) / 86_400_000));
+  const percent = Math.max(0, Math.min(100, Math.round((elapsedMs / totalMs) * 100)));
+
+  return {
+    start,
+    end,
+    percent,
+    elapsedDays,
+    remainingDays,
+  };
+});
 
 type EditField = "data" | "tipo" | "valor";
 const editingCell = ref<{ id: string; field: EditField } | null>(null);
@@ -397,15 +656,17 @@ async function commitBudgetValor(b: BudgetItem) {
             <label class="filter-label">Período</label>
             <div class="filter-row">
               <DatePicker
-                v-model="period"
+                :modelValue="period"
                 selectionMode="range"
                 dateFormat="dd/mm/yy"
                 showIcon
                 showButtonBar
-                :numberOfMonths="1"
+                appendTo="body"
+                :numberOfMonths="2"
                 :manualInput="false"
                 placeholder="Selecione"
                 fluid
+                @update:modelValue="onPeriodModelUpdate"
               />
               <Button
                 v-if="period && (period[0] || period[1])"
@@ -421,6 +682,7 @@ async function commitBudgetValor(b: BudgetItem) {
           <div class="filter-group">
             <label class="filter-label">Categorias</label>
             <MultiSelect
+              ref="categoryFilterRef"
               v-model="selectedCategories"
               :options="categoryOptions"
               optionLabel="label"
@@ -429,6 +691,7 @@ async function commitBudgetValor(b: BudgetItem) {
               display="chip"
               filter
               fluid
+              @change="onCategoryFilterChange"
             />
           </div>
           <div class="filter-group">
@@ -437,7 +700,7 @@ async function commitBudgetValor(b: BudgetItem) {
               v-model="search"
               placeholder="descrição ou detalhe"
               fluid
-              @keydown.enter="load"
+              @keydown.enter="applyFilters"
             />
           </div>
           <div class="filter-actions">
@@ -445,7 +708,7 @@ async function commitBudgetValor(b: BudgetItem) {
               label="Filtrar"
               icon="pi pi-filter"
               :loading="loading"
-              @click="load"
+              @click="applyFilters"
             />
             <Button
               label="Limpar"
@@ -493,15 +756,55 @@ async function commitBudgetValor(b: BudgetItem) {
           <span>Orçamento previsto</span>
           <span class="budget-header-total">{{ fmtMoneyBR(-totalPrevisto) }}</span>
         </div>
+        <div class="salary-cycle">
+          <div class="salary-cycle-meta">
+            <span>Ciclo salarial</span>
+            <span v-if="salaryCycle">{{ salaryCycle.remainingDays }} dias restantes</span>
+            <span v-else>Sem salario no filtro</span>
+          </div>
+          <div class="salary-cycle-bar-wrap">
+            <div
+              class="salary-cycle-bar"
+              :class="{ 'salary-cycle-bar--empty': !salaryCycle }"
+              :style="{ width: (salaryCycle?.percent ?? 0) + '%' }"
+            >
+              <span class="salary-cycle-label">{{ salaryCycle?.percent ?? 0 }}%</span>
+            </div>
+          </div>
+          <div v-if="salaryCycle" class="salary-cycle-dates">
+            <span>{{ fmtDateBR(toIso(salaryCycle.start) ?? "") }}</span>
+            <span>{{ fmtDateBR(toIso(salaryCycle.end) ?? "") }}</span>
+          </div>
+        </div>
         <ul class="cat-list">
           <li
-            v-for="b in budgetItems.filter(b => b.ativo)"
+            v-for="b in activeBudgetItems"
             :key="b.id"
             class="budget-item"
+            :class="{
+              'budget-item--dragging': draggingBudgetId === b.id,
+              'budget-item--drag-over': dragOverBudgetId === b.id && draggingBudgetId !== b.id,
+            }"
+            @dragover.prevent="dragOverBudgetId = b.id"
+            @dragleave="dragOverBudgetId = null"
+            @drop.prevent="onBudgetDrop(b.id)"
           >
             <template v-if="b.categoriaId">
               <div class="budget-item-top">
-                <span class="budget-item-nome">{{ b.descricao }}</span>
+                <div class="budget-title">
+                  <span
+                    class="budget-drag-handle"
+                    draggable="true"
+                    title="Arrastar para reordenar"
+                    role="button"
+                    tabindex="0"
+                    @dragstart="(event) => onBudgetDragStart(event, b.id)"
+                    @dragend="onBudgetDragEnd"
+                  >
+                    <i class="pi pi-bars" />
+                  </span>
+                  <span class="budget-item-nome">{{ b.descricao }}</span>
+                </div>
                 <span
                   class="budget-item-val"
                   :class="(Number(b.valorMensal) - Math.abs(categoriasResumo.find(c => c.id === b.categoriaId)?.total ?? 0)) >= 0 ? 'money-pos' : 'money-neg'"
@@ -513,15 +816,15 @@ async function commitBudgetValor(b: BudgetItem) {
                 <div
                   class="budget-progress-bar"
                   :style="{
-                    width: Math.min(100, Math.abs(
-                      (categoriasResumo.find(c => c.id === b.categoriaId)?.total ?? 0)
-                    ) / Number(b.valorMensal) * 100) + '%',
+                    width: Math.min(100, budgetPercent(b)) + '%',
                     background: colorForCategoria(b.categoriaId),
                   }"
-                />
+                >
+                  <span class="budget-progress-label">{{ budgetPercent(b) }}%</span>
+                </div>
               </div>
               <div class="budget-item-rest">
-                <span>Gasto: {{ fmtMoneyBR(Math.abs(categoriasResumo.find(c => c.id === b.categoriaId)?.total ?? 0)) }}</span>
+                <span>Gasto: {{ fmtMoneyBR(spentByCategoria(b.categoriaId)) }}</span>
                 <span>
                   de
                   <InputNumber
@@ -548,7 +851,20 @@ async function commitBudgetValor(b: BudgetItem) {
             </template>
             <template v-else>
               <div class="budget-item-top">
-                <span class="budget-item-nome">{{ b.descricao }}</span>
+                <div class="budget-title">
+                  <span
+                    class="budget-drag-handle"
+                    draggable="true"
+                    title="Arrastar para reordenar"
+                    role="button"
+                    tabindex="0"
+                    @dragstart="(event) => onBudgetDragStart(event, b.id)"
+                    @dragend="onBudgetDragEnd"
+                  >
+                    <i class="pi pi-bars" />
+                  </span>
+                  <span class="budget-item-nome">{{ b.descricao }}</span>
+                </div>
                 <InputNumber
                   v-if="editingBudgetId === b.id"
                   v-model="budgetValorDraft"
@@ -607,25 +923,13 @@ async function commitBudgetValor(b: BudgetItem) {
         <DataTable
         :value="rows"
         :loading="loading"
+        :sortField="sortField"
+        :sortOrder="sortOrder"
         stripedRows
         size="small"
+        @sort="onSort"
       >
-        <Column header="" :style="{ width: '50px' }">
-          <template #body="{ data }">
-            <div class="row-actions">
-              <Button
-                icon="pi pi-trash"
-                severity="danger"
-                text
-                rounded
-                size="small"
-                aria-label="Excluir"
-                @click="onDelete(data)"
-              />
-            </div>
-          </template>
-        </Column>
-        <Column field="data" header="Data" :style="{ width: '130px' }">
+        <Column field="data" header="Data" sortable :style="{ width: '130px' }">
           <template #body="{ data }">
             <DatePicker
               v-if="isEditing(data, 'data')"
@@ -649,7 +953,7 @@ async function commitBudgetValor(b: BudgetItem) {
             </span>
           </template>
         </Column>
-        <Column field="tipo" header="Tipo" :style="{ width: '200px' }">
+        <Column field="tipo" header="Tipo" sortable :style="{ width: '200px' }">
           <template #body="{ data }">
             <Select
               v-if="isEditing(data, 'tipo')"
@@ -677,7 +981,7 @@ async function commitBudgetValor(b: BudgetItem) {
             </span>
           </template>
         </Column>
-        <Column field="detalhe" header="Detalhe">
+        <Column field="detalhe" header="Detalhe" sortable>
           <template #body="{ data }">
             <InputText
               v-if="editingDetalheId === data.identificador"
@@ -701,7 +1005,7 @@ async function commitBudgetValor(b: BudgetItem) {
             </span>
           </template>
         </Column>
-        <Column field="categoriaId" header="Categoria" :style="{ width: '200px' }">
+        <Column field="categoriaId" header="Categoria" sortable :style="{ width: '200px' }">
           <template #body="{ data }">
             <Select
               v-if="editingCategoriaId === data.identificador"
@@ -729,7 +1033,16 @@ async function commitBudgetValor(b: BudgetItem) {
             </button>
           </template>
         </Column>
-        <Column field="valor" header="Valor" :style="{ width: '160px' }">
+        <Column
+          field="valor"
+          header="Valor"
+          sortable
+          dataType="numeric"
+          headerClass="value-column-header"
+          bodyClass="value-column-body"
+          :style="{ width: '160px', textAlign: 'right' }"
+          :headerStyle="{ width: '160px', textAlign: 'right' }"
+        >
           <template #body="{ data }">
             <InputNumber
               v-if="isEditing(data, 'valor')"
@@ -756,6 +1069,32 @@ async function commitBudgetValor(b: BudgetItem) {
             >
               {{ fmtMoneyBR(data.valor) }}
             </span>
+          </template>
+        </Column>
+        <Column header="" :style="{ width: '90px' }">
+          <template #body="{ data }">
+            <div class="row-actions">
+              <Button
+                icon="pi pi-sitemap"
+                severity="secondary"
+                text
+                rounded
+                size="small"
+                aria-label="Gerar regra"
+                title="Gerar regra a partir desta linha"
+                @click="onCreateRuleFromRow(data)"
+              />
+              <Button
+                icon="pi pi-trash"
+                severity="danger"
+                text
+                rounded
+                size="small"
+                aria-label="Excluir"
+                title="Excluir transacao"
+                @click="onDelete(data)"
+              />
+            </div>
           </template>
         </Column>
       </DataTable>
@@ -934,6 +1273,66 @@ section {
   font-variant-numeric: tabular-nums;
 }
 
+.salary-cycle {
+  padding: 0.65rem 1rem 0.7rem;
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+
+.salary-cycle-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 0.45rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--p-content-border-color);
+  font-size: 0.74rem;
+  color: var(--p-text-muted-color, #6b7280);
+}
+
+.salary-cycle-bar-wrap {
+  height: 16px;
+  border-radius: 8px;
+  background: var(--p-content-border-color);
+  overflow: hidden;
+}
+
+.salary-cycle-bar {
+  position: relative;
+  height: 100%;
+  min-width: 2rem;
+  border-radius: 8px;
+  background: var(--p-green-400, #4ade80);
+  transition: width 400ms;
+}
+
+.salary-cycle-bar--empty {
+  background: var(--p-surface-300, #d1d5db);
+}
+
+.salary-cycle-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1f2937;
+  font-size: 0.64rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.salary-cycle-dates {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .side-empty {
   padding: 1rem;
   opacity: 0.7;
@@ -1023,19 +1422,67 @@ section {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  transition: background 120ms;
+}
+
+.budget-item:nth-child(even) {
+  background: var(--p-surface-100, rgba(0, 0, 0, 0.055));
+}
+
+.budget-item:hover {
+  background: var(--p-highlight-background, rgba(0, 0, 0, 0.075));
+}
+
+.budget-item--dragging {
+  opacity: 0.55;
+}
+
+.budget-item--drag-over {
+  outline: 2px solid var(--p-primary-color);
+  outline-offset: -2px;
+  background: var(--p-highlight-background, rgba(59, 130, 246, 0.12));
 }
 
 .budget-item-top {
   display: flex;
+  gap: 0.5rem;
   justify-content: space-between;
   font-size: 0.82rem;
+}
+
+.budget-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.budget-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 4px;
+  color: var(--p-text-muted-color, #6b7280);
+  cursor: grab;
+  flex: 0 0 auto;
+}
+
+.budget-drag-handle:active {
+  cursor: grabbing;
+}
+
+.budget-drag-handle:hover {
+  background: var(--p-highlight-background, rgba(0, 0, 0, 0.06));
+  color: var(--p-text-color);
 }
 
 .budget-item-nome {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 55%;
+  min-width: 0;
 }
 
 .budget-item-val {
@@ -1044,16 +1491,33 @@ section {
 }
 
 .budget-progress-wrap {
-  height: 4px;
-  border-radius: 2px;
+  height: 14px;
+  border-radius: 7px;
   background: var(--p-content-border-color);
   overflow: hidden;
+  position: relative;
 }
 
 .budget-progress-bar {
   height: 100%;
-  border-radius: 2px;
+  min-width: 1.75rem;
+  border-radius: 7px;
   transition: width 400ms;
+  position: relative;
+}
+
+.budget-progress-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1f2937;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
 }
 
 .budget-item-rest {
@@ -1099,6 +1563,19 @@ section {
   background: var(--p-highlight-background, rgba(0, 0, 0, 0.04));
   outline: 1px dashed var(--p-content-border-color);
   outline-offset: 2px;
+}
+
+.money-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+:deep(.value-column-header .p-datatable-column-header-content) {
+  justify-content: flex-end;
+}
+
+:deep(.value-column-body) {
+  text-align: right;
 }
 
 .row-actions {

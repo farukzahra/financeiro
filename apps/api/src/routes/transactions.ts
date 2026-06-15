@@ -4,18 +4,21 @@ import { db } from "../db/client.js";
 import { transactions, imports } from "../db/schema.js";
 import { TransactionUpdateSchema, TransactionCreateSchema } from "@financeiro/shared";
 import { chaveAgrupamento } from "../services/normalize.js";
+import { requireUser } from "../auth.js";
 
 const MANUAL_IMPORT_HASH = "__manual__";
 
-async function getOrCreateManualImportId(): Promise<string> {
+async function getOrCreateManualImportId(userId: string): Promise<string> {
   const [existing] = await db
     .select({ id: imports.id })
     .from(imports)
-    .where(eq(imports.hashSha256, MANUAL_IMPORT_HASH));
+    .where(and(eq(imports.userId, userId), eq(imports.hashSha256, MANUAL_IMPORT_HASH)));
   if (existing) return existing.id;
+
   const [created] = await db
     .insert(imports)
     .values({
+      userId,
       nomeArquivo: "__manual__",
       hashSha256: MANUAL_IMPORT_HASH,
       conta: "manual",
@@ -37,9 +40,10 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
       minValue?: string;
       maxValue?: string;
     };
-  }>("/transactions", async (req) => {
+  }>("/transactions", async (req, reply) => {
+    const user = await requireUser(req, reply);
     const { from, to, category, q, minValue, maxValue } = req.query;
-    const filters = [];
+    const filters = [eq(transactions.userId, user.id)];
 
     if (from && to) filters.push(between(transactions.data, from, to));
     else if (from) filters.push(gte(transactions.data, from));
@@ -58,12 +62,10 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
     if (minValue) filters.push(gte(transactions.valor, minValue));
     if (maxValue) filters.push(lte(transactions.valor, maxValue));
 
-    const where = filters.length ? and(...filters) : undefined;
-
     const rows = await db
       .select()
       .from(transactions)
-      .where(where)
+      .where(and(...filters))
       .orderBy(transactions.data);
 
     const totalEntradas = rows
@@ -76,10 +78,7 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
     return {
       itens: rows.map((r) => ({
         ...r,
-        data:
-          r.data instanceof Date
-            ? r.data.toISOString().slice(0, 10)
-            : (r.data as unknown as string),
+        data: r.data as unknown as string,
         importadoEm: r.importadoEm.toISOString(),
       })),
       resumo: {
@@ -92,16 +91,19 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
   });
 
   app.post("/transactions", async (req, reply) => {
+    const user = await requireUser(req, reply);
     const parsed = TransactionCreateSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+
     const d = parsed.data;
-    const importId = await getOrCreateManualImportId();
+    const importId = await getOrCreateManualImportId(user.id);
     const identificador = crypto.randomUUID();
     const chave = chaveAgrupamento(d.tipo, d.detalhe);
     const [created] = await db
       .insert(transactions)
       .values({
         identificador,
+        userId: user.id,
         importId,
         data: d.data,
         valor: d.valor,
@@ -119,18 +121,21 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
   });
 
   app.patch<{ Params: { id: string } }>("/transactions/:id", async (req, reply) => {
+    const user = await requireUser(req, reply);
     const parsed = TransactionUpdateSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+
     const updates: Record<string, unknown> = {};
     if (parsed.data.categoriaId) {
       updates.categoriaId = parsed.data.categoriaId;
       updates.categoryRuleId = null;
       updates.regraAplicada = "manual";
     }
+
     const [current] = await db
       .select({ tipo: transactions.tipo, detalhe: transactions.detalhe })
       .from(transactions)
-      .where(eq(transactions.identificador, req.params.id));
+      .where(and(eq(transactions.userId, user.id), eq(transactions.identificador, req.params.id)));
     if (!current) return reply.code(404).send({ error: "Nao encontrada" });
 
     let novoTipo = current.tipo;
@@ -160,46 +165,50 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
     const [updated] = await db
       .update(transactions)
       .set(updates)
-      .where(eq(transactions.identificador, req.params.id))
+      .where(and(eq(transactions.userId, user.id), eq(transactions.identificador, req.params.id)))
       .returning();
     if (!updated) return reply.code(404).send({ error: "Nao encontrada" });
     return updated;
   });
 
   app.delete<{ Params: { id: string } }>("/transactions/:id", async (req, reply) => {
+    const user = await requireUser(req, reply);
     const [removed] = await db
       .delete(transactions)
-      .where(eq(transactions.identificador, req.params.id))
+      .where(and(eq(transactions.userId, user.id), eq(transactions.identificador, req.params.id)))
       .returning({ id: transactions.identificador });
     if (!removed) return reply.code(404).send({ error: "Nao encontrada" });
     return { ok: true, id: removed.id };
   });
 
-  app.get("/transactions/tipos", async () => {
+  app.get("/transactions/tipos", async (req, reply) => {
+    const user = await requireUser(req, reply);
     const baseline = [
-      "Aplicação RDB",
-      "Compra no débito",
-      "Débito em conta",
+      "AplicaÃ§Ã£o RDB",
+      "Compra no dÃ©bito",
+      "DÃ©bito em conta",
       "Estorno",
       "Pagamento de boleto efetuado",
       "Pagamento de fatura",
       "Reembolso recebido pelo Pix",
       "Resgate RDB",
       "Saque",
-      "Transferência enviada pelo Pix",
-      "Transferência Recebida",
-      "Transferência recebida pelo Pix",
+      "TransferÃªncia enviada pelo Pix",
+      "TransferÃªncia Recebida",
+      "TransferÃªncia recebida pelo Pix",
     ];
     const rows = await db
       .selectDistinct({ tipo: transactions.tipo })
       .from(transactions)
+      .where(eq(transactions.userId, user.id))
       .orderBy(transactions.tipo);
     const set = new Set<string>(baseline);
     for (const r of rows) if (r.tipo) set.add(r.tipo);
     return [...set].sort((a, b) => a.localeCompare(b, "pt-BR"));
   });
 
-  app.get("/transactions/summary", async () => {
+  app.get("/transactions/summary", async (req, reply) => {
+    const user = await requireUser(req, reply);
     const rows = await db
       .select({
         mes: drizzleSql<string>`to_char(${transactions.data}, 'YYYY-MM')`,
@@ -208,6 +217,7 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
         qtd: drizzleSql<number>`count(*)::int`,
       })
       .from(transactions)
+      .where(eq(transactions.userId, user.id))
       .groupBy(drizzleSql`to_char(${transactions.data}, 'YYYY-MM')`)
       .orderBy(drizzleSql`to_char(${transactions.data}, 'YYYY-MM') desc`);
     return rows;

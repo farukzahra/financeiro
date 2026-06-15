@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { db, sql } from "../client.js";
-import { budgetItems } from "../schema.js";
-import { sql as drizzleSql } from "drizzle-orm";
+import { budgetItems, users } from "../schema.js";
+import { eq } from "drizzle-orm";
 
 const SEED: { descricao: string; diaVencimento: number | null; valorMensal: string }[] = [
   { descricao: "Celular Khalil", diaVencimento: 12, valorMensal: "70.00" },
@@ -19,10 +19,17 @@ const SEED: { descricao: string; diaVencimento: number | null; valorMensal: stri
 ];
 
 async function main() {
+  const legacy = await db.query.users.findFirst({
+    where: eq(users.googleSub, "__legacy__"),
+  });
+  if (!legacy) {
+    throw new Error("Usuario legado nao encontrado. Rode as migrations antes do seed de orcamento.");
+  }
+
   for (const item of SEED) {
     await db
       .insert(budgetItems)
-      .values({ ...item, ativo: true })
+      .values({ ...item, userId: legacy.id, ativo: true })
       .onConflictDoNothing();
   }
   console.log(`${SEED.length} budget items seeded.`);

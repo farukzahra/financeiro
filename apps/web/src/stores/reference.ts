@@ -34,6 +34,13 @@ export const useReferenceStore = defineStore("reference", () => {
     tipos.value = await listTipos();
   }
 
+  function reset() {
+    categories.value = [];
+    rules.value = [];
+    tipos.value = [];
+    loaded.value = false;
+  }
+
   const categoryOptions = computed(() =>
     categories.value.map((c) => ({ label: `${c.letra} - ${c.id}`, value: c.id })),
   );
@@ -47,6 +54,7 @@ export const useReferenceStore = defineStore("reference", () => {
     reloadRules,
     reloadCategories,
     reloadTipos,
+    reset,
     categoryOptions,
   };
 });

@@ -2,7 +2,58 @@ import axios from "axios";
 
 export const api = axios.create({
   baseURL: "/api",
+  withCredentials: true,
 });
+
+export type UserSettings = {
+  transactionsFilters?: {
+    from?: string | null;
+    to?: string | null;
+    categories?: string[];
+    search?: string;
+    activePanel?: "filters" | "cats" | "budget" | null;
+    sortField?: "data" | "tipo" | "detalhe" | "categoriaId" | "valor" | null;
+    sortOrder?: 1 | -1;
+  };
+  budgetOrder?: string[];
+};
+
+export type AuthUser = {
+  id: string;
+  email: string;
+  name: string | null;
+  avatarUrl: string | null;
+  role: string;
+  settings: UserSettings;
+};
+
+export async function getMe(): Promise<AuthUser> {
+  const { data } = await api.get<AuthUser>("/auth/me");
+  return data;
+}
+
+export async function login(email: string, password: string): Promise<AuthUser> {
+  const { data } = await api.post<AuthUser>("/auth/login", { email, password });
+  return data;
+}
+
+export async function register(body: {
+  name?: string;
+  email: string;
+  password: string;
+}): Promise<AuthUser> {
+  const { data } = await api.post<AuthUser>("/auth/register", body);
+  return data;
+}
+
+export async function logout(): Promise<void> {
+  await api.post("/auth/logout");
+}
+
+export async function updateUserSettings(settings: UserSettings): Promise<AuthUser> {
+  const { data } = await api.patch<AuthUser>("/auth/settings", settings);
+  return data;
+}
 
 export type Category = {
   id: string;
@@ -125,7 +176,18 @@ export async function listTransactions(params: {
 }): Promise<TransactionsResponse> {
   const { data } = await api.get<TransactionsResponse>("/transactions", {
     params,
-    paramsSerializer: { indexes: null },
+    paramsSerializer: (rawParams) => {
+      const search = new URLSearchParams();
+      Object.entries(rawParams).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === "") return;
+        if (Array.isArray(value)) {
+          value.forEach((item) => search.append(key, String(item)));
+        } else {
+          search.append(key, String(value));
+        }
+      });
+      return search.toString();
+    },
   });
   return data;
 }

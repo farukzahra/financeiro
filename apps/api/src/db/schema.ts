@@ -7,9 +7,31 @@ import {
   boolean,
   integer,
   numeric,
+  jsonb,
   index,
   primaryKey,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
+
+export const users = pgTable(
+  "app_user",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull(),
+    name: text("name"),
+    avatarUrl: text("avatar_url"),
+    googleSub: text("google_sub").notNull(),
+    passwordHash: text("password_hash"),
+    role: text("role").notNull().default("user"),
+    settings: jsonb("settings").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    emailUnique: uniqueIndex("idx_user_email_unique").on(t.email),
+    googleSubUnique: uniqueIndex("idx_user_google_sub_unique").on(t.googleSub),
+  }),
+);
 
 export const categories = pgTable("category", {
   id: text("id").primaryKey(),
@@ -22,6 +44,9 @@ export const categoryRules = pgTable(
   "category_rule",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
     categoriaId: text("categoria_id")
       .notNull()
       .references(() => categories.id),
@@ -31,12 +56,19 @@ export const categoryRules = pgTable(
     ativa: boolean("ativa").notNull().default(true),
   },
   (t) => ({
-    ativaPrioridade: index("idx_rule_ativa_prioridade").on(t.ativa, t.prioridade),
+    userAtivaPrioridade: index("idx_rule_user_ativa_prioridade").on(
+      t.userId,
+      t.ativa,
+      t.prioridade,
+    ),
   }),
 );
 
 export const imports = pgTable("import", {
   id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
   nomeArquivo: text("nome_arquivo").notNull(),
   hashSha256: text("hash_sha256").notNull(),
   conta: text("conta").notNull(),
@@ -52,7 +84,10 @@ export const imports = pgTable("import", {
 export const transactions = pgTable(
   "transaction",
   {
-    identificador: text("identificador").primaryKey(), // UUID Nubank
+    identificador: text("identificador").notNull(), // UUID Nubank
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
     importId: uuid("import_id")
       .notNull()
       .references(() => imports.id),
@@ -71,14 +106,18 @@ export const transactions = pgTable(
     observacao: text("observacao"),
   },
   (t) => ({
-    dataIdx: index("idx_tx_data").on(t.data),
-    catDataIdx: index("idx_tx_cat_data").on(t.categoriaId, t.data),
-    chaveIdx: index("idx_tx_chave").on(t.chaveNormalizada),
+    pk: primaryKey({ columns: [t.userId, t.identificador] }),
+    userDataIdx: index("idx_tx_user_data").on(t.userId, t.data),
+    userCatDataIdx: index("idx_tx_user_cat_data").on(t.userId, t.categoriaId, t.data),
+    userChaveIdx: index("idx_tx_user_chave").on(t.userId, t.chaveNormalizada),
   }),
 );
 
 export const budgetItems = pgTable("budget_item", {
   id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
   descricao: text("descricao").notNull(),
   categoriaId: text("categoria_id").references(() => categories.id),
   diaVencimento: integer("dia_vencimento"),

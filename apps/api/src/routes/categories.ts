@@ -3,13 +3,16 @@ import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { categories } from "../db/schema.js";
 import { CategoryUpsertSchema } from "@financeiro/shared";
+import { requireUser } from "../auth.js";
 
 export async function registerCategoriesRoutes(app: FastifyInstance) {
-  app.get("/categories", async () => {
+  app.get("/categories", async (req, reply) => {
+    await requireUser(req, reply);
     return db.select().from(categories).orderBy(categories.id);
   });
 
   app.post("/categories", async (req, reply) => {
+    await requireUser(req, reply);
     const parsed = CategoryUpsertSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
     const [row] = await db
@@ -22,6 +25,7 @@ export async function registerCategoriesRoutes(app: FastifyInstance) {
   });
 
   app.patch<{ Params: { id: string } }>("/categories/:id", async (req, reply) => {
+    await requireUser(req, reply);
     const parsed = CategoryUpsertSchema.partial().safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
     const [row] = await db

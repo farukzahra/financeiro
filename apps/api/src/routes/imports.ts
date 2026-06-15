@@ -1,14 +1,16 @@
 import type { FastifyInstance } from "fastify";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { categories, categoryRules, imports, transactions } from "../db/schema.js";
 import { extractFileMetadata, parseCsv } from "../services/parser.js";
 import { categorizeAll, type CategoryRuleLite } from "../services/categorizer.js";
 import { ConfirmRequestSchema } from "@financeiro/shared";
+import { requireUser } from "../auth.js";
 
 export async function registerImportsRoutes(app: FastifyInstance) {
   // POST /imports/preview (multipart) -> { metadata, itens[] }
   app.post("/imports/preview", async (req, reply) => {
+    const user = await requireUser(req, reply);
     const data = await req.file();
     if (!data) return reply.code(400).send({ error: "Arquivo obrigatorio" });
 
@@ -21,13 +23,13 @@ export async function registerImportsRoutes(app: FastifyInstance) {
     }
 
     const existingImport = await db.query.imports.findFirst({
-      where: eq(imports.hashSha256, metadata.hashSha256),
+      where: and(eq(imports.userId, user.id), eq(imports.hashSha256, metadata.hashSha256)),
     });
 
     const rows = parseCsv(buffer);
 
     const allRules = await db.query.categoryRules.findMany({
-      where: eq(categoryRules.ativa, true),
+      where: and(eq(categoryRules.userId, user.id), eq(categoryRules.ativa, true)),
     });
     const allCategories = await db.query.categories.findMany();
     const catIds = new Set(allCategories.map((c) => c.id));
@@ -46,7 +48,7 @@ export async function registerImportsRoutes(app: FastifyInstance) {
       ? await db
           .select({ id: transactions.identificador })
           .from(transactions)
-          .where(inArray(transactions.identificador, ids))
+          .where(and(eq(transactions.userId, user.id), inArray(transactions.identificador, ids)))
       : [];
     const existentesSet = new Set(existentes.map((e) => e.id));
 
@@ -74,6 +76,7 @@ export async function registerImportsRoutes(app: FastifyInstance) {
 
   // POST /imports/confirm
   app.post("/imports/confirm", async (req, reply) => {
+    const user = await requireUser(req, reply);
     const parsed = ConfirmRequestSchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.code(400).send({ error: parsed.error.flatten() });
@@ -85,6 +88,7 @@ export async function registerImportsRoutes(app: FastifyInstance) {
         .insert(imports)
         .values({
           nomeArquivo: metadata.nomeArquivo,
+          userId: user.id,
           hashSha256: metadata.hashSha256,
           conta: metadata.conta,
           periodoInicio: metadata.periodoInicio,
@@ -100,6 +104,7 @@ export async function registerImportsRoutes(app: FastifyInstance) {
           .insert(transactions)
           .values({
             identificador: it.identificador,
+            userId: user.id,
             importId: imp.id,
             data: it.data,
             valor: it.valor,
@@ -111,7 +116,9 @@ export async function registerImportsRoutes(app: FastifyInstance) {
             categoryRuleId: it.categoryRuleId,
             regraAplicada: it.regraAplicada,
           })
-          .onConflictDoNothing()
+          .onConflictDoNothing({
+            target: [transactions.userId, transactions.identificador],
+          })
           .returning({ id: transactions.identificador });
         if (res.length) inseridas++;
         else duplicadas++;

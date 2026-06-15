@@ -2,6 +2,7 @@ import "dotenv/config";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
+import { registerAuthRoutes } from "./auth.js";
 import { registerImportsRoutes } from "./routes/imports.js";
 import { registerTransactionsRoutes } from "./routes/transactions.js";
 import { registerCategoriesRoutes } from "./routes/categories.js";
@@ -11,11 +12,12 @@ import { registerBudgetRoutes } from "./routes/budget.js";
 async function main() {
   const app = Fastify({ logger: true });
 
-  await app.register(cors, { origin: true });
+  await app.register(cors, { origin: true, credentials: true });
   await app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } });
 
   app.get("/health", async () => ({ ok: true }));
 
+  await registerAuthRoutes(app);
   await registerImportsRoutes(app);
   await registerTransactionsRoutes(app);
   await registerCategoriesRoutes(app);
