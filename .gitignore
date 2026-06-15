@@ -19,3 +19,5 @@ __pycache__/
 output/
 sheets/
 *.sqlite
+export-*.sql
+user-data-*.sql
