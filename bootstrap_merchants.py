@@ -18,7 +18,7 @@ Uso:
 
 Defaults:
     pasta_entrada = exemplo_input
-    arquivo_saida = merchants_para_classificar.csv
+    arquivo_saida = dados/csv/merchants_para_classificar.csv
 """
 
 from __future__ import annotations
@@ -275,8 +275,13 @@ def escrever_planilha(agregados: list[Agregado], saida: Path) -> None:
 # ---------------------------------------------------------------------------
 
 def main(argv: list[str]) -> int:
-    pasta = Path(argv[1]) if len(argv) > 1 else Path("exemplo_input")
-    saida = Path(argv[2]) if len(argv) > 2 else Path("merchants_para_classificar.csv")
+    base_dir = Path(__file__).parent
+    pasta = Path(argv[1]) if len(argv) > 1 else base_dir / "exemplo_input"
+    saida = (
+        Path(argv[2])
+        if len(argv) > 2
+        else base_dir / "dados" / "csv" / "merchants_para_classificar.csv"
+    )
 
     if not pasta.is_dir():
         print(f"Pasta nao encontrada: {pasta}", file=sys.stderr)

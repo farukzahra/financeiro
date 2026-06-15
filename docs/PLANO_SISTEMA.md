@@ -24,7 +24,7 @@ ficam abertos.
   Possui letra curta opcional (`A`, `F`, ...) usada no agrupamento para a planilha.
 - **Regra de categorizacao** (`CategoryRule`): par `(padrao, categoria)` que permite
   ao usuario manter o dicionario sem editar codigo. Substitui o atual
-  `merchants_para_classificar.csv` + `autofill_categorias.py:REGRAS`.
+  `dados/csv/merchants_para_classificar.csv` + `autofill_categorias.py:REGRAS`.
 
 ---
 

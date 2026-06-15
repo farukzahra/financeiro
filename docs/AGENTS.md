@@ -98,6 +98,20 @@ Nao crie arquivos `.md` na raiz do repositorio. Use sempre uma pasta adequada:
 Se um Markdown antigo aparecer na raiz, mova para `docs/` ou `planos/` com nome
 descritivo em kebab-case antes de editar.
 
+## Organizacao de dados locais
+
+Nao crie CSVs, dumps SQL, planilhas ou saidas geradas na raiz do repositorio.
+Use sempre `dados/`:
+
+- `dados/csv/`: CSVs auxiliares versionados, como
+  `merchants_para_classificar.csv`.
+- `dados/output/`: saidas locais geradas por scripts legados.
+- `dados/sheets/`: arquivos auxiliares de planilhas.
+- `dados/exports/`: dumps/exportacoes locais, normalmente ignorados pelo Git.
+
+`exemplo_input/` continua reservado para CSVs de exemplo do Nubank usados em
+testes manuais.
+
 ## Como rodar
 
 Instalar dependencias:

@@ -21,3 +21,6 @@ sheets/
 *.sqlite
 export-*.sql
 user-data-*.sql
+dados/output/
+dados/sheets/
+dados/exports/

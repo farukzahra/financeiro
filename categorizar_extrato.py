@@ -2,13 +2,14 @@
 categorizar_extrato.py
 
 Le um CSV de extrato do Nubank, aplica as 4 camadas de categorizacao
-descritas em docs/parser-categorizacao-nubank.md e grava o resultado em output/<nome_do_arquivo>.
+descritas em docs/parser-categorizacao-nubank.md e grava o resultado em
+dados/output/<nome_do_arquivo>.
 
 Pipeline:
   1. Tipo de operacao -> categoria (TIPOS_AUTOMATICOS, RDB, fatura, saque etc.)
-     vem implicitamente do dicionario merchants_para_classificar.csv para os
-     tipos sem detalhe (a chave e o proprio tipo normalizado).
-  2. Dicionario manual (merchants_para_classificar.csv): chave normalizada
+     vem implicitamente do dicionario dados/csv/merchants_para_classificar.csv
+     para os tipos sem detalhe (a chave e o proprio tipo normalizado).
+  2. Dicionario manual (dados/csv/merchants_para_classificar.csv): chave normalizada
      -> categoria preenchida pelo usuario.
   3. Heuristicas leves (autofill_categorias.REGRAS) para chaves novas que
      ainda nao estao no dicionario.
@@ -19,7 +20,7 @@ Uso:
 
 Se <arquivo_entrada.csv> nao existir como caminho relativo/absoluto, tenta
 exemplo_input/<arquivo_entrada.csv>. A saida default vai para
-output/<basename do entrada>.
+dados/output/<basename do entrada>.
 """
 
 from __future__ import annotations
@@ -38,12 +39,14 @@ from bootstrap_merchants import (
 )
 
 
-DICIONARIO_CSV = Path(__file__).parent / "merchants_para_classificar.csv"
-OUTPUT_DIR = Path(__file__).parent / "output"
+BASE_DIR = Path(__file__).parent
+DADOS_DIR = BASE_DIR / "dados"
+DICIONARIO_CSV = DADOS_DIR / "csv" / "merchants_para_classificar.csv"
+OUTPUT_DIR = DADOS_DIR / "output"
 
 
 def carregar_dicionario(caminho: Path) -> dict[str, str]:
-    """Le merchants_para_classificar.csv e devolve {chave_normalizada: categoria}.
+    """Le dados/csv/merchants_para_classificar.csv e devolve {chave_normalizada: categoria}.
 
     Linhas com `categoria` vazia sao ignoradas. Em caso de chave duplicada,
     a primeira (mais relevante por volume, dada a ordenacao da planilha) vence.
@@ -66,7 +69,7 @@ def resolver_entrada(arg: str) -> Path:
     candidato = Path(arg)
     if candidato.is_file():
         return candidato
-    alt = Path(__file__).parent / "exemplo_input" / arg
+    alt = BASE_DIR / "exemplo_input" / arg
     if alt.is_file():
         return alt
     raise FileNotFoundError(
