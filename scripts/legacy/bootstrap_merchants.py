@@ -14,7 +14,7 @@ Depois, um proximo script transforma essa planilha preenchida em
 `categorias.yaml`.
 
 Uso:
-    python bootstrap_merchants.py [pasta_entrada] [arquivo_saida]
+    python scripts/legacy/bootstrap_merchants.py [pasta_entrada] [arquivo_saida]
 
 Defaults:
     pasta_entrada = exemplo_input
@@ -275,7 +275,7 @@ def escrever_planilha(agregados: list[Agregado], saida: Path) -> None:
 # ---------------------------------------------------------------------------
 
 def main(argv: list[str]) -> int:
-    base_dir = Path(__file__).parent
+    base_dir = Path(__file__).resolve().parents[2]
     pasta = Path(argv[1]) if len(argv) > 1 else base_dir / "exemplo_input"
     saida = (
         Path(argv[2])

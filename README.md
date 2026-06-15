@@ -61,7 +61,7 @@ http://localhost:5173
 Para abrir o Electron em desenvolvimento:
 
 ```powershell
-.\iniciar.bat
+.\scripts\windows\iniciar.bat
 ```
 
 Para apontar o Electron para producao:
@@ -93,11 +93,11 @@ SITE_ADDRESS=:80
 
 ## Scripts legados
 
-Scripts Python na raiz ajudam a classificar extratos e gerar CSVs auxiliares:
+Scripts Python legados ajudam a classificar extratos e gerar CSVs auxiliares:
 
 ```powershell
-python bootstrap_merchants.py
-python categorizar_extrato.py NU_941505780_01JUN2026_07JUN2026.csv
+python scripts\legacy\bootstrap_merchants.py
+python scripts\legacy\categorizar_extrato.py NU_941505780_01JUN2026_07JUN2026.csv
 ```
 
 Dados usados por esses scripts ficam em:

@@ -24,7 +24,7 @@ ficam abertos.
   Possui letra curta opcional (`A`, `F`, ...) usada no agrupamento para a planilha.
 - **Regra de categorizacao** (`CategoryRule`): par `(padrao, categoria)` que permite
   ao usuario manter o dicionario sem editar codigo. Substitui o atual
-  `dados/csv/merchants_para_classificar.csv` + `autofill_categorias.py:REGRAS`.
+  `dados/csv/merchants_para_classificar.csv` + `scripts/legacy/autofill_categorias.py:REGRAS`.
 
 ---
 
@@ -312,7 +312,7 @@ financeiro/
 
 1. `web` envia o arquivo via `POST /imports/preview` (multipart).
 2. `api` faz parsing com `papaparse` (streaming), aplica categorizacao em
-   memoria (porte do `bootstrap_merchants.py` + `autofill_categorias.py` para
+   memoria (porte do `scripts/legacy/bootstrap_merchants.py` + `scripts/legacy/autofill_categorias.py` para
    TS), e devolve JSON: `{ metadados, itens: [...] }`.
 3. `web` mostra na DataTable, usuario seleciona/edita.
 4. `web` envia `POST /imports/confirm` com `{ metadados, itensSelecionados[] }`.

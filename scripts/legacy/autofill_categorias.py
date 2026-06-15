@@ -1,7 +1,7 @@
 """Preenche heuristicamente a coluna `categoria` da planilha,
 respeitando linhas ja preenchidas manualmente.
 
-Uso: python autofill_categorias.py <entrada.csv> [saida.csv]
+Uso: python scripts/legacy/autofill_categorias.py <entrada.csv> [saida.csv]
 """
 from __future__ import annotations
 

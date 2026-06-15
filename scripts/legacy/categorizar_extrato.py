@@ -16,7 +16,7 @@ Pipeline:
   4. Fallback: OUTROS.
 
 Uso:
-    python categorizar_extrato.py <arquivo_entrada.csv> [arquivo_saida.csv]
+    python scripts/legacy/categorizar_extrato.py <arquivo_entrada.csv> [arquivo_saida.csv]
 
 Se <arquivo_entrada.csv> nao existir como caminho relativo/absoluto, tenta
 exemplo_input/<arquivo_entrada.csv>. A saida default vai para
@@ -39,7 +39,7 @@ from bootstrap_merchants import (
 )
 
 
-BASE_DIR = Path(__file__).parent
+BASE_DIR = Path(__file__).resolve().parents[2]
 DADOS_DIR = BASE_DIR / "dados"
 DICIONARIO_CSV = DADOS_DIR / "csv" / "merchants_para_classificar.csv"
 OUTPUT_DIR = DADOS_DIR / "output"

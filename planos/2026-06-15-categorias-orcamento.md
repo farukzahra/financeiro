@@ -100,6 +100,6 @@ porque o painel soma tudo que é `SAUDE`, não só o que é Unimed.
 
 ## Pendente
 
-- [ ] Atualizar regras de categorização automática (`autofill_categorias.py` / merchants)
+- [ ] Atualizar regras de categorização automática (`scripts/legacy/autofill_categorias.py` / merchants)
       para que transações Unimed vão para `UNIMED` em vez de `SAUDE`
 - [ ] Recategorizar transações históricas em `SAUDE` que sejam do Unimed

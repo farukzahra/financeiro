@@ -31,8 +31,8 @@ O fluxo central e:
 - `apps/electron`: wrapper desktop Electron que abre o Vite em
   `http://localhost:5173`.
 - `packages/shared`: schemas Zod e tipos compartilhados entre API e web.
-- Scripts Python na raiz (`categorizar_extrato.py`, `bootstrap_merchants.py`,
-  `autofill_categorias.py`) sao legado/apoio da logica de categorizacao.
+- Scripts Python em `scripts/legacy/` sao legado/apoio da logica de
+  categorizacao.
 
 Arquivos importantes:
 
@@ -143,12 +143,12 @@ pnpm dev
 Alternativa desktop:
 
 ```powershell
-.\iniciar.bat
+.\scripts\windows\iniciar.bat
 ```
 
 Atencao: ha uma diferenca operacional a conferir antes de rodar. O
 `docker-compose.yml` expoe Postgres em `localhost:5433` com usuario/senha
-`financeiro/financeiro`, enquanto defaults da API e do `iniciar.bat` apontam
+`financeiro/financeiro`, enquanto defaults da API e do `scripts/windows/iniciar.bat` apontam
 para outros host/credenciais (`5432`, e no BAT `postgres/postgres`). Prefira
 definir `DATABASE_URL` explicitamente quando for executar localmente.
 
@@ -168,7 +168,7 @@ pnpm --filter @financeiro/api dev
 - `pnpm db:generate`: gera migration Drizzle a partir do schema.
 - `pnpm db:migrate`: aplica migrations.
 - `pnpm db:seed`: cadastra categorias iniciais.
-- `.\categorizar.bat <arquivo.csv>`: fluxo Python legado para categorizar CSV.
+- `.\scripts\windows\categorizar.bat <arquivo.csv>`: fluxo Python legado para categorizar CSV.
 
 ## Modelo de dominio
 
