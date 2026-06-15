@@ -4,7 +4,8 @@
   "private": true,
   "main": "main.cjs",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "start:prod": "node -e \"if (!process.env.FINANCEIRO_APP_URL) { console.error('Defina FINANCEIRO_APP_URL'); process.exit(1); }\" && electron ."
   },
   "devDependencies": {
     "electron": "^31.7.7"

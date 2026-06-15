@@ -1,0 +1,13 @@
+{$SITE_ADDRESS::80} {
+	encode gzip zstd
+
+	handle_path /api/* {
+		reverse_proxy api:3001
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

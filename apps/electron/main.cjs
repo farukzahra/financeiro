@@ -2,8 +2,9 @@
 // Carrega http://localhost:5173 (Vite dev server) já em execução
 const { app, BrowserWindow, shell, nativeTheme } = require('electron');
 const http = require('http');
+const https = require('https');
 
-const DEV_URL = 'http://localhost:5173';
+const APP_URL = process.env.FINANCEIRO_APP_URL || 'http://localhost:5173';
 const RETRY_INTERVAL = 500;
 const RETRY_TIMEOUT = 30_000;
 
@@ -13,7 +14,9 @@ function waitForServer(url, timeout) {
   return new Promise((resolve, reject) => {
     const start = Date.now();
     function attempt() {
-      http.get(url, (res) => {
+      const client = new URL(url).protocol === 'https:' ? https : http;
+      client.get(url, (res) => {
+        res.resume();
         resolve();
       }).on('error', () => {
         if (Date.now() - start > timeout) {
@@ -41,7 +44,7 @@ function createWindow() {
     show: false,
   });
 
-  mainWindow.loadURL(DEV_URL);
+  mainWindow.loadURL(APP_URL);
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
@@ -61,7 +64,7 @@ function createWindow() {
 app.whenReady().then(async () => {
   // Aguarda o Vite dev server estar disponível
   try {
-    await waitForServer(DEV_URL, RETRY_TIMEOUT);
+    await waitForServer(APP_URL, RETRY_TIMEOUT);
   } catch (err) {
     console.error(err.message);
     app.quit();

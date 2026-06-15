@@ -1,0 +1,15 @@
+node_modules
+**/node_modules
+dist
+**/dist
+.git
+.github
+.env
+.env.local
+*.log
+output
+sheets
+__pycache__
+*.pyc
+apps/electron/node_modules
+apps/electron/dist
