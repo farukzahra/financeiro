@@ -3,7 +3,7 @@ import { db, sql } from "./client.js";
 import { categories } from "./schema.js";
 import { sql as drizzleSql } from "drizzle-orm";
 
-// Categorias simplificadas combinadas com PLANO.md / docs/PLANO_SISTEMA.md.
+// Categorias simplificadas combinadas com docs/parser-categorizacao-nubank.md / docs/PLANO_SISTEMA.md.
 const SEED_CATEGORIES = [
   { id: "ALIMENTACAO", letra: "A", descricao: "Alimentacao (mercado e restaurante)" },
   { id: "FARMACIA", letra: "F", descricao: "Farmacia / remedios" },

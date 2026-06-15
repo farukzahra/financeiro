@@ -1,6 +1,6 @@
 # Planejamento — Sistema de Categorizacao de Extratos
 
-Sistema para ingerir extratos CSV do Nubank (formato descrito em [PLANO.md](../PLANO.md)),
+Sistema para ingerir extratos CSV do Nubank (formato descrito em [parser-categorizacao-nubank.md](parser-categorizacao-nubank.md)),
 classificar transacoes via dicionario + heuristicas, oferecer preview interativo de
 selecao e persistir o que o usuario aprovar em um banco relacional, organizado por mes.
 

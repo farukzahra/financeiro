@@ -2,7 +2,7 @@
 categorizar_extrato.py
 
 Le um CSV de extrato do Nubank, aplica as 4 camadas de categorizacao
-descritas em PLANO.md e grava o resultado em output/<nome_do_arquivo>.
+descritas em docs/parser-categorizacao-nubank.md e grava o resultado em output/<nome_do_arquivo>.
 
 Pipeline:
   1. Tipo de operacao -> categoria (TIPOS_AUTOMATICOS, RDB, fatura, saque etc.)
