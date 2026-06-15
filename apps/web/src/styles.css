@@ -43,10 +43,9 @@ body {
 }
 
 .app-header {
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr);
+  position: relative;
+  display: flex;
   align-items: center;
-  gap: 1rem;
   padding: 0 1.25rem;
   height: 56px;
   flex-shrink: 0;
@@ -83,14 +82,17 @@ body {
 }
 
 .app-header-nav {
+  position: absolute;
+  left: 50%;
+  top: 50%;
   display: flex;
   align-items: center;
-  justify-self: center;
   gap: 0.2rem;
   padding: 0.2rem;
   border: 1px solid var(--p-content-border-color);
   border-radius: 8px;
   background: var(--p-surface-50, rgba(0, 0, 0, 0.03));
+  transform: translate(-50%, -50%);
 }
 
 .app-nav-link {
@@ -151,7 +153,6 @@ body {
 
 @media (max-width: 760px) {
   .app-header {
-    grid-template-columns: auto 1fr auto;
     padding: 0 0.75rem;
   }
 
@@ -163,10 +164,6 @@ body {
 
   .app-header-brand {
     gap: 0;
-  }
-
-  .app-header-nav {
-    justify-self: center;
   }
 
   .app-nav-link {

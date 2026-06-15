@@ -222,9 +222,9 @@ async function onLogout() {
 }
 
 .app-user {
+  margin-left: auto;
   display: flex;
   align-items: center;
-  justify-self: end;
   gap: 0.5rem;
   min-width: 0;
 }
