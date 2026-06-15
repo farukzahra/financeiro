@@ -54,6 +54,10 @@ function sessionSecret(): string {
   return process.env.AUTH_SECRET ?? "dev-secret-change-me";
 }
 
+function shouldUseSecureCookie(): boolean {
+  return process.env.AUTH_COOKIE_SECURE === "true";
+}
+
 function publicUser(user: typeof users.$inferSelect): CurrentUser {
   return {
     id: user.id,
@@ -136,7 +140,7 @@ function parseCookies(header: string | undefined): Record<string, string> {
 }
 
 function setSessionCookie(reply: FastifyReply, token: string) {
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  const secure = shouldUseSecureCookie() ? "; Secure" : "";
   reply.header(
     "Set-Cookie",
     `${COOKIE_NAME}=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${SESSION_MAX_AGE_SECONDS}${secure}`,
@@ -144,7 +148,7 @@ function setSessionCookie(reply: FastifyReply, token: string) {
 }
 
 function clearSessionCookie(reply: FastifyReply) {
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  const secure = shouldUseSecureCookie() ? "; Secure" : "";
   reply.header(
     "Set-Cookie",
     `${COOKIE_NAME}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${secure}`,

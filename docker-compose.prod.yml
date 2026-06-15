@@ -22,6 +22,7 @@ services:
     environment:
       DATABASE_URL: postgres://financeiro:${POSTGRES_PASSWORD}@db:5432/financeiro
       AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET obrigatorio}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
       PORT: 3001
       NODE_ENV: production
     depends_on:
