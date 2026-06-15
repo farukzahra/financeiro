@@ -16,6 +16,7 @@ import {
   createBudgetItem,
   patchBudgetItem,
   deleteBudgetItem,
+  createRule,
   type BudgetItem,
 } from "../lib/api";
 import { useConfirm } from "primevue/useconfirm";
@@ -47,6 +48,17 @@ const budgetForm = ref({
   valorMensal: 0,
   ativo: true,
 });
+const showRuleDialog = ref(false);
+const ruleForm = ref({
+  categoriaId: null as string | null,
+  tipoPadrao: "substring" as "substring" | "regex",
+  padrao: "",
+  prioridade: 100,
+});
+const ruleTypeOptions = [
+  { label: "Substring", value: "substring" },
+  { label: "Regex", value: "regex" },
+];
 
 async function loadBudget() {
   budgetRows.value = await listBudget();
@@ -68,6 +80,16 @@ function openCreate() {
   editingBudget.value = null;
   budgetForm.value = { descricao: "", categoriaId: null, diaVencimento: null, valorMensal: 0, ativo: true };
   showBudgetDialog.value = true;
+}
+
+function openCreateRule() {
+  ruleForm.value = {
+    categoriaId: null,
+    tipoPadrao: "substring",
+    padrao: "",
+    prioridade: 100,
+  };
+  showRuleDialog.value = true;
 }
 
 function openEdit(row: BudgetItem) {
@@ -121,13 +143,39 @@ function confirmDelete(row: BudgetItem) {
     },
   });
 }
+
+async function saveRule() {
+  if (!ruleForm.value.categoriaId || !ruleForm.value.padrao.trim()) {
+    toast.add({
+      severity: "warn",
+      summary: "Preencha categoria e padrao",
+      life: 2500,
+    });
+    return;
+  }
+
+  try {
+    await createRule({
+      categoriaId: ruleForm.value.categoriaId,
+      tipoPadrao: ruleForm.value.tipoPadrao,
+      padrao: ruleForm.value.padrao.trim(),
+      prioridade: ruleForm.value.prioridade,
+      ativa: true,
+    });
+    await ref_.reloadRules();
+    showRuleDialog.value = false;
+    toast.add({ severity: "success", summary: "Regra criada", life: 1500 });
+  } catch (err) {
+    toast.add({ severity: "error", summary: "Erro", detail: (err as Error).message, life: 3000 });
+  }
+}
 </script>
 
 <template>
   <section>
     <h2>Configuracoes</h2>
     <TabView>
-      <TabPanel header="Orcamento">
+      <TabPanel header="Orcamento" value="orcamento">
         <div class="budget-header">
           <div class="total-previsto">
             Total previsto mensal: <strong>{{ fmtMoney(totalPrevisto) }}</strong>
@@ -163,7 +211,7 @@ function confirmDelete(row: BudgetItem) {
         </DataTable>
       </TabPanel>
 
-      <TabPanel header="Categorias">
+      <TabPanel header="Categorias" value="categorias">
         <DataTable :value="ref_.categories" :loading="loading" size="small" stripedRows>
           <Column field="id" header="Id" />
           <Column field="letra" header="Letra" />
@@ -176,7 +224,11 @@ function confirmDelete(row: BudgetItem) {
         </DataTable>
       </TabPanel>
 
-      <TabPanel header="Regras">
+      <TabPanel header="Regras" value="regras">
+        <div class="table-header">
+          <div class="table-title">Regras de categorizacao</div>
+          <Button label="Nova regra" icon="pi pi-plus" severity="success" size="small" @click="openCreateRule" />
+        </div>
         <DataTable :value="ref_.rules" :loading="loading" size="small" stripedRows>
           <Column field="prioridade" header="Prio" :style="{ width: '70px' }" />
           <Column field="tipoPadrao" header="Tipo" :style="{ width: '110px' }" />
@@ -238,6 +290,56 @@ function confirmDelete(row: BudgetItem) {
         <Button label="Salvar" icon="pi pi-check" @click="saveBudget" />
       </template>
     </Dialog>
+
+    <Dialog
+      v-model:visible="showRuleDialog"
+      header="Nova regra"
+      modal
+      :style="{ width: '460px' }"
+    >
+      <div class="form-col">
+        <label>Categoria</label>
+        <Select
+          v-model="ruleForm.categoriaId"
+          :options="categoryOptions"
+          optionLabel="label"
+          optionValue="value"
+          filter
+          placeholder="Selecione"
+          fluid
+        />
+
+        <label>Tipo</label>
+        <Select
+          v-model="ruleForm.tipoPadrao"
+          :options="ruleTypeOptions"
+          optionLabel="label"
+          optionValue="value"
+          fluid
+        />
+
+        <label>Padrao</label>
+        <InputText
+          v-model="ruleForm.padrao"
+          placeholder="ex: CASA DE PAO BETHELEM L"
+          fluid
+          @keydown.enter.prevent="saveRule"
+        />
+
+        <label>Prioridade</label>
+        <InputNumber
+          v-model="ruleForm.prioridade"
+          :min="1"
+          :max="9999"
+          fluid
+        />
+      </div>
+
+      <template #footer>
+        <Button label="Cancelar" severity="secondary" outlined @click="showRuleDialog = false" />
+        <Button label="Salvar" icon="pi pi-check" @click="saveRule" />
+      </template>
+    </Dialog>
   </section>
 </template>
 
@@ -247,6 +349,18 @@ function confirmDelete(row: BudgetItem) {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 0.75rem;
+}
+
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.table-title {
+  font-size: 0.9rem;
+  opacity: 0.8;
 }
 
 .total-previsto {
