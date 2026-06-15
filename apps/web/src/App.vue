@@ -66,14 +66,14 @@ async function onLogout() {
         <span class="app-header-logo">C</span>
         <span class="app-header-title">Financeiro</span>
       </div>
-      <nav class="app-header-nav">
-        <RouterLink to="/" class="app-nav-link">
+      <nav class="app-header-nav" aria-label="Navegacao principal">
+        <RouterLink to="/" class="app-nav-link" title="Transacoes">
           <i class="pi pi-list" />
-          Transacoes
+          <span>Transacoes</span>
         </RouterLink>
-        <RouterLink to="/configuracoes" class="app-nav-link">
+        <RouterLink to="/configuracoes" class="app-nav-link" title="Configuracoes">
           <i class="pi pi-cog" />
-          Configuracoes
+          <span>Configuracoes</span>
         </RouterLink>
       </nav>
       <div class="app-user">
@@ -222,9 +222,9 @@ async function onLogout() {
 }
 
 .app-user {
-  margin-left: auto;
   display: flex;
   align-items: center;
+  justify-self: end;
   gap: 0.5rem;
   min-width: 0;
 }
