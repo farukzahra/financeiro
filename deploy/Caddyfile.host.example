@@ -1,0 +1,11 @@
+financeiro.faruk.dev.br {
+	encode gzip zstd
+	reverse_proxy 127.0.0.1:8081
+}
+
+faruk.dev.br, www.faruk.dev.br {
+	encode gzip zstd
+	root * /opt/faruk/site
+	try_files {path} /index.html
+	file_server
+}

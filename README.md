@@ -80,6 +80,8 @@ O deploy usa GitHub Actions e VPS via SSH. Arquivos principais:
 - `Dockerfile.api`
 - `Dockerfile.web`
 - `deploy/Caddyfile`
+- `deploy/Caddyfile.host.example`
+- `deploy/faruk-site/index.html`
 - `scripts/deploy-vps.sh`
 
 Variaveis esperadas na VPS em `/opt/financeiro/.env`:
@@ -87,9 +89,17 @@ Variaveis esperadas na VPS em `/opt/financeiro/.env`:
 ```env
 POSTGRES_PASSWORD=...
 AUTH_SECRET=...
-AUTH_COOKIE_SECURE=false
-SITE_ADDRESS=:80
+AUTH_COOKIE_SECURE=true
+WEB_PORT=8081
 ```
+
+Em VPS com mais de um projeto, o recomendado e usar um Caddy central no host
+para publicar:
+
+- `financeiro.faruk.dev.br` -> `127.0.0.1:8081`
+- `faruk.dev.br` e `www.faruk.dev.br` -> outro projeto ou site estatico
+
+Guia completo: `docs/vps-multisite-faruk.md`
 
 ## Scripts legados
 
