@@ -199,6 +199,22 @@ async function load() {
   }
 }
 
+function recalculateResumo() {
+  let totalEntradas = 0;
+  let totalSaidas = 0;
+  for (const r of rows.value) {
+    const v = Number(r.valor);
+    if (v > 0) totalEntradas += v;
+    else if (v < 0) totalSaidas += v;
+  }
+  resumo.value = {
+    totalEntradas: totalEntradas.toFixed(2),
+    totalSaidas: totalSaidas.toFixed(2),
+    saldo: (totalEntradas + totalSaidas).toFixed(2),
+    qtd: rows.value.length,
+  };
+}
+
 function applyFilters() {
   if (applyFiltersTimer) {
     clearTimeout(applyFiltersTimer);
@@ -318,6 +334,7 @@ async function onEditField(
   try {
     const updated = await patchTransaction(row.identificador, { [field]: value as never });
     Object.assign(row, updated);
+    if (field === "valor") recalculateResumo();
     toast.add({ severity: "success", summary: "Atualizado", life: 1500 });
   } catch (err) {
     toast.add({
@@ -341,16 +358,7 @@ function onDelete(row: Transaction) {
       try {
         await deleteTransaction(row.identificador);
         rows.value = rows.value.filter((r) => r.identificador !== row.identificador);
-        const v = Number(row.valor);
-        if (v > 0) {
-          resumo.value.totalEntradas = (Number(resumo.value.totalEntradas) - v).toFixed(2);
-        } else if (v < 0) {
-          resumo.value.totalSaidas = (Number(resumo.value.totalSaidas) - v).toFixed(2);
-        }
-        resumo.value.saldo = (
-          Number(resumo.value.totalEntradas) + Number(resumo.value.totalSaidas)
-        ).toFixed(2);
-        resumo.value.qtd -= 1;
+        recalculateResumo();
         toast.add({ severity: "success", summary: "Excluida", life: 1500 });
       } catch (err) {
         toast.add({

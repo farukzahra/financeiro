@@ -37,7 +37,7 @@ O fluxo central e:
 Arquivos importantes:
 
 - `package.json`: scripts do monorepo.
-- `docker-compose.yml`: Postgres local.
+- `docker-compose.yml`: Postgres opcional via Docker (alternativa ao Postgres externo).
 - `apps/api/src/index.ts`: bootstrap da API e registro das rotas.
 - `apps/api/src/db/schema.ts`: modelo Drizzle.
 - `apps/api/src/db/migrations/`: migrations versionadas.
@@ -123,18 +123,16 @@ Instalar dependencias:
 pnpm install
 ```
 
-Subir banco:
+Configurar banco local (Postgres externo, fora do Docker):
 
 ```powershell
-pnpm db:up
-```
-
-Aplicar migrations e seed de categorias:
-
-```powershell
+copy apps\api\.env.example apps\api\.env
 pnpm db:migrate
 pnpm db:seed
 ```
+
+Padrao: `postgres://postgres:postgres@localhost:5432/financeiro` em
+`apps/api/.env`. Ajuste `DATABASE_URL` se suas credenciais forem diferentes.
 
 Rodar API e web:
 
@@ -148,24 +146,16 @@ Alternativa desktop:
 .\scripts\windows\iniciar.bat
 ```
 
-Atencao: ha uma diferenca operacional a conferir antes de rodar. O
-`docker-compose.yml` expoe Postgres em `localhost:5433` com usuario/senha
-`financeiro/financeiro`, enquanto defaults da API e do `scripts/windows/iniciar.bat` apontam
-para outros host/credenciais (`5432`, e no BAT `postgres/postgres`). Prefira
-definir `DATABASE_URL` explicitamente quando for executar localmente.
-
-Exemplo compativel com o compose atual:
-
-```powershell
-$env:DATABASE_URL="postgres://financeiro:financeiro@localhost:5433/financeiro"
-pnpm --filter @financeiro/api dev
-```
+Em dev local, a API le `DATABASE_URL` de `apps/api/.env`. O
+`docker-compose.yml` (porta `5433`) e alternativa opcional; o padrao do projeto
+e o Postgres externo na porta `5432`. O `scripts/windows/iniciar.bat` tambem
+aponta para `5432`.
 
 ## Scripts uteis
 
 - `pnpm dev`: roda todos os workspaces com script `dev` em paralelo.
 - `pnpm build`: build de todos os workspaces.
-- `pnpm db:up`: sobe Postgres via Docker Compose.
+- `pnpm db:up`: sobe Postgres via Docker Compose (opcional; dev local usa Postgres externo).
 - `pnpm db:down`: derruba os servicos do Compose.
 - `pnpm db:generate`: gera migration Drizzle a partir do schema.
 - `pnpm db:migrate`: aplica migrations.

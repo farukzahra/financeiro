@@ -9,7 +9,7 @@ transacoes, revisar lancamentos e acompanhar orcamento previsto.
 - API: Fastify + TypeScript + Drizzle ORM + PostgreSQL
 - Web: Vue 3 + Vite + PrimeVue + Pinia
 - Desktop: Electron apontando para a web
-- Banco local/producao: PostgreSQL em Docker
+- Banco local: PostgreSQL externo (`localhost:5432`); producao: PostgreSQL em Docker na VPS
 
 ## Estrutura
 
@@ -30,19 +30,19 @@ Instale dependencias:
 pnpm install
 ```
 
-Suba o Postgres local:
+Configure o banco local (Postgres fora do Docker) em `apps/api/.env` e aplique
+migrations/seeds:
 
 ```powershell
-pnpm db:up
-```
-
-Configure a URL do banco, aplique migrations e seeds:
-
-```powershell
-$env:DATABASE_URL="postgres://financeiro:financeiro@localhost:5433/financeiro"
+copy apps\api\.env.example apps\api\.env
 pnpm db:migrate
 pnpm db:seed
 ```
+
+O padrao local aponta para `postgres://postgres:postgres@localhost:5432/financeiro`.
+Se precisar de outro host, usuario ou senha, ajuste `DATABASE_URL` no `.env`.
+O `docker-compose.yml` (porta `5433`) e opcional — use `pnpm db:up` so se quiser
+um Postgres isolado via Docker.
 
 Rode API e web:
 

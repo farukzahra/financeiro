@@ -4,7 +4,7 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 
 const connectionString =
-  process.env.DATABASE_URL ?? "postgres://financeiro:financeiro@localhost:5432/financeiro";
+  process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/financeiro";
 
 async function main() {
   const sql = postgres(connectionString, { max: 1 });

@@ -4,7 +4,7 @@ import postgres from "postgres";
 import * as schema from "./schema.js";
 
 const connectionString =
-  process.env.DATABASE_URL ?? "postgres://financeiro:financeiro@localhost:5432/financeiro";
+  process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/financeiro";
 
 export const sql = postgres(connectionString, { max: 10 });
 export const db = drizzle(sql, { schema });

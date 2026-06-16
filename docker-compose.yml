@@ -1,4 +1,6 @@
 services:
+  # Postgres opcional via Docker. Em dev local, o padrao e usar o Postgres
+  # externo (localhost:5432) configurado em apps/api/.env.
   db:
     image: postgres:16-alpine
     environment:
