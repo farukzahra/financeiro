@@ -291,6 +291,19 @@ NU_941505780_01JUN2026_07JUN2026.csv
 - Evite refactors grandes misturados com mudanca funcional.
 - Se encontrar worktree suja, nao reverta mudancas de outros.
 
+## Git
+
+Quando o usuario pedir para commitar:
+
+1. Crie o commit com mensagem no padrao **Conventional Commits** (em ingles).
+2. Faca **`git push`** em seguida para publicar na branch remota.
+
+Nao pare no commit local — o push faz parte do fluxo esperado. O deploy da VPS
+dispara automaticamente via GitHub Actions ao receber push em `main`/`master`.
+
+So faca push quando o usuario pedir commit (ou push explicitamente). Nunca use
+comandos destrutivos (`push --force`, `reset --hard`) sem pedido claro.
+
 ## Verificacao recomendada
 
 Sem suite de testes automatizados evidente neste repositorio. Antes de entregar
