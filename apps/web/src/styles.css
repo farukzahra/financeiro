@@ -137,6 +137,47 @@ body {
   border: 1px solid var(--p-content-border-color);
 }
 
+.summary-card--tooltip {
+  position: relative;
+}
+
+.summary-card--tooltip:focus-visible {
+  outline: 2px solid var(--p-primary-color);
+  outline-offset: 2px;
+}
+
+.summary-tooltip {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 0.5rem);
+  z-index: 20;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 3rem));
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.5rem;
+  background: rgba(28, 25, 23, 0.96);
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  font-size: 0.74rem;
+  line-height: 1.4;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+  transition: opacity 120ms, transform 120ms;
+}
+
+.summary-card--tooltip:hover .summary-tooltip,
+.summary-card--tooltip:focus-visible .summary-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.summary-tooltip div + div {
+  margin-top: 0.3rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 .summary-card .label {
   font-size: 0.75rem;
   text-transform: uppercase;

@@ -269,6 +269,12 @@ de tipos Nubank. Antes de "corrigir" acentos, verifique se o CSV real e os
 testes manuais continuam batendo. Uma correcao parcial de encoding pode quebrar
 importacoes existentes.
 
+Para texto visivel na interface web, prefira sempre portugues com acentuacao
+correta. Nao introduza labels sem acento por conveniencia ("orcamento",
+"configuracoes", "liquido") quando o texto exibido ao usuario puder ser
+"orçamento", "configurações" e "líquido". A cautela com encoding vale
+principalmente para parsing, CSV legado e strings historicas sensiveis.
+
 O parser espera nomes de arquivo no padrao:
 
 ```text

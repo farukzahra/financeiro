@@ -68,9 +68,26 @@ async function loadBudgetItems() {
 const totalPrevisto = computed(() =>
   budgetItems.value.filter((b) => b.ativo).reduce((s, b) => s + Number(b.valorMensal), 0),
 );
-const saldoLiquido = computed(() =>
-  Number(resumo.value.saldo) - totalPrevisto.value,
+function budgetRemaining(b: BudgetItem): number {
+  const planned = Number(b.valorMensal);
+  if (!b.categoriaId) return planned;
+  return Math.max(0, planned - spentByCategoria(b.categoriaId));
+}
+const totalPrevistoRestante = computed(() =>
+  budgetItems.value.filter((b) => b.ativo).reduce((s, b) => s + budgetRemaining(b), 0),
 );
+const saldoLiquido = computed(() =>
+  Number(resumo.value.saldo) - totalPrevistoRestante.value,
+);
+const saldoLiquidoTooltip = computed(() => {
+  const saldoAtual = Number(resumo.value.saldo);
+  const previstoRestante = totalPrevistoRestante.value;
+  const liquido = saldoLiquido.value;
+  return {
+    linha1: "Saldo liquido = saldo atual - previsto restante ativo.",
+    linha2: `${fmtMoneyBR(saldoAtual)} - ${fmtMoneyBR(previstoRestante)} = ${fmtMoneyBR(liquido)}`,
+  };
+});
 
 const budgetByCategoria = computed(() => {
   const m = new Map<string, number>();
@@ -760,9 +777,19 @@ async function commitBudgetValor(b: BudgetItem) {
       </aside>
 
       <aside v-else-if="activePanel === 'budget'" class="side-panel side-card">
-        <div class="side-card-header">
-          <span>Orçamento previsto</span>
-          <span class="budget-header-total">{{ fmtMoneyBR(-totalPrevisto) }}</span>
+        <div class="side-card-header side-card-header--budget">
+          <span class="side-card-title">Orçamento</span>
+          <div class="budget-header-divider" aria-hidden="true" />
+          <div class="budget-header-values">
+            <div class="budget-header-block">
+              <span class="budget-header-label">Previsto</span>
+              <span class="budget-header-total">{{ fmtMoneyBR(-totalPrevisto) }}</span>
+            </div>
+            <div class="budget-header-block budget-header-block--end">
+              <span class="budget-header-label">Orçamento restante</span>
+              <span class="budget-header-total">{{ fmtMoneyBR(-totalPrevistoRestante) }}</span>
+            </div>
+          </div>
         </div>
         <div class="salary-cycle">
           <div class="salary-cycle-meta">
@@ -920,10 +947,18 @@ async function commitBudgetValor(b: BudgetItem) {
               {{ fmtMoneyBR(resumo.saldo) }}
             </div>
           </div>
-          <div class="summary-card">
+          <div
+            class="summary-card summary-card--tooltip"
+            tabindex="0"
+            :aria-label="`${saldoLiquidoTooltip.linha1} ${saldoLiquidoTooltip.linha2}`"
+          >
             <div class="label">Saldo líquido</div>
             <div class="value" :class="classMoney(saldoLiquido)">
               {{ fmtMoneyBR(saldoLiquido) }}
+            </div>
+            <div class="summary-tooltip" role="tooltip">
+              <div>{{ saldoLiquidoTooltip.linha1 }}</div>
+              <div>{{ saldoLiquidoTooltip.linha2 }}</div>
             </div>
           </div>
         </div>
@@ -1274,11 +1309,56 @@ section {
   border-bottom: 1px solid var(--p-content-border-color);
 }
 
-.budget-header-total {
-  font-size: 0.85rem;
+.side-card-header--budget {
+  display: grid;
+  gap: 0.65rem;
+  align-items: stretch;
+}
+
+.side-card-title {
+  padding-top: 0;
+}
+
+.budget-header-values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.budget-header-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--p-content-border-color);
+}
+
+.budget-header-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.budget-header-block--end {
+  align-items: flex-end;
+  text-align: right;
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--p-content-border-color);
+}
+
+.budget-header-label {
+  font-size: 0.72rem;
   font-weight: 500;
   color: var(--p-text-muted-color, #6b7280);
+  line-height: 1.2;
+}
+
+.budget-header-total {
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: var(--p-text-color);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .salary-cycle {
