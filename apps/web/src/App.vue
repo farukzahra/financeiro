@@ -75,6 +75,10 @@ async function onLogout() {
           <i class="pi pi-cog" />
           <span>Configuracoes</span>
         </RouterLink>
+        <RouterLink to="/sobre" class="app-nav-link" title="Sobre">
+          <i class="pi pi-info-circle" />
+          <span>Sobre</span>
+        </RouterLink>
       </nav>
       <div class="app-user">
         <span v-if="auth.user.role === 'admin'" class="app-role">admin</span>

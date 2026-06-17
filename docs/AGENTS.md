@@ -256,8 +256,17 @@ Pontos de orientacao:
 - `ImportModal.vue` cuida do upload/preview/confirmacao.
 - `ManualTransactionModal.vue` cria lancamentos manuais.
 - `SettingsView.vue` gerencia categorias, regras e orcamento.
+- `AboutView.vue` mostra a versao atual do build e um historico curto das
+  entregas.
 - `stores/reference.ts` centraliza dados de referencia, como categorias.
 - `styles.css` contem estilo global; mantenha UI consistente com PrimeVue.
+
+Ao fazer um novo commit que altere o produto visivel ao usuario, atualize tambem
+a aba `Sobre`:
+
+- adicione uma nova entrada no historico curto em `AboutView.vue`;
+- mantenha a narrativa curta e objetiva sobre o que entrou naquele build;
+- a versao exibida deve continuar refletindo o build atual automaticamente.
 
 Ao mudar a API, ajuste tambem `apps/web/src/lib/api.ts` e os tipos locais.
 
