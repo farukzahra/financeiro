@@ -16,7 +16,7 @@ const toast = useToast();
 
 const mode = ref<"login" | "register">("login");
 const name = ref("");
-const email = ref("farukz@gmail.com");
+const email = ref("");
 const password = ref("");
 
 onMounted(async () => {
@@ -66,14 +66,14 @@ async function onLogout() {
         <span class="app-header-logo">C</span>
         <span class="app-header-title">Financeiro</span>
       </div>
-      <nav class="app-header-nav" aria-label="Navegacao principal">
-        <RouterLink to="/" class="app-nav-link" title="Transacoes">
+      <nav class="app-header-nav" aria-label="Navegação principal">
+        <RouterLink to="/" class="app-nav-link" title="Transações">
           <i class="pi pi-list" />
-          <span>Transacoes</span>
+          <span>Transações</span>
         </RouterLink>
-        <RouterLink to="/configuracoes" class="app-nav-link" title="Configuracoes">
+        <RouterLink to="/configuracoes" class="app-nav-link" title="Configurações">
           <i class="pi pi-cog" />
-          <span>Configuracoes</span>
+          <span>Configurações</span>
         </RouterLink>
         <RouterLink to="/sobre" class="app-nav-link" title="Sobre">
           <i class="pi pi-info-circle" />

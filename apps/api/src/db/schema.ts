@@ -35,7 +35,6 @@ export const users = pgTable(
 
 export const categories = pgTable("category", {
   id: text("id").primaryKey(),
-  letra: text("letra").notNull(),
   descricao: text("descricao").notNull(),
   ativa: boolean("ativa").notNull().default(true),
 });

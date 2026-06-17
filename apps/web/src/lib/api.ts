@@ -57,7 +57,6 @@ export async function updateUserSettings(settings: UserSettings): Promise<AuthUs
 
 export type Category = {
   id: string;
-  letra: string;
   descricao: string;
   ativa: boolean;
 };
@@ -160,6 +159,26 @@ export async function confirmImport(payload: {
 
 export async function listCategories(): Promise<Category[]> {
   const { data } = await api.get<Category[]>("/categories");
+  return data;
+}
+
+export async function createCategory(body: {
+  id: string;
+  descricao: string;
+  ativa?: boolean;
+}): Promise<Category> {
+  const { data } = await api.post<Category>("/categories", body);
+  return data;
+}
+
+export async function patchCategory(
+  id: string,
+  body: Partial<{
+    descricao: string;
+    ativa: boolean;
+  }>,
+): Promise<Category> {
+  const { data } = await api.patch<Category>(`/categories/${id}`, body);
   return data;
 }
 

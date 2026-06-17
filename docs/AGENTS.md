@@ -234,6 +234,11 @@ em `apps/web/src/lib/api.ts`.
 Regra: mudancas em `apps/api/src/db/schema.ts` precisam de migration Drizzle
 commitada junto.
 
+Se uma mudanca remover coluna, tabela ou dado persistido, documente isso no
+proprio trabalho e garanta que a migration correspondente seja aplicada tambem
+em producao durante o deploy. Build aprovado nao substitui migration executada
+na VPS.
+
 Fluxo recomendado:
 
 ```powershell

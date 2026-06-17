@@ -10,6 +10,7 @@ import InputText from "primevue/inputtext";
 import InputNumber from "primevue/inputnumber";
 import Select from "primevue/select";
 import Dialog from "primevue/dialog";
+import Checkbox from "primevue/checkbox";
 import { useReferenceStore } from "../stores/reference";
 import {
   listBudget,
@@ -17,10 +18,14 @@ import {
   patchBudgetItem,
   deleteBudgetItem,
   createRule,
+  createCategory,
+  patchCategory,
   type BudgetItem,
+  type Category,
 } from "../lib/api";
 import { useConfirm } from "primevue/useconfirm";
 import { useToast } from "primevue/usetoast";
+import { categoryDisplayName, categoryOptionLabel } from "../lib/categories";
 
 const ref_ = useReferenceStore();
 const loading = ref(false);
@@ -37,7 +42,6 @@ onMounted(async () => {
   }
 });
 
-// ----- Budget -----
 const budgetRows = ref<BudgetItem[]>([]);
 const showBudgetDialog = ref(false);
 const editingBudget = ref<BudgetItem | null>(null);
@@ -48,6 +52,7 @@ const budgetForm = ref({
   valorMensal: 0,
   ativo: true,
 });
+
 const showRuleDialog = ref(false);
 const ruleForm = ref({
   categoriaId: null as string | null,
@@ -55,6 +60,15 @@ const ruleForm = ref({
   padrao: "",
   prioridade: 100,
 });
+
+const showCategoryDialog = ref(false);
+const editingCategory = ref<Category | null>(null);
+const categoryForm = ref({
+  id: "",
+  descricao: "",
+  ativa: true,
+});
+
 const ruleTypeOptions = [
   { label: "Substring", value: "substring" },
   { label: "Regex", value: "regex" },
@@ -65,7 +79,7 @@ async function loadBudget() {
 }
 
 const categoryOptions = computed(() =>
-  ref_.categories.map((c) => ({ label: `${c.letra} - ${c.id}`, value: c.id })),
+  ref_.categories.map((c) => ({ label: categoryOptionLabel(c), value: c.id })),
 );
 
 const totalPrevisto = computed(() =>
@@ -76,23 +90,19 @@ function fmtMoney(v: number | string) {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function openCreate() {
+function openCreateBudget() {
   editingBudget.value = null;
-  budgetForm.value = { descricao: "", categoriaId: null, diaVencimento: null, valorMensal: 0, ativo: true };
+  budgetForm.value = {
+    descricao: "",
+    categoriaId: null,
+    diaVencimento: null,
+    valorMensal: 0,
+    ativo: true,
+  };
   showBudgetDialog.value = true;
 }
 
-function openCreateRule() {
-  ruleForm.value = {
-    categoriaId: null,
-    tipoPadrao: "substring",
-    padrao: "",
-    prioridade: 100,
-  };
-  showRuleDialog.value = true;
-}
-
-function openEdit(row: BudgetItem) {
+function openEditBudget(row: BudgetItem) {
   editingBudget.value = row;
   budgetForm.value = {
     descricao: row.descricao,
@@ -112,6 +122,7 @@ async function saveBudget() {
     valorMensal: budgetForm.value.valorMensal.toFixed(2),
     ativo: budgetForm.value.ativo,
   };
+
   try {
     if (editingBudget.value) {
       const updated = await patchBudgetItem(editingBudget.value.id, body);
@@ -124,11 +135,16 @@ async function saveBudget() {
     showBudgetDialog.value = false;
     toast.add({ severity: "success", summary: "Salvo", life: 1500 });
   } catch (err) {
-    toast.add({ severity: "error", summary: "Erro", detail: (err as Error).message, life: 3000 });
+    toast.add({
+      severity: "error",
+      summary: "Erro",
+      detail: (err as Error).message,
+      life: 3000,
+    });
   }
 }
 
-function confirmDelete(row: BudgetItem) {
+function confirmDeleteBudget(row: BudgetItem) {
   confirm.require({
     message: `Excluir "${row.descricao}"?`,
     header: "Confirmar",
@@ -139,16 +155,26 @@ function confirmDelete(row: BudgetItem) {
     accept: async () => {
       await deleteBudgetItem(row.id);
       budgetRows.value = budgetRows.value.filter((r) => r.id !== row.id);
-      toast.add({ severity: "success", summary: "Excluido", life: 1500 });
+      toast.add({ severity: "success", summary: "Excluído", life: 1500 });
     },
   });
+}
+
+function openCreateRule() {
+  ruleForm.value = {
+    categoriaId: null,
+    tipoPadrao: "substring",
+    padrao: "",
+    prioridade: 100,
+  };
+  showRuleDialog.value = true;
 }
 
 async function saveRule() {
   if (!ruleForm.value.categoriaId || !ruleForm.value.padrao.trim()) {
     toast.add({
       severity: "warn",
-      summary: "Preencha categoria e padrao",
+      summary: "Preencha categoria e padrão",
       life: 2500,
     });
     return;
@@ -166,59 +192,106 @@ async function saveRule() {
     showRuleDialog.value = false;
     toast.add({ severity: "success", summary: "Regra criada", life: 1500 });
   } catch (err) {
-    toast.add({ severity: "error", summary: "Erro", detail: (err as Error).message, life: 3000 });
+    toast.add({
+      severity: "error",
+      summary: "Erro",
+      detail: (err as Error).message,
+      life: 3000,
+    });
+  }
+}
+
+function openCreateCategory() {
+  editingCategory.value = null;
+  categoryForm.value = {
+    id: "",
+    descricao: "",
+    ativa: true,
+  };
+  showCategoryDialog.value = true;
+}
+
+function openEditCategory(row: Category) {
+  editingCategory.value = row;
+  categoryForm.value = {
+    id: row.id,
+    descricao: row.descricao,
+    ativa: row.ativa,
+  };
+  showCategoryDialog.value = true;
+}
+
+async function saveCategory() {
+  const body = {
+    descricao: categoryForm.value.descricao.trim(),
+    ativa: categoryForm.value.ativa,
+  };
+
+  if (!categoryForm.value.id.trim() || !body.descricao) {
+    toast.add({
+      severity: "warn",
+      summary: "Preencha os campos obrigatórios",
+      life: 2500,
+    });
+    return;
+  }
+
+  try {
+    if (editingCategory.value) {
+      await patchCategory(editingCategory.value.id, body);
+    } else {
+      await createCategory({
+        id: categoryForm.value.id.trim().toUpperCase(),
+        ...body,
+      });
+    }
+    await ref_.reloadCategories();
+    showCategoryDialog.value = false;
+    toast.add({ severity: "success", summary: "Categoria salva", life: 1500 });
+  } catch (err) {
+    toast.add({
+      severity: "error",
+      summary: "Erro",
+      detail: (err as Error).message,
+      life: 3000,
+    });
   }
 }
 </script>
 
 <template>
-  <section>
-    <h2>Configuracoes</h2>
+  <section class="settings-page">
     <TabView>
-      <TabPanel header="Orcamento" value="orcamento">
-        <div class="budget-header">
-          <div class="total-previsto">
-            Total previsto mensal: <strong>{{ fmtMoney(totalPrevisto) }}</strong>
-          </div>
-          <Button label="Novo item" icon="pi pi-plus" severity="success" size="small" @click="openCreate" />
-        </div>
-        <DataTable :value="budgetRows" :loading="loading" size="small" stripedRows>
-          <Column field="diaVencimento" header="Dia" :style="{ width: '60px' }">
-            <template #body="{ data }">{{ data.diaVencimento ?? "—" }}</template>
-          </Column>
-          <Column field="descricao" header="Descricao" />
-          <Column field="categoriaId" header="Categoria">
-            <template #body="{ data }">{{ data.categoriaId ?? "—" }}</template>
-          </Column>
-          <Column field="valorMensal" header="Previsto/mes" :style="{ width: '150px' }">
-            <template #body="{ data }">
-              <span class="money-neg">{{ fmtMoney(data.valorMensal) }}</span>
-            </template>
-          </Column>
-          <Column field="ativo" header="Ativo" :style="{ width: '80px' }">
-            <template #body="{ data }">
-              <Tag :severity="data.ativo ? 'success' : 'secondary'" :value="data.ativo ? 'sim' : 'nao'" />
-            </template>
-          </Column>
-          <Column header="" :style="{ width: '80px' }">
-            <template #body="{ data }">
-              <div style="display:flex;gap:0.25rem">
-                <Button icon="pi pi-pencil" text rounded size="small" @click="openEdit(data)" />
-                <Button icon="pi pi-trash" text rounded size="small" severity="danger" @click="confirmDelete(data)" />
-              </div>
-            </template>
-          </Column>
-        </DataTable>
-      </TabPanel>
-
       <TabPanel header="Categorias" value="categorias">
+        <div class="table-header">
+          <div class="table-title">Categorias disponíveis</div>
+          <Button
+            label="Nova categoria"
+            icon="pi pi-plus"
+            severity="success"
+            size="small"
+            @click="openCreateCategory"
+          />
+        </div>
+
         <DataTable :value="ref_.categories" :loading="loading" size="small" stripedRows>
-          <Column field="id" header="Id" />
-          <Column field="letra" header="Letra" />
-          <Column field="descricao" header="Descricao" />
-          <Column field="ativa" header="Ativa">
+          <Column field="id" header="Categoria">
             <template #body="{ data }">
-              <Tag :severity="data.ativa ? 'success' : 'secondary'" :value="data.ativa ? 'sim' : 'nao'" />
+              <div>{{ categoryDisplayName(data.id) }}</div>
+              <small class="category-code">{{ data.id }}</small>
+            </template>
+          </Column>
+          <Column field="descricao" header="Descrição" />
+          <Column field="ativa" header="Ativa" :style="{ width: '90px' }">
+            <template #body="{ data }">
+              <Tag :severity="data.ativa ? 'success' : 'secondary'" :value="data.ativa ? 'sim' : 'não'" />
+            </template>
+          </Column>
+          <Column header="" :style="{ width: '70px' }">
+            <template #body="{ data }">
+              <div class="icon-actions">
+                <Button icon="pi pi-pencil" text rounded size="small" @click="openEditCategory(data)" />
+              </div>
             </template>
           </Column>
         </DataTable>
@@ -226,17 +299,78 @@ async function saveRule() {
 
       <TabPanel header="Regras" value="regras">
         <div class="table-header">
-          <div class="table-title">Regras de categorizacao</div>
-          <Button label="Nova regra" icon="pi pi-plus" severity="success" size="small" @click="openCreateRule" />
+          <div class="table-title">Regras de categorização</div>
+          <Button
+            label="Nova regra"
+            icon="pi pi-plus"
+            severity="success"
+            size="small"
+            @click="openCreateRule"
+          />
         </div>
+
         <DataTable :value="ref_.rules" :loading="loading" size="small" stripedRows>
           <Column field="prioridade" header="Prio" :style="{ width: '70px' }" />
           <Column field="tipoPadrao" header="Tipo" :style="{ width: '110px' }" />
-          <Column field="padrao" header="Padrao" />
-          <Column field="categoriaId" header="Categoria" :style="{ width: '180px' }" />
+          <Column field="padrao" header="Padrão" />
+          <Column field="categoriaId" header="Categoria" :style="{ width: '180px' }">
+            <template #body="{ data }">{{ categoryDisplayName(data.categoriaId) }}</template>
+          </Column>
           <Column field="ativa" header="Ativa" :style="{ width: '90px' }">
             <template #body="{ data }">
-              <Tag :severity="data.ativa ? 'success' : 'secondary'" :value="data.ativa ? 'sim' : 'nao'" />
+              <Tag :severity="data.ativa ? 'success' : 'secondary'" :value="data.ativa ? 'sim' : 'não'" />
+            </template>
+          </Column>
+        </DataTable>
+      </TabPanel>
+
+      <TabPanel header="Orçamento" value="orcamento">
+        <div class="budget-header">
+          <div class="total-previsto">
+            Total previsto mensal: <strong>{{ fmtMoney(totalPrevisto) }}</strong>
+          </div>
+          <Button
+            label="Novo item"
+            icon="pi pi-plus"
+            severity="success"
+            size="small"
+            @click="openCreateBudget"
+          />
+        </div>
+
+        <DataTable :value="budgetRows" :loading="loading" size="small" stripedRows>
+          <Column field="diaVencimento" header="Dia" :style="{ width: '60px' }">
+            <template #body="{ data }">{{ data.diaVencimento ?? "—" }}</template>
+          </Column>
+          <Column field="descricao" header="Descrição" />
+          <Column field="categoriaId" header="Categoria">
+            <template #body="{ data }">
+              {{ data.categoriaId ? categoryDisplayName(data.categoriaId) : "—" }}
+            </template>
+          </Column>
+          <Column field="valorMensal" header="Previsto/mês" :style="{ width: '150px' }">
+            <template #body="{ data }">
+              <span class="money-neg">{{ fmtMoney(data.valorMensal) }}</span>
+            </template>
+          </Column>
+          <Column field="ativo" header="Ativo" :style="{ width: '80px' }">
+            <template #body="{ data }">
+              <Tag :severity="data.ativo ? 'success' : 'secondary'" :value="data.ativo ? 'sim' : 'não'" />
+            </template>
+          </Column>
+          <Column header="" :style="{ width: '80px' }">
+            <template #body="{ data }">
+              <div class="icon-actions">
+                <Button icon="pi pi-pencil" text rounded size="small" @click="openEditBudget(data)" />
+                <Button
+                  icon="pi pi-trash"
+                  text
+                  rounded
+                  size="small"
+                  severity="danger"
+                  @click="confirmDeleteBudget(data)"
+                />
+              </div>
             </template>
           </Column>
         </DataTable>
@@ -245,12 +379,12 @@ async function saveRule() {
 
     <Dialog
       v-model:visible="showBudgetDialog"
-      :header="editingBudget ? 'Editar item' : 'Novo item de orcamento'"
+      :header="editingBudget ? 'Editar item' : 'Novo item de orçamento'"
       modal
       :style="{ width: '420px' }"
     >
       <div class="form-col">
-        <label>Descricao</label>
+        <label>Descrição</label>
         <InputText v-model="budgetForm.descricao" fluid />
 
         <label>Categoria (opcional)</label>
@@ -283,11 +417,50 @@ async function saveRule() {
           :maxFractionDigits="2"
           fluid
         />
+
+        <div class="checkbox-row">
+          <Checkbox v-model="budgetForm.ativo" binary inputId="budget-ativo" />
+          <label for="budget-ativo">Ativo</label>
+        </div>
       </div>
 
       <template #footer>
         <Button label="Cancelar" severity="secondary" outlined @click="showBudgetDialog = false" />
         <Button label="Salvar" icon="pi pi-check" @click="saveBudget" />
+      </template>
+    </Dialog>
+
+    <Dialog
+      v-model:visible="showCategoryDialog"
+      :header="editingCategory ? 'Editar categoria' : 'Nova categoria'"
+      modal
+      :style="{ width: '420px' }"
+    >
+      <div class="form-col">
+        <label>ID da categoria</label>
+        <InputText
+          v-model="categoryForm.id"
+          :disabled="!!editingCategory"
+          placeholder="ex: CASA DE PAO"
+          fluid
+        />
+
+        <label>Descrição</label>
+        <InputText
+          v-model="categoryForm.descricao"
+          placeholder="Nome exibido nas telas"
+          fluid
+        />
+
+        <div class="checkbox-row">
+          <Checkbox v-model="categoryForm.ativa" binary inputId="category-ativa" />
+          <label for="category-ativa">Ativa</label>
+        </div>
+      </div>
+
+      <template #footer>
+        <Button label="Cancelar" severity="secondary" outlined @click="showCategoryDialog = false" />
+        <Button label="Salvar" icon="pi pi-check" @click="saveCategory" />
       </template>
     </Dialog>
 
@@ -318,7 +491,7 @@ async function saveRule() {
           fluid
         />
 
-        <label>Padrao</label>
+        <label>Padrão</label>
         <InputText
           v-model="ruleForm.padrao"
           placeholder="ex: CASA DE PAO BETHELEM L"
@@ -344,28 +517,34 @@ async function saveRule() {
 </template>
 
 <style scoped>
-.budget-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
+.settings-page {
+  height: 100%;
+  overflow-y: auto;
+  padding: 1rem 1.5rem 2rem;
 }
 
+.budget-header,
 .table-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
   margin-bottom: 0.75rem;
 }
 
-.table-title {
+.table-title,
+.total-previsto {
   font-size: 0.9rem;
   opacity: 0.8;
 }
 
-.total-previsto {
-  font-size: 0.9rem;
-  opacity: 0.8;
+.category-code {
+  opacity: 0.6;
+}
+
+.icon-actions {
+  display: flex;
+  gap: 0.25rem;
 }
 
 .form-col {
@@ -378,5 +557,17 @@ async function saveRule() {
   font-size: 0.78rem;
   opacity: 0.7;
   margin-top: 0.25rem;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.checkbox-row label {
+  margin-top: 0;
+  opacity: 0.9;
 }
 </style>

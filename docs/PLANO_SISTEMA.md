@@ -20,8 +20,8 @@ ficam abertos.
 - **Preview**: estado transitorio em memoria (na sessao/cliente) com o resultado do
   parser + categorizacao sugerida. Nao persiste no banco. So vira `Transaction` no
   momento da confirmacao.
-- **Categoria** (`Category`): codigo canonico (`ALIMENTACAO`, `FARMACIA`, etc.).
-  Possui letra curta opcional (`A`, `F`, ...) usada no agrupamento para a planilha.
+- **Categoria** (`Category`): codigo canonico (`ALIMENTACAO`, `FARMACIA`, etc.),
+  com descricao amigavel e status de ativacao.
 - **Regra de categorizacao** (`CategoryRule`): par `(padrao, categoria)` que permite
   ao usuario manter o dicionario sem editar codigo. Substitui o atual
   `dados/csv/merchants_para_classificar.csv` + `scripts/legacy/autofill_categorias.py:REGRAS`.
@@ -69,7 +69,6 @@ erDiagram
 
     CATEGORY {
         string id PK "ALIMENTACAO, FARMACIA..."
-        string letra "A,F,G,D,P,S..."
         string descricao
         boolean ativa
     }
@@ -205,8 +204,8 @@ banco.
 
 ### 3.7 Manutencao de regras e categorias
 
-- CRUD de `Category` (nao deletar, so desativar) — id imutavel, letra/descricao
-  editaveis.
+- CRUD de `Category` (nao deletar, so desativar) — id imutavel, descricao
+  editavel.
 - CRUD de `CategoryRule` com teste em tempo real: ao digitar o padrao, mostrar
   quantas transacoes ja persistidas cairiam nessa regra.
 - Acao "reclassificar historico": aplica regras ativas a transacoes existentes
@@ -515,7 +514,7 @@ Pequeno, focado:
 
 Tela secundaria simples, dois tabs:
 
-- **Tab Categorias**: tabela `id | letra | descricao | ativa | usos`.
+- **Tab Categorias**: tabela `id | descricao | ativa | usos`.
   Acoes: criar, editar inline, desativar.
 - **Tab Regras**: tabela `padrao | tipo | categoria | prioridade | ativa |
   qtd casaria`. Acoes: criar (abre M2), editar, desativar, reordenar
@@ -523,7 +522,7 @@ Tela secundaria simples, dois tabs:
 
 ### 6.7 Componentes reutilizaveis
 
-- **CategoryBadge**: pill com `letra` + tooltip com `descricao`.
+- **CategoryBadge**: pill com o nome da categoria e tooltip com `descricao`.
 - **MoneyCell**: valor pt-BR, negativos em vermelho.
 - **CategoryPicker**: dropdown com busca, usado inline na tabela e nos forms.
 - **TransactionsTable**: a tabela da T1 e do step Preview da M1 sao o mesmo

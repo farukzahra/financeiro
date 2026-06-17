@@ -7,6 +7,7 @@ import {
   type Category,
   type CategoryRule,
 } from "../lib/api";
+import { categoryDisplayName, categoryOptionLabel } from "../lib/categories";
 
 export const useReferenceStore = defineStore("reference", () => {
   const categories = ref<Category[]>([]);
@@ -42,9 +43,8 @@ export const useReferenceStore = defineStore("reference", () => {
   }
 
   const categoryOptions = computed(() =>
-    categories.value.map((c) => ({ label: `${c.letra} - ${c.id}`, value: c.id })),
+    categories.value.map((c) => ({ label: categoryOptionLabel(c), value: c.id })),
   );
-
   return {
     categories,
     rules,

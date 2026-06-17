@@ -6,7 +6,6 @@ import { z } from "zod";
 
 export const CategorySchema = z.object({
   id: z.string().min(1),
-  letra: z.string().min(1).max(2),
   descricao: z.string().min(1),
   ativa: z.boolean(),
 });

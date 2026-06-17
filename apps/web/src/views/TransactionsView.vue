@@ -23,6 +23,7 @@ import {
   type BudgetItem,
 } from "../lib/api";
 import { fmtMoneyBR, fmtDateBR, classMoney } from "../lib/format";
+import { categoryDisplayName } from "../lib/categories";
 import ImportModal from "../components/ImportModal.vue";
 import ManualTransactionModal from "../components/ManualTransactionModal.vue";
 
@@ -444,18 +445,15 @@ const categoryOptions = computed(() => ref_.categoryOptions);
 
 type CategoriaResumo = {
   id: string;
-  letra: string;
   qtd: number;
   total: number;
 };
 
 const categoriasResumo = computed<CategoriaResumo[]>(() => {
   const map = new Map<string, CategoriaResumo>();
-  const letras = new Map(ref_.categories.map((c) => [c.id, c.letra]));
   for (const r of rows.value) {
     const cur = map.get(r.categoriaId) ?? {
       id: r.categoriaId,
-      letra: letras.get(r.categoriaId) ?? "?",
       qtd: 0,
       total: 0,
     };
@@ -507,12 +505,6 @@ async function commitCategoria(row: Transaction, novoId: string) {
 function cancelCategoria() {
   editingCategoriaId.value = null;
 }
-
-const letraByCategoria = computed(() => {
-  const m = new Map<string, string>();
-  for (const c of ref_.categories) m.set(c.id, c.letra);
-  return m;
-});
 
 function colorForCategoria(id: string): string {
   let h = 0;
@@ -762,11 +754,7 @@ async function commitBudgetValor(b: BudgetItem) {
             @click="filtrarPorCategoria(c.id)"
           >
             <div class="cat-id">
-              <span
-                class="cat-letra"
-                :style="{ background: colorForCategoria(c.id) }"
-              >{{ c.letra }}</span>
-              <span class="cat-nome">{{ c.id }}</span>
+              <span class="cat-nome">{{ categoryDisplayName(c.id) }}</span>
               <span class="cat-qtd">{{ c.qtd }}</span>
             </div>
             <div class="cat-valor" :class="classMoney(c.total)">
@@ -1071,8 +1059,7 @@ async function commitBudgetValor(b: BudgetItem) {
               :title="'Clique para trocar (' + data.categoriaId + ')'"
               @click="startEditCategoria(data)"
             >
-              <span class="cat-pill-letra">{{ letraByCategoria.get(data.categoriaId) ?? "?" }}</span>
-              <span class="cat-pill-nome">{{ data.categoriaId }}</span>
+              <span class="cat-pill-nome">{{ categoryDisplayName(data.categoriaId) }}</span>
             </button>
           </template>
         </Column>
@@ -1461,19 +1448,6 @@ section {
   min-width: 0;
 }
 
-.cat-letra {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 0.25rem;
-  background: var(--p-highlight-background, rgba(59, 130, 246, 0.15));
-  color: #1f2937;
-  font-weight: 700;
-  font-size: 0.75rem;
-}
-
 .cat-nome {
   font-size: 0.85rem;
   white-space: nowrap;
@@ -1701,18 +1675,6 @@ section {
 .cat-pill:hover {
   filter: brightness(0.95);
   transform: translateY(-1px);
-}
-
-.cat-pill-letra {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.12);
-  font-weight: 700;
-  font-size: 0.7rem;
 }
 
 .cat-pill-nome {

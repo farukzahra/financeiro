@@ -36,6 +36,13 @@
       "when": 1781093400000,
       "tag": "0004_user_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781716751289,
+      "tag": "0005_unknown_squirrel_girl",
+      "breakpoints": true
     }
   ]
 }
