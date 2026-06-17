@@ -1,52 +1,53 @@
 <script setup lang="ts">
 const buildVersion = import.meta.env.VITE_APP_VERSION;
+const buildGitSha = import.meta.env.VITE_APP_GIT_SHA;
 const buildTime = new Date(import.meta.env.VITE_BUILD_TIME);
 
 const historyItems = [
   {
-    build: "Build 12",
+    build: "0.12.0",
     title: "Resumo de orçamento e saldo líquido",
     detail:
       "Tooltip com fórmula dinâmica, saldo líquido baseado no orçamento restante e cabeçalho de orçamento refinado.",
   },
   {
-    build: "Build 11",
+    build: "0.11.0",
     title: "Deploy multi-site na VPS",
     detail:
       "Financeiro preparado para rodar atrás de proxy e convivendo com faruk.dev.br e outros projetos no mesmo host.",
   },
   {
-    build: "Build 10",
+    build: "0.10.0",
     title: "Organização do repositório",
     detail:
       "README na raiz, documentação movida para docs, scripts em scripts/ e dados legados em dados/.",
   },
   {
-    build: "Build 9",
+    build: "0.9.0",
     title: "Autenticação e multiusuário",
     detail:
       "Login interno, logout, escopo por usuário e persistência de preferências em settings.",
   },
   {
-    build: "Build 8",
+    build: "0.8.0",
     title: "Deploy automático",
     detail:
       "Docker de produção, workflow de deploy na VPS e ambiente preparado para build e migrações automáticas.",
   },
   {
-    build: "Build 7",
+    build: "0.7.0",
     title: "Configurações persistentes",
     detail:
       "Filtros, ordenação, layout e ordem do orçamento salvos por usuário.",
   },
   {
-    build: "Build 6",
+    build: "0.6.0",
     title: "Orçamento previsto mais visual",
     detail:
       "Cores alternadas, progresso por item, porcentagens na barra e ciclo salarial no painel lateral.",
   },
   {
-    build: "Build 5",
+    build: "0.5.0",
     title: "Produtividade na lista",
     detail:
       "Ordenação por colunas, geração de regra direto da linha e melhorias de alinhamento na tabela.",
@@ -76,6 +77,7 @@ function formatBuildTime(date: Date) {
         <div class="about-build-card">
           <div class="about-build-label">Versão atual do build</div>
           <div class="about-build-value">{{ buildVersion }}</div>
+          <div v-if="buildGitSha" class="about-build-commit">Commit {{ buildGitSha }}</div>
           <div class="about-build-meta">Gerado em {{ formatBuildTime(buildTime) }}</div>
         </div>
       </header>
@@ -178,6 +180,13 @@ p {
 .about-build-meta {
   font-size: 0.82rem;
   color: var(--p-text-muted-color, #6b7280);
+}
+
+.about-build-commit {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #166534;
+  font-variant-numeric: tabular-nums;
 }
 
 .about-section {

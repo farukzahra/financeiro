@@ -14,17 +14,19 @@ function gitSha() {
       .toString()
       .trim();
   } catch {
-    return "sem-git";
+    return "";
   }
 }
 
-const appVersion = `${pkg.version}+${gitSha()}`;
+const appVersion = pkg.version;
+const appGitSha = gitSha();
 const buildTime = new Date().toISOString();
 
 export default defineConfig({
   plugins: [vue()],
   define: {
     "import.meta.env.VITE_APP_VERSION": JSON.stringify(appVersion),
+    "import.meta.env.VITE_APP_GIT_SHA": JSON.stringify(appGitSha),
     "import.meta.env.VITE_BUILD_TIME": JSON.stringify(buildTime),
   },
   resolve: {

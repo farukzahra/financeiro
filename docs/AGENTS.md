@@ -271,7 +271,13 @@ a aba `Sobre`:
 
 - adicione uma nova entrada no historico curto em `AboutView.vue`;
 - mantenha a narrativa curta e objetiva sobre o que entrou naquele build;
-- a versao exibida deve continuar refletindo o build atual automaticamente.
+- a versao exibida deve continuar refletindo o build atual automaticamente;
+- a versao semantica do produto comeca em `0.12.0`;
+- para funcionalidades novas, incremente a versao do meio: `0.13.0`, `0.14.0`;
+- para bugfixes e ajustes sem nova feature, incremente a ultima parte:
+  `0.12.1`, `0.12.2`;
+- mantenha `package.json` da raiz e dos apps/pacotes internos alinhados com a
+  mesma versao atual.
 
 Ao mudar a API, ajuste tambem `apps/web/src/lib/api.ts` e os tipos locais.
 
