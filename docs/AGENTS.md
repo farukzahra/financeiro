@@ -65,6 +65,11 @@ Autenticacao/multiusuario:
 - Configure `AUTH_SECRET` na API em ambientes reais.
 - Senhas usam hash `scrypt` em `app_user.password_hash`.
 - `app_user.role` define papeis simples; `farukz@gmail.com` e o admin inicial.
+  Mantenha apenas um usuario com `role = admin` no banco.
+- No cadastro (`POST /auth/register`), se existir admin, o novo usuario recebe
+  copia dinamica das regras, itens de orcamento e preferencias (`settings`) do
+  admin. Categorias sao globais e ja ficam disponiveis para todos. Sem admin,
+  o cadastro segue sem bootstrap.
 - Preferencias persistentes do usuario ficam em `app_user.settings` como JSONB.
   Hoje a tela inicial salva/restaura `transactionsFilters` com periodo,
   categorias, busca e painel lateral ativo.

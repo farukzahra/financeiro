@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "./db/client.js";
 import { users } from "./db/schema.js";
+import { copyAdminConfigToNewUser } from "./services/admin-bootstrap.js";
 
 const COOKIE_NAME = process.env.AUTH_COOKIE_NAME ?? "financeiro_session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
@@ -211,8 +212,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       })
       .returning();
 
+    await copyAdminConfigToNewUser(created.id);
+
+    const fresh = await db.query.users.findFirst({
+      where: eq(users.id, created.id),
+    });
+
     setSessionCookie(reply, createSessionToken(created.id));
-    return publicUser(created);
+    return publicUser(fresh ?? created);
   });
 
   app.get("/auth/me", async (req, reply) => {
