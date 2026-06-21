@@ -1012,7 +1012,13 @@ async function commitBudgetValor(b: BudgetItem) {
             </span>
           </template>
         </Column>
-        <Column field="detalhe" header="Detalhe" sortable>
+        <Column
+          field="detalhe"
+          header="Detalhe"
+          sortable
+          :style="{ width: '320px' }"
+          :headerStyle="{ width: '320px' }"
+        >
           <template #body="{ data }">
             <InputText
               v-if="editingDetalheId === data.identificador"
@@ -1033,6 +1039,44 @@ async function commitBudgetValor(b: BudgetItem) {
               @keydown.enter.prevent="startEditDetalhe(data)"
             >
               {{ data.detalhe || "—" }}
+            </span>
+          </template>
+        </Column>
+        <Column
+          field="valor"
+          header="Valor"
+          sortable
+          dataType="numeric"
+          headerClass="value-column-header"
+          bodyClass="value-column-body"
+          :style="{ width: '160px', textAlign: 'right' }"
+          :headerStyle="{ width: '160px', textAlign: 'right' }"
+        >
+          <template #body="{ data }">
+            <InputNumber
+              v-if="isEditing(data, 'valor')"
+              v-model="valorDraft"
+              class="value-editor"
+              mode="decimal"
+              locale="pt-BR"
+              :minFractionDigits="2"
+              :maxFractionDigits="2"
+              autofocus
+              @blur="commitValor(data)"
+              @keydown.enter.prevent="commitValor(data)"
+              @keydown.esc.prevent="cancelEditCell"
+            />
+            <span
+              v-else
+              class="editable-cell money-cell"
+              :class="classMoney(data.valor)"
+              role="button"
+              tabindex="0"
+              title="Clique para editar"
+              @click="startEditCell(data, 'valor')"
+              @keydown.enter.prevent="startEditCell(data, 'valor')"
+            >
+              {{ fmtMoneyBR(data.valor) }}
             </span>
           </template>
         </Column>
@@ -1061,44 +1105,6 @@ async function commitBudgetValor(b: BudgetItem) {
             >
               <span class="cat-pill-nome">{{ categoryDisplayName(data.categoriaId) }}</span>
             </button>
-          </template>
-        </Column>
-        <Column
-          field="valor"
-          header="Valor"
-          sortable
-          dataType="numeric"
-          headerClass="value-column-header"
-          bodyClass="value-column-body"
-          :style="{ width: '160px', textAlign: 'right' }"
-          :headerStyle="{ width: '160px', textAlign: 'right' }"
-        >
-          <template #body="{ data }">
-            <InputNumber
-              v-if="isEditing(data, 'valor')"
-              v-model="valorDraft"
-              mode="decimal"
-              locale="pt-BR"
-              :minFractionDigits="2"
-              :maxFractionDigits="2"
-              autofocus
-              fluid
-              @blur="commitValor(data)"
-              @keydown.enter.prevent="commitValor(data)"
-              @keydown.esc.prevent="cancelEditCell"
-            />
-            <span
-              v-else
-              class="editable-cell money-cell"
-              :class="classMoney(data.valor)"
-              role="button"
-              tabindex="0"
-              title="Clique para editar"
-              @click="startEditCell(data, 'valor')"
-              @keydown.enter.prevent="startEditCell(data, 'valor')"
-            >
-              {{ fmtMoneyBR(data.valor) }}
-            </span>
           </template>
         </Column>
         <Column header="" :style="{ width: '90px' }">
@@ -1638,6 +1644,11 @@ section {
 
 :deep(.value-column-body) {
   text-align: right;
+}
+
+:deep(.value-editor) {
+  width: 80%;
+  margin-left: auto;
 }
 
 .row-actions {
