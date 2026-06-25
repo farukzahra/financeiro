@@ -5,6 +5,12 @@ const buildTime = new Date(import.meta.env.VITE_BUILD_TIME);
 
 const historyItems = [
   {
+    build: "0.13.0",
+    title: "Dia de pagamento configurável",
+    detail:
+      "Ciclo salarial passa a usar dia de pagamento configurável, incluindo dia útil do mês com feriados bancários nacionais do Brasil.",
+  },
+  {
     build: "0.12.0",
     title: "Resumo de orçamento e saldo líquido",
     detail:

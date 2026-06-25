@@ -277,7 +277,10 @@ a aba `Sobre`:
 - para bugfixes e ajustes sem nova feature, incremente a ultima parte:
   `0.12.1`, `0.12.2`;
 - mantenha `package.json` da raiz e dos apps/pacotes internos alinhados com a
-  mesma versao atual.
+mesma versao atual.
+- Antes de commitar mudancas visiveis ao usuario, rode `pnpm release:check`.
+- Neste checkout, o hook local `.githooks/pre-commit` deve bloquear commit que
+  mude UI visivel sem bump de versao e sem atualizar `AboutView.vue`.
 
 Ao mudar a API, ajuste tambem `apps/web/src/lib/api.ts` e os tipos locais.
 
