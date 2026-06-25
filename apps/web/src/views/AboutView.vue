@@ -5,6 +5,12 @@ const buildTime = new Date(import.meta.env.VITE_BUILD_TIME);
 
 const historyItems = [
   {
+    build: "0.14.0",
+    title: "Resumo com entradas e saídas",
+    detail:
+      "Painel principal agora mostra totais de entradas e saídas do período filtrado, mantendo os cards alinhados em telas grandes.",
+  },
+  {
     build: "0.13.0",
     title: "Dia de pagamento configurável",
     detail:

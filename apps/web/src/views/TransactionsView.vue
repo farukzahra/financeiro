@@ -81,6 +81,8 @@ const totalPrevistoRestante = computed(() =>
 const saldoLiquido = computed(() =>
   Number(resumo.value.saldo) - totalPrevistoRestante.value,
 );
+const totalEntradasPeriodo = computed(() => Number(resumo.value.totalEntradas));
+const totalSaidasPeriodo = computed(() => Math.abs(Number(resumo.value.totalSaidas)));
 const saldoLiquidoTooltip = computed(() => {
   const saldoAtual = Number(resumo.value.saldo);
   const previstoRestante = totalPrevistoRestante.value;
@@ -1021,6 +1023,20 @@ async function commitBudgetValor(b: BudgetItem) {
               <div>{{ saldoLiquidoTooltip.linha2 }}</div>
             </div>
           </div>
+
+          <div class="summary-card">
+            <div class="label">Entradas</div>
+            <div class="value money-cell summary-value--positive">
+              {{ fmtMoneyBR(totalEntradasPeriodo) }}
+            </div>
+          </div>
+
+          <div class="summary-card">
+            <div class="label">Saídas</div>
+            <div class="value money-cell summary-value--negative">
+              {{ fmtMoneyBR(totalSaidasPeriodo) }}
+            </div>
+          </div>
         </div>
 
         <DataTable
@@ -1301,6 +1317,72 @@ section {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.summary-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 12px;
+  background: var(--p-content-background);
+}
+
+.summary-card .label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+}
+
+.summary-card .value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-value--positive {
+  color: #16a34a;
+}
+
+.summary-value--negative {
+  color: #dc2626;
+}
+
+.summary-card--tooltip:focus-visible,
+.summary-card--tooltip:hover {
+  border-color: var(--p-primary-color);
+}
+
+.summary-tooltip {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  top: calc(100% + 0.45rem);
+  display: none;
+  z-index: 3;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: #111827;
+  color: #f9fafb;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.22);
+}
+
+.summary-card--tooltip:focus-visible .summary-tooltip,
+.summary-card--tooltip:hover .summary-tooltip {
+  display: grid;
+  gap: 0.2rem;
 }
 
 .filters-card {
@@ -1676,6 +1758,30 @@ section {
 
 .budget-edit-val:hover {
   border-bottom-color: var(--p-primary-color);
+}
+
+@media (max-width: 1100px) {
+  .summary-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .center-col {
+    padding: 0.85rem;
+  }
+
+  .actions-bar {
+    flex-wrap: wrap;
+  }
+
+  .actions-bar .p-button {
+    flex: 1 1 180px;
+  }
+
+  .summary-cards {
+    grid-template-columns: 1fr;
+  }
 }
 
 .tx-footer {
