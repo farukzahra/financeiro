@@ -71,6 +71,9 @@ importers:
       axios:
         specifier: ^1.7.7
         version: 1.17.0
+      febraban-bank-holidays:
+        specifier: ^1.2.0
+        version: 1.2.0
       pinia:
         specifier: ^2.2.4
         version: 2.3.1(typescript@5.9.3)(vue@3.5.35(typescript@5.9.3))
@@ -1312,6 +1315,9 @@ packages:
 
   fd-slicer@1.1.0:
     resolution: {integrity: sha512-cE1qsB/VwyQozZ+q1dGxR8LBYNZeofhEdUNGSMbQD3Gw2lAzX9Zb3uIU6Ebc/Fmyjo9AWWfnn0AUCHqtevs/8g==}
+
+  febraban-bank-holidays@1.2.0:
+    resolution: {integrity: sha512-fFh1EciUMTF/aA9di4ryOsUTt4nmxNnLUXj6RYuhfS/S0tAcsz9PDBpvjU61r57Zn6xAUf94HuD3Lucc22r3AA==}
 
   find-my-way@8.2.2:
     resolution: {integrity: sha512-Dobi7gcTEq8yszimcfp/R7+owiT4WncAJ7VTTgFH1jYJ5GaG1FbhjwDG820hptN0QDFvzVY3RfCzdInvGPGzjA==}
@@ -2731,6 +2737,8 @@ snapshots:
   fd-slicer@1.1.0:
     dependencies:
       pend: 1.2.0
+
+  febraban-bank-holidays@1.2.0: {}
 
   find-my-way@8.2.2:
     dependencies:

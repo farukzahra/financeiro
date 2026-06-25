@@ -72,8 +72,9 @@ const categoryForm = ref({
   ativa: true,
 });
 const salaryCycleForm = ref({
-  startDay: null as number | null,
-  endDay: null as number | null,
+  mode: "businessDayOfMonth" as "dayOfMonth" | "businessDayOfMonth",
+  dayOfMonth: null as number | null,
+  businessDayOrdinal: 5 as number | null,
 });
 
 const ruleTypeOptions = [
@@ -81,14 +82,21 @@ const ruleTypeOptions = [
   { label: "Regex", value: "regex" },
 ];
 
+const salaryPaymentModeOptions = [
+  { label: "Dia do mês", value: "dayOfMonth" },
+  { label: "Dia útil do mês", value: "businessDayOfMonth" },
+];
+
 async function loadBudget() {
   budgetRows.value = await listBudget();
 }
 
 function hydrateSalaryCycleForm() {
+  const saved = auth.user?.settings.salaryCycle?.paymentDay;
   salaryCycleForm.value = {
-    startDay: auth.user?.settings.salaryCycle?.startDay ?? null,
-    endDay: auth.user?.settings.salaryCycle?.endDay ?? null,
+    mode: saved?.mode ?? "businessDayOfMonth",
+    dayOfMonth: saved?.dayOfMonth ?? null,
+    businessDayOrdinal: saved?.businessDayOrdinal ?? 5,
   };
 }
 
@@ -276,11 +284,14 @@ async function saveSalaryCycle() {
   try {
     await auth.saveSettings({
       salaryCycle: {
-        startDay: salaryCycleForm.value.startDay ?? null,
-        endDay: salaryCycleForm.value.endDay ?? null,
+        paymentDay: {
+          mode: salaryCycleForm.value.mode,
+          dayOfMonth: salaryCycleForm.value.dayOfMonth ?? null,
+          businessDayOrdinal: salaryCycleForm.value.businessDayOrdinal ?? null,
+        },
       },
     });
-    toast.add({ severity: "success", summary: "Ciclo salarial salvo", life: 1500 });
+    toast.add({ severity: "success", summary: "Dia de pagamento salvo", life: 1500 });
   } catch (err) {
     toast.add({
       severity: "error",
@@ -411,33 +422,44 @@ async function saveSalaryCycle() {
 
       <TabPanel header="Preferências" value="preferencias">
         <div class="prefs-card">
-          <div class="table-title">Ciclo salarial</div>
+          <div class="table-title">Dia de pagamento</div>
           <p class="prefs-copy">
-            Defina o dia inicial e o dia final usados no card de ciclo salarial do painel.
+            Defina quando seu pagamento cai. O ciclo no painel será calculado entre o último e o próximo pagamento.
           </p>
 
           <div class="salary-cycle-grid">
             <div class="form-col">
-              <label>Dia inicial</label>
-              <InputNumber
-                v-model="salaryCycleForm.startDay"
-                placeholder="ex: 21"
+              <label>Como o pagamento acontece</label>
+              <Select
+                v-model="salaryCycleForm.mode"
+                :options="salaryPaymentModeOptions"
+                optionLabel="label"
+                optionValue="value"
                 fluid
               />
             </div>
 
-            <div class="form-col">
-              <label>Dia final</label>
+            <div v-if="salaryCycleForm.mode === 'dayOfMonth'" class="form-col">
+              <label>Dia do pagamento</label>
               <InputNumber
-                v-model="salaryCycleForm.endDay"
-                placeholder="ex: 20"
+                v-model="salaryCycleForm.dayOfMonth"
+                placeholder="ex: 1"
+                fluid
+              />
+            </div>
+
+            <div v-else class="form-col">
+              <label>Qual dia útil do mês</label>
+              <InputNumber
+                v-model="salaryCycleForm.businessDayOrdinal"
+                placeholder="ex: 5"
                 fluid
               />
             </div>
           </div>
 
           <div class="prefs-actions">
-            <Button label="Salvar ciclo salarial" icon="pi pi-check" @click="saveSalaryCycle" />
+            <Button label="Salvar dia de pagamento" icon="pi pi-check" @click="saveSalaryCycle" />
           </div>
         </div>
       </TabPanel>

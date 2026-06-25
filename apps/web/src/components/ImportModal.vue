@@ -177,7 +177,7 @@ function toggleAll() {
         <div><strong>Arquivo:</strong> {{ preview.metadata.nomeArquivo }}</div>
         <div><strong>Conta:</strong> {{ preview.metadata.conta }}</div>
         <div>
-          <strong>Periodo:</strong>
+            <strong>Período:</strong>
           {{ fmtDateBR(preview.metadata.periodoInicio) }} -
           {{ fmtDateBR(preview.metadata.periodoFim) }}
         </div>

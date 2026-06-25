@@ -7,8 +7,11 @@ export const api = axios.create({
 
 export type UserSettings = {
   salaryCycle?: {
-    startDay?: number | null;
-    endDay?: number | null;
+    paymentDay?: {
+      mode?: "dayOfMonth" | "businessDayOfMonth" | null;
+      dayOfMonth?: number | null;
+      businessDayOrdinal?: number | null;
+    };
   };
   transactionsFilters?: {
     from?: string | null;

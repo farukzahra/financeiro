@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, watch } from "vue";
+import { isBusinessDay as isBrazilBusinessDay } from "febraban-bank-holidays";
 import Button from "primevue/button";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
@@ -85,7 +86,7 @@ const saldoLiquidoTooltip = computed(() => {
   const previstoRestante = totalPrevistoRestante.value;
   const liquido = saldoLiquido.value;
   return {
-    linha1: "Saldo liquido = saldo atual - previsto restante ativo.",
+    linha1: "Saldo líquido = saldo atual - previsto restante ativo.",
     linha2: `${fmtMoneyBR(saldoAtual)} - ${fmtMoneyBR(previstoRestante)} = ${fmtMoneyBR(liquido)}`,
   };
 });
@@ -163,50 +164,75 @@ function dateWithDay(year: number, monthIndex: number, day: number): Date {
   return new Date(year, monthIndex, safeDay);
 }
 
-function shiftMonth(date: Date, months: number, day: number): Date {
-  return dateWithDay(date.getFullYear(), date.getMonth() + months, day);
+function nthBusinessDayOfMonth(year: number, monthIndex: number, ordinal: number): Date {
+  const target = Math.max(1, Math.trunc(ordinal));
+  let count = 0;
+  const totalDays = daysInMonth(year, monthIndex);
+
+  for (let day = 1; day <= totalDays; day += 1) {
+    const date = new Date(year, monthIndex, day);
+    if (!isBrazilBusinessDay(date)) continue;
+    count += 1;
+    if (count >= target) return date;
+  }
+
+  return new Date(year, monthIndex, totalDays);
 }
 
-function resolveSalaryCycleBounds(today: Date, startDay: number | null, endDay: number | null) {
-  if (startDay === null || endDay === null) return null;
+function resolvePaymentDate(
+  year: number,
+  monthIndex: number,
+  paymentDay:
+    | {
+        mode?: "dayOfMonth" | "businessDayOfMonth" | null;
+        dayOfMonth?: number | null;
+        businessDayOrdinal?: number | null;
+      }
+    | null
+    | undefined,
+): Date | null {
+  if (!paymentDay?.mode) return null;
 
-  const currentMonthStart = dateWithDay(today.getFullYear(), today.getMonth(), startDay);
-  const currentMonthEnd = dateWithDay(today.getFullYear(), today.getMonth(), endDay);
+  if (paymentDay.mode === "dayOfMonth") {
+    if (paymentDay.dayOfMonth === null || paymentDay.dayOfMonth === undefined) return null;
+    return dateWithDay(year, monthIndex, paymentDay.dayOfMonth);
+  }
+
+  if (paymentDay.businessDayOrdinal === null || paymentDay.businessDayOrdinal === undefined) return null;
+  return nthBusinessDayOfMonth(year, monthIndex, paymentDay.businessDayOrdinal);
+}
+
+function resolveSalaryCycleBounds(
+  today: Date,
+  paymentDay:
+    | {
+        mode?: "dayOfMonth" | "businessDayOfMonth" | null;
+        dayOfMonth?: number | null;
+        businessDayOrdinal?: number | null;
+      }
+    | null
+    | undefined,
+) {
+  const currentPayment = resolvePaymentDate(today.getFullYear(), today.getMonth(), paymentDay);
+  if (!currentPayment) return null;
+
   const todayTime = startOfDay(today).getTime();
-  const startTime = startOfDay(currentMonthStart).getTime();
-  const endTime = startOfDay(currentMonthEnd).getTime();
+  const currentPaymentTime = startOfDay(currentPayment).getTime();
 
-  if (startDay <= endDay) {
-    if (todayTime < startTime) {
-      return {
-        start: shiftMonth(today, -1, startDay),
-        end: currentMonthEnd,
-      };
-    }
-
-    if (todayTime > endTime) {
-      return {
-        start: currentMonthStart,
-        end: shiftMonth(today, 1, endDay),
-      };
-    }
-
+  if (todayTime < currentPaymentTime) {
+    const previousPayment = resolvePaymentDate(today.getFullYear(), today.getMonth() - 1, paymentDay);
+    if (!previousPayment) return null;
     return {
-      start: currentMonthStart,
-      end: currentMonthEnd,
+      start: previousPayment,
+      end: currentPayment,
     };
   }
 
-  if (todayTime >= startTime) {
-    return {
-      start: currentMonthStart,
-      end: shiftMonth(today, 1, endDay),
-    };
-  }
-
+  const nextPayment = resolvePaymentDate(today.getFullYear(), today.getMonth() + 1, paymentDay);
+  if (!nextPayment) return null;
   return {
-    start: shiftMonth(today, -1, startDay),
-    end: currentMonthEnd,
+    start: currentPayment,
+    end: nextPayment,
   };
 }
 
@@ -325,7 +351,7 @@ function saveBudgetOrder() {
     toast.add({
       severity: "error",
       summary: "Erro",
-      detail: "Nao foi possivel salvar a ordem do orcamento.",
+      detail: "Não foi possível salvar a ordem do orçamento.",
       life: 3000,
     });
   });
@@ -415,8 +441,8 @@ async function onEditField(
 
 function onDelete(row: Transaction) {
   confirm.require({
-    message: `Excluir esta transacao? (${row.detalhe || row.tipo})`,
-    header: "Confirmar exclusao",
+      message: `Excluir esta transação? (${row.detalhe || row.tipo})`,
+      header: "Confirmar exclusão",
     icon: "pi pi-exclamation-triangle",
     acceptLabel: "Excluir",
     rejectLabel: "Cancelar",
@@ -426,7 +452,7 @@ function onDelete(row: Transaction) {
         await deleteTransaction(row.identificador);
         rows.value = rows.value.filter((r) => r.identificador !== row.identificador);
         recalculateResumo();
-        toast.add({ severity: "success", summary: "Excluida", life: 1500 });
+        toast.add({ severity: "success", summary: "Excluída", life: 1500 });
       } catch (err) {
         toast.add({
           severity: "error",
@@ -444,8 +470,8 @@ async function onCreateRuleFromRow(row: Transaction) {
   if (!padrao) {
     toast.add({
       severity: "warn",
-      summary: "Sem padrao",
-      detail: "Esta transacao nao tem texto suficiente para gerar regra.",
+        summary: "Sem padrão",
+        detail: "Esta transação não tem texto suficiente para gerar regra.",
       life: 2500,
     });
     return;
@@ -573,18 +599,17 @@ function budgetPercent(b: BudgetItem): number {
 }
 
 const salaryCycle = computed(() => {
-  const startDay = auth.user?.settings.salaryCycle?.startDay ?? null;
-  const endDay = auth.user?.settings.salaryCycle?.endDay ?? null;
-  const bounds = resolveSalaryCycleBounds(new Date(), startDay, endDay);
+  const paymentDay = auth.user?.settings.salaryCycle?.paymentDay;
+  const bounds = resolveSalaryCycleBounds(new Date(), paymentDay);
   if (!bounds) return null;
 
   const start = startOfDay(bounds.start);
   const end = startOfDay(bounds.end);
   const today = startOfDay(new Date());
-  const totalMs = Math.max(86_400_000, addDays(end, 1).getTime() - start.getTime());
+  const totalMs = Math.max(86_400_000, end.getTime() - start.getTime());
   const elapsedMs = today.getTime() - start.getTime();
   const elapsedDays = Math.max(0, Math.floor(elapsedMs / 86_400_000));
-  const remainingDays = Math.max(0, Math.floor((end.getTime() - today.getTime()) / 86_400_000));
+  const remainingDays = Math.max(0, Math.ceil((end.getTime() - today.getTime()) / 86_400_000));
   const percent = Math.max(0, Math.min(100, Math.round((elapsedMs / totalMs) * 100)));
 
   return {
@@ -1174,7 +1199,7 @@ async function commitBudgetValor(b: BudgetItem) {
                 rounded
                 size="small"
                 aria-label="Excluir"
-                title="Excluir transacao"
+                title="Excluir transação"
                 @click="onDelete(data)"
               />
             </div>

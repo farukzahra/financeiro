@@ -25,6 +25,13 @@ const UserSettingsSchema = z
     budgetOrder: z.array(z.string().uuid()).optional(),
     salaryCycle: z
       .object({
+        paymentDay: z
+          .object({
+            mode: z.enum(["dayOfMonth", "businessDayOfMonth"]).nullable().optional(),
+            dayOfMonth: z.number().int().nullable().optional(),
+            businessDayOrdinal: z.number().int().nullable().optional(),
+          })
+          .optional(),
         startDay: z.number().int().nullable().optional(),
         endDay: z.number().int().nullable().optional(),
       })

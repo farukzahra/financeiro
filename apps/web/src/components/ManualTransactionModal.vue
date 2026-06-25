@@ -35,7 +35,7 @@ const saving = ref(false);
 
 const isEdit = computed(() => !!props.editing);
 const dialogHeader = computed(() =>
-  isEdit.value ? "Editar transacao" : "Nova transacao manual",
+  isEdit.value ? "Editar transação" : "Nova transação manual",
 );
 
 function parseIso(s: string): Date {
@@ -173,7 +173,7 @@ async function save() {
       </div>
       <div class="field full">
         <label>Detalhe</label>
-        <InputText v-model="detalhe" placeholder="Descricao do destinatario / loja" fluid />
+        <InputText v-model="detalhe" placeholder="Descrição do destinatário / loja" fluid />
       </div>
       <div class="field full">
         <label>Categoria *</label>
