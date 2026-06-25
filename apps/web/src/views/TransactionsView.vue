@@ -1365,11 +1365,11 @@ section {
 
 .summary-tooltip {
   position: absolute;
-  left: 1rem;
-  right: 1rem;
-  top: calc(100% + 0.45rem);
+  right: 0;
+  bottom: calc(100% + 0.45rem);
   display: none;
   z-index: 3;
+  width: min(320px, calc(100vw - 2rem));
   padding: 0.65rem 0.75rem;
   border-radius: 10px;
   background: #111827;

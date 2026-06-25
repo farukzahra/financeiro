@@ -5,6 +5,12 @@ const buildTime = new Date(import.meta.env.VITE_BUILD_TIME);
 
 const historyItems = [
   {
+    build: "0.14.1",
+    title: "Tooltip do saldo líquido ajustado",
+    detail:
+      "Tooltip do saldo líquido foi reposicionado para melhorar leitura e evitar abertura para baixo do card.",
+  },
+  {
     build: "0.14.0",
     title: "Resumo com entradas e saídas",
     detail:
