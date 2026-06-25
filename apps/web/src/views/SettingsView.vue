@@ -12,6 +12,7 @@ import Select from "primevue/select";
 import Dialog from "primevue/dialog";
 import Checkbox from "primevue/checkbox";
 import { useReferenceStore } from "../stores/reference";
+import { useAuthStore } from "../stores/auth";
 import {
   listBudget,
   createBudgetItem,
@@ -28,6 +29,7 @@ import { useToast } from "primevue/usetoast";
 import { categoryDisplayName, categoryOptionLabel } from "../lib/categories";
 
 const ref_ = useReferenceStore();
+const auth = useAuthStore();
 const loading = ref(false);
 const confirm = useConfirm();
 const toast = useToast();
@@ -36,6 +38,7 @@ onMounted(async () => {
   loading.value = true;
   try {
     if (!ref_.loaded) await ref_.load();
+    hydrateSalaryCycleForm();
     await loadBudget();
   } finally {
     loading.value = false;
@@ -68,6 +71,10 @@ const categoryForm = ref({
   descricao: "",
   ativa: true,
 });
+const salaryCycleForm = ref({
+  startDay: null as number | null,
+  endDay: null as number | null,
+});
 
 const ruleTypeOptions = [
   { label: "Substring", value: "substring" },
@@ -76,6 +83,13 @@ const ruleTypeOptions = [
 
 async function loadBudget() {
   budgetRows.value = await listBudget();
+}
+
+function hydrateSalaryCycleForm() {
+  salaryCycleForm.value = {
+    startDay: auth.user?.settings.salaryCycle?.startDay ?? null,
+    endDay: auth.user?.settings.salaryCycle?.endDay ?? null,
+  };
 }
 
 const categoryOptions = computed(() =>
@@ -257,6 +271,25 @@ async function saveCategory() {
     });
   }
 }
+
+async function saveSalaryCycle() {
+  try {
+    await auth.saveSettings({
+      salaryCycle: {
+        startDay: salaryCycleForm.value.startDay ?? null,
+        endDay: salaryCycleForm.value.endDay ?? null,
+      },
+    });
+    toast.add({ severity: "success", summary: "Ciclo salarial salvo", life: 1500 });
+  } catch (err) {
+    toast.add({
+      severity: "error",
+      summary: "Erro",
+      detail: (err as Error).message,
+      life: 3000,
+    });
+  }
+}
 </script>
 
 <template>
@@ -374,6 +407,39 @@ async function saveCategory() {
             </template>
           </Column>
         </DataTable>
+      </TabPanel>
+
+      <TabPanel header="Preferências" value="preferencias">
+        <div class="prefs-card">
+          <div class="table-title">Ciclo salarial</div>
+          <p class="prefs-copy">
+            Defina o dia inicial e o dia final usados no card de ciclo salarial do painel.
+          </p>
+
+          <div class="salary-cycle-grid">
+            <div class="form-col">
+              <label>Dia inicial</label>
+              <InputNumber
+                v-model="salaryCycleForm.startDay"
+                placeholder="ex: 21"
+                fluid
+              />
+            </div>
+
+            <div class="form-col">
+              <label>Dia final</label>
+              <InputNumber
+                v-model="salaryCycleForm.endDay"
+                placeholder="ex: 20"
+                fluid
+              />
+            </div>
+          </div>
+
+          <div class="prefs-actions">
+            <Button label="Salvar ciclo salarial" icon="pi pi-check" @click="saveSalaryCycle" />
+          </div>
+        </div>
       </TabPanel>
     </TabView>
 
@@ -569,5 +635,24 @@ async function saveCategory() {
 .checkbox-row label {
   margin-top: 0;
   opacity: 0.9;
+}
+
+.prefs-card {
+  max-width: 720px;
+}
+
+.prefs-copy {
+  margin: 0 0 1rem;
+  opacity: 0.75;
+}
+
+.salary-cycle-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.prefs-actions {
+  margin-top: 1rem;
 }
 </style>

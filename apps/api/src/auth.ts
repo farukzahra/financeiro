@@ -23,6 +23,12 @@ const RegisterSchema = z.object({
 const UserSettingsSchema = z
   .object({
     budgetOrder: z.array(z.string().uuid()).optional(),
+    salaryCycle: z
+      .object({
+        startDay: z.number().int().nullable().optional(),
+        endDay: z.number().int().nullable().optional(),
+      })
+      .optional(),
     transactionsFilters: z
       .object({
         from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),

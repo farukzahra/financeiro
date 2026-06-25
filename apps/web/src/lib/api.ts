@@ -6,6 +6,10 @@ export const api = axios.create({
 });
 
 export type UserSettings = {
+  salaryCycle?: {
+    startDay?: number | null;
+    endDay?: number | null;
+  };
   transactionsFilters?: {
     from?: string | null;
     to?: string | null;

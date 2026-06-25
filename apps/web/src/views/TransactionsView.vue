@@ -154,11 +154,60 @@ function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function normalizeText(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+function daysInMonth(year: number, monthIndex: number): number {
+  return new Date(year, monthIndex + 1, 0).getDate();
+}
+
+function dateWithDay(year: number, monthIndex: number, day: number): Date {
+  const safeDay = Math.min(Math.max(1, Math.trunc(day)), daysInMonth(year, monthIndex));
+  return new Date(year, monthIndex, safeDay);
+}
+
+function shiftMonth(date: Date, months: number, day: number): Date {
+  return dateWithDay(date.getFullYear(), date.getMonth() + months, day);
+}
+
+function resolveSalaryCycleBounds(today: Date, startDay: number | null, endDay: number | null) {
+  if (startDay === null || endDay === null) return null;
+
+  const currentMonthStart = dateWithDay(today.getFullYear(), today.getMonth(), startDay);
+  const currentMonthEnd = dateWithDay(today.getFullYear(), today.getMonth(), endDay);
+  const todayTime = startOfDay(today).getTime();
+  const startTime = startOfDay(currentMonthStart).getTime();
+  const endTime = startOfDay(currentMonthEnd).getTime();
+
+  if (startDay <= endDay) {
+    if (todayTime < startTime) {
+      return {
+        start: shiftMonth(today, -1, startDay),
+        end: currentMonthEnd,
+      };
+    }
+
+    if (todayTime > endTime) {
+      return {
+        start: currentMonthStart,
+        end: shiftMonth(today, 1, endDay),
+      };
+    }
+
+    return {
+      start: currentMonthStart,
+      end: currentMonthEnd,
+    };
+  }
+
+  if (todayTime >= startTime) {
+    return {
+      start: currentMonthStart,
+      end: shiftMonth(today, 1, endDay),
+    };
+  }
+
+  return {
+    start: shiftMonth(today, -1, startDay),
+    end: currentMonthEnd,
+  };
 }
 
 function restoreSavedFilters() {
@@ -524,20 +573,18 @@ function budgetPercent(b: BudgetItem): number {
 }
 
 const salaryCycle = computed(() => {
-  const salaryRows = rows.value
-    .map((row) => ({ row, date: parseIsoDate(row.data) }))
-    .filter(({ row, date }) => date && normalizeText(row.detalhe).includes("salario"))
-    .sort((a, b) => b.date!.getTime() - a.date!.getTime());
+  const startDay = auth.user?.settings.salaryCycle?.startDay ?? null;
+  const endDay = auth.user?.settings.salaryCycle?.endDay ?? null;
+  const bounds = resolveSalaryCycleBounds(new Date(), startDay, endDay);
+  if (!bounds) return null;
 
-  const start = salaryRows[0]?.date;
-  if (!start) return null;
-
-  const end = addDays(start, 30);
+  const start = startOfDay(bounds.start);
+  const end = startOfDay(bounds.end);
   const today = startOfDay(new Date());
-  const elapsedMs = today.getTime() - startOfDay(start).getTime();
-  const totalMs = end.getTime() - start.getTime();
+  const totalMs = Math.max(86_400_000, addDays(end, 1).getTime() - start.getTime());
+  const elapsedMs = today.getTime() - start.getTime();
   const elapsedDays = Math.max(0, Math.floor(elapsedMs / 86_400_000));
-  const remainingDays = Math.max(0, Math.ceil((end.getTime() - today.getTime()) / 86_400_000));
+  const remainingDays = Math.max(0, Math.floor((end.getTime() - today.getTime()) / 86_400_000));
   const percent = Math.max(0, Math.min(100, Math.round((elapsedMs / totalMs) * 100)));
 
   return {
@@ -783,7 +830,7 @@ async function commitBudgetValor(b: BudgetItem) {
           <div class="salary-cycle-meta">
             <span>Ciclo salarial</span>
             <span v-if="salaryCycle">{{ salaryCycle.remainingDays }} dias restantes</span>
-            <span v-else>Sem salario no filtro</span>
+              <span v-else>Defina o ciclo em Preferências</span>
           </div>
           <div class="salary-cycle-bar-wrap">
             <div
