@@ -83,6 +83,23 @@ const saldoLiquido = computed(() =>
 );
 const totalEntradasPeriodo = computed(() => Number(resumo.value.totalEntradas));
 const totalSaidasPeriodo = computed(() => Math.abs(Number(resumo.value.totalSaidas)));
+const saldoAtualTooltip = computed(() => {
+  const entradas = totalEntradasPeriodo.value;
+  const saidas = Number(resumo.value.totalSaidas);
+  const saldo = Number(resumo.value.saldo);
+  return {
+    linha1: "Saldo atual = entradas + saídas do período filtrado.",
+    linha2: `${fmtMoneyBR(entradas)} + ${fmtMoneyBR(saidas)} = ${fmtMoneyBR(saldo)}`,
+  };
+});
+const entradasTooltip = computed(() => ({
+  linha1: "Entradas = soma das transações positivas no período filtrado.",
+  linha2: `${fmtMoneyBR(totalEntradasPeriodo.value)} em entradas`,
+}));
+const saidasTooltip = computed(() => ({
+  linha1: "Saídas = soma absoluta das transações negativas no período filtrado.",
+  linha2: `${fmtMoneyBR(totalSaidasPeriodo.value)} em saídas`,
+}));
 const saldoLiquidoTooltip = computed(() => {
   const saldoAtual = Number(resumo.value.saldo);
   const previstoRestante = totalPrevistoRestante.value;
@@ -1003,10 +1020,18 @@ async function commitBudgetValor(b: BudgetItem) {
           />
         </div>
         <div class="summary-cards">
-          <div class="summary-card">
+          <div
+            class="summary-card summary-card--tooltip"
+            tabindex="0"
+            :aria-label="`${saldoAtualTooltip.linha1} ${saldoAtualTooltip.linha2}`"
+          >
             <div class="label">Saldo atual</div>
             <div class="value" :class="classMoney(resumo.saldo)">
               {{ fmtMoneyBR(resumo.saldo) }}
+            </div>
+            <div class="summary-tooltip summary-tooltip--left" role="tooltip">
+              <div>{{ saldoAtualTooltip.linha1 }}</div>
+              <div>{{ saldoAtualTooltip.linha2 }}</div>
             </div>
           </div>
           <div
@@ -1024,17 +1049,33 @@ async function commitBudgetValor(b: BudgetItem) {
             </div>
           </div>
 
-          <div class="summary-card">
+          <div
+            class="summary-card summary-card--tooltip"
+            tabindex="0"
+            :aria-label="`${entradasTooltip.linha1} ${entradasTooltip.linha2}`"
+          >
             <div class="label">Entradas</div>
             <div class="value money-cell summary-value--positive">
               {{ fmtMoneyBR(totalEntradasPeriodo) }}
             </div>
+            <div class="summary-tooltip" role="tooltip">
+              <div>{{ entradasTooltip.linha1 }}</div>
+              <div>{{ entradasTooltip.linha2 }}</div>
+            </div>
           </div>
 
-          <div class="summary-card">
+          <div
+            class="summary-card summary-card--tooltip"
+            tabindex="0"
+            :aria-label="`${saidasTooltip.linha1} ${saidasTooltip.linha2}`"
+          >
             <div class="label">Saídas</div>
             <div class="value money-cell summary-value--negative">
               {{ fmtMoneyBR(totalSaidasPeriodo) }}
+            </div>
+            <div class="summary-tooltip" role="tooltip">
+              <div>{{ saidasTooltip.linha1 }}</div>
+              <div>{{ saidasTooltip.linha2 }}</div>
             </div>
           </div>
         </div>
@@ -1377,6 +1418,11 @@ section {
   font-size: 0.75rem;
   line-height: 1.35;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.22);
+}
+
+.summary-tooltip--left {
+  left: 0;
+  right: auto;
 }
 
 .summary-card--tooltip:focus-visible .summary-tooltip,

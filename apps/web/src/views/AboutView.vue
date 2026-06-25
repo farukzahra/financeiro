@@ -5,6 +5,12 @@ const buildTime = new Date(import.meta.env.VITE_BUILD_TIME);
 
 const historyItems = [
   {
+    build: "0.14.2",
+    title: "Tooltips nos cards de resumo",
+    detail:
+      "Cards de saldo, entradas e saídas agora exibem descrições curtas com fórmulas e contexto do período filtrado.",
+  },
+  {
     build: "0.14.1",
     title: "Tooltip do saldo líquido ajustado",
     detail:
