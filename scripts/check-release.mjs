@@ -10,7 +10,6 @@ const versionFiles = [
   "package.json",
   "apps/api/package.json",
   "apps/web/package.json",
-  "apps/electron/package.json",
   "packages/shared/package.json",
 ];
 

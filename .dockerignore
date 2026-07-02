@@ -11,5 +11,3 @@ output
 sheets
 __pycache__
 *.pyc
-apps/electron/node_modules
-apps/electron/dist

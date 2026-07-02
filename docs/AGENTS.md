@@ -27,9 +27,7 @@ O fluxo central e:
 
 - Monorepo `pnpm` com workspaces em `apps/*` e `packages/*`.
 - `apps/api`: API Fastify + TypeScript + Drizzle ORM + PostgreSQL.
-- `apps/web`: Vue 3 + Vite + TypeScript + PrimeVue + Pinia.
-- `apps/electron`: wrapper desktop Electron que abre o Vite em
-  `http://localhost:5173`.
+- `apps/web`: Vue 3 + Vite + TypeScript + Vuetify + Pinia.
 - `packages/shared`: schemas Zod e tipos compartilhados entre API e web.
 - Scripts Python em `scripts/legacy/` sao legado/apoio da logica de
   categorizacao.
@@ -145,16 +143,9 @@ Rodar API e web:
 pnpm dev
 ```
 
-Alternativa desktop:
-
-```powershell
-.\scripts\windows\iniciar.bat
-```
-
 Em dev local, a API le `DATABASE_URL` de `apps/api/.env`. O
 `docker-compose.yml` (porta `5433`) e alternativa opcional; o padrao do projeto
-e o Postgres externo na porta `5432`. O `scripts/windows/iniciar.bat` tambem
-aponta para `5432`.
+e o Postgres externo na porta `5432`.
 
 ## Scripts uteis
 
@@ -375,6 +366,3 @@ Fluxo manual minimo para importacao:
   contratos ou fluxo de dados mudarem.
 - `docs/PLANO_SISTEMA.md` e util como contexto historico, mas o codigo atual e
   a fonte da verdade.
-- Existe `pnpm-lock.yaml` modificado e `apps/electron/package-lock.json` nao
-  rastreado no estado observado em 2026-06-10; trate como possiveis mudancas do
-  usuario e nao reverta sem pedido explicito.

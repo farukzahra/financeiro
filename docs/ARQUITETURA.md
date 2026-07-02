@@ -359,17 +359,6 @@ confirm.require({ message, header?, acceptLabel?, rejectLabel?, accept? });
 
 ---
 
-## DESKTOP (opcional)
-
-| Camada | Pacote | Versão |
-|--------|--------|--------|
-| Shell desktop | `electron` | ^31.7 |
-| Entry | `main.cjs` (CommonJS no processo main) | — |
-
-Carrega a mesma SPA do FE (`localhost:5173` em dev ou URL de produção via env).
-
----
-
 ## Resumo copy-paste
 
 ### `apps/web/package.json` (dependências base)

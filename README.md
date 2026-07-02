@@ -7,15 +7,13 @@ transacoes, revisar lancamentos e acompanhar orcamento previsto.
 
 - Monorepo `pnpm`
 - API: Fastify + TypeScript + Drizzle ORM + PostgreSQL
-- Web: Vue 3 + Vite + PrimeVue + Pinia
-- Desktop: Electron apontando para a web
+- Web: Vue 3 + Vite + Vuetify + Pinia
 - Banco local: PostgreSQL externo (`localhost:5432`); producao: PostgreSQL em Docker na VPS
 
 ## Estrutura
 
 - `apps/api`: API, autenticacao, rotas, migrations e acesso ao banco
 - `apps/web`: interface principal
-- `apps/electron`: wrapper desktop
 - `packages/shared`: schemas e tipos compartilhados
 - `docs`: documentacao tecnica e guias
 - `planos`: planos de implementacao/investigacao
@@ -54,21 +52,6 @@ A web local roda em:
 
 ```text
 http://localhost:5173
-```
-
-## Desktop
-
-Para abrir o Electron em desenvolvimento:
-
-```powershell
-.\scripts\windows\iniciar.bat
-```
-
-Para apontar o Electron para producao:
-
-```powershell
-$env:FINANCEIRO_APP_URL="http://66.23.231.218"
-pnpm --filter @financeiro/electron start:prod
 ```
 
 ## Producao
