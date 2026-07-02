@@ -1,13 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
-import Dialog from "primevue/dialog";
-import Button from "primevue/button";
-import InputText from "primevue/inputtext";
-import InputNumber from "primevue/inputnumber";
-import DatePicker from "primevue/datepicker";
-import Select from "primevue/select";
-import Textarea from "primevue/textarea";
-import { useToast } from "primevue/usetoast";
+import { useSnackbar } from "../composables/useSnackbar";
 import { useReferenceStore } from "../stores/reference";
 import { createTransaction, patchTransaction, type Transaction } from "../lib/api";
 
@@ -22,7 +15,7 @@ const emit = defineEmits<{
 }>();
 
 const ref_ = useReferenceStore();
-const toast = useToast();
+const snackbar = useSnackbar();
 
 const data = ref<Date | null>(new Date());
 const valor = ref<number | null>(null);
@@ -77,18 +70,18 @@ function toIso(d: Date): string {
 }
 
 const sinalOptions = [
-  { label: "Saida (-)", value: "saida" },
-  { label: "Entrada (+)", value: "entrada" },
+  { title: "Saída (-)", value: "saida" },
+  { title: "Entrada (+)", value: "entrada" },
 ];
 
-const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t })));
+const tipoOptions = computed(() => ref_.tipos.map((t) => ({ title: t, value: t })));
 
 async function save() {
   if (!data.value || valor.value == null || !tipo.value.trim() || !categoriaId.value) {
-    toast.add({
+    snackbar.add({
       severity: "warn",
-      summary: "Campos obrigatorios",
-      detail: "Data, valor, tipo e categoria sao obrigatorios.",
+      summary: "Campos obrigatórios",
+      detail: "Data, valor, tipo e categoria são obrigatórios.",
       life: 3000,
     });
     return;
@@ -107,16 +100,16 @@ async function save() {
     };
     if (isEdit.value && props.editing) {
       const t = await patchTransaction(props.editing.identificador, body);
-      toast.add({ severity: "success", summary: "Atualizada", life: 1500 });
+      snackbar.add({ severity: "success", summary: "Atualizada", life: 1500 });
       emit("updated", t);
     } else {
       const t = await createTransaction(body);
-      toast.add({ severity: "success", summary: "Criada", life: 1500 });
+      snackbar.add({ severity: "success", summary: "Criada", life: 1500 });
       emit("created", t);
     }
     emit("update:visible", false);
   } catch (err) {
-    toast.add({
+    snackbar.add({
       severity: "error",
       summary: "Erro ao salvar",
       detail: (err as Error).message,
@@ -129,74 +122,82 @@ async function save() {
 </script>
 
 <template>
-  <Dialog
-    :visible="visible"
-    @update:visible="emit('update:visible', $event)"
-    modal
-    :header="dialogHeader"
-    :style="{ width: '480px' }"
+  <v-dialog
+    :model-value="visible"
+    max-width="480"
+    @update:model-value="emit('update:visible', $event)"
   >
-    <div class="form-grid">
-      <div class="field">
-        <label>Data *</label>
-        <DatePicker v-model="data" dateFormat="dd/mm/yy" showIcon fluid />
-      </div>
-      <div class="field">
-        <label>Sinal</label>
-        <Select v-model="sinal" :options="sinalOptions" optionLabel="label" optionValue="value" fluid />
-      </div>
-      <div class="field">
-        <label>Valor (R$) *</label>
-        <InputNumber
-          v-model="valor"
-          mode="decimal"
-          locale="pt-BR"
-          :minFractionDigits="2"
-          :maxFractionDigits="2"
-          :min="0"
-          placeholder="0,00"
-          fluid
-        />
-      </div>
-      <div class="field full">
-        <label>Tipo *</label>
-        <Select
-          v-model="tipo"
-          :options="tipoOptions"
-          optionLabel="label"
-          optionValue="value"
-          editable
-          filter
-          placeholder="Selecione ou digite"
-          fluid
-        />
-      </div>
-      <div class="field full">
-        <label>Detalhe</label>
-        <InputText v-model="detalhe" placeholder="Descrição do destinatário / loja" fluid />
-      </div>
-      <div class="field full">
-        <label>Categoria *</label>
-        <Select
-          v-model="categoriaId"
-          :options="ref_.categoryOptions"
-          optionLabel="label"
-          optionValue="value"
-          filter
-          placeholder="Selecione"
-          fluid
-        />
-      </div>
-      <div class="field full">
-        <label>Observacao</label>
-        <Textarea v-model="observacao" rows="2" autoResize fluid />
-      </div>
-    </div>
-    <template #footer>
-      <Button label="Cancelar" severity="secondary" text @click="emit('update:visible', false)" />
-      <Button label="Salvar" icon="pi pi-check" :loading="saving" @click="save" />
-    </template>
-  </Dialog>
+    <v-card>
+      <v-card-title>{{ dialogHeader }}</v-card-title>
+      <v-card-text>
+        <div class="form-grid">
+          <div class="field">
+            <label>Data *</label>
+            <v-menu :close-on-content-click="false">
+              <template #activator="{ props: menuProps }">
+                <v-text-field
+                  v-bind="menuProps"
+                  :model-value="data ? data.toLocaleDateString('pt-BR') : ''"
+                  readonly
+                  prepend-inner-icon="mdi-calendar"
+                />
+              </template>
+              <v-date-picker v-model="data" />
+            </v-menu>
+          </div>
+          <div class="field">
+            <label>Sinal</label>
+            <v-select v-model="sinal" :items="sinalOptions" item-title="title" item-value="value" />
+          </div>
+          <div class="field">
+            <label>Valor (R$) *</label>
+            <v-number-input
+              v-model="valor"
+              :min="0"
+              :precision="2"
+              control-variant="hidden"
+              placeholder="0,00"
+            />
+          </div>
+          <div class="field full">
+            <label>Tipo *</label>
+            <v-combobox
+              v-model="tipo"
+              :items="tipoOptions"
+              item-title="title"
+              item-value="value"
+              placeholder="Selecione ou digite"
+            />
+          </div>
+          <div class="field full">
+            <label>Detalhe</label>
+            <v-text-field v-model="detalhe" placeholder="Descrição do destinatário / loja" />
+          </div>
+          <div class="field full">
+            <label>Categoria *</label>
+            <v-autocomplete
+              v-model="categoriaId"
+              :items="ref_.categoryOptions"
+              item-title="label"
+              item-value="value"
+              placeholder="Selecione"
+            />
+          </div>
+          <div class="field full">
+            <label>Observação</label>
+            <v-textarea v-model="observacao" rows="2" auto-grow />
+          </div>
+        </div>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn variant="text" @click="emit('update:visible', false)">Cancelar</v-btn>
+        <v-btn color="primary" prepend-icon="mdi-check" :loading="saving" @click="save">
+          Salvar
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <style scoped>

@@ -1,6 +1,22 @@
 ﻿:root {
   font-family: system-ui, -apple-system, Segoe UI, sans-serif;
-  color-scheme: light dark;
+  color-scheme: light;
+
+  /* aliases para CSS customizado (shell) — espelham o tema Vuetify */
+  --app-primary: rgb(var(--v-theme-primary));
+  --app-secondary: rgb(var(--v-theme-secondary));
+  --app-surface: rgb(var(--v-theme-surface));
+  --app-background: rgb(var(--v-theme-background));
+  --app-border: rgba(var(--v-border-color), var(--v-border-opacity));
+  --app-text: rgba(var(--v-theme-on-surface), var(--v-high-emphasis-opacity));
+  --app-text-muted: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+  --app-highlight: rgba(var(--v-theme-primary), 0.08);
+
+  /* tons lavados — logo, badges, ciclo salarial */
+  --app-primary-wash: #E4EEF8;
+  --app-primary-wash-text: #3D6FA3;
+  --app-accent-wash: #F3E8DE;
+  --app-accent-wash-deep: #E2D0C2;
 }
 
 * {
@@ -12,6 +28,8 @@ body {
   padding: 0;
   height: 100vh;
   overflow: hidden;
+  background: var(--app-background);
+  color: var(--app-text);
 }
 
 #app {
@@ -49,8 +67,8 @@ body {
   padding: 0 1.25rem;
   height: 56px;
   flex-shrink: 0;
-  border-bottom: 1px solid var(--p-content-border-color);
-  background: var(--p-content-background);
+  border-bottom: 1px solid var(--app-border);
+  background: var(--app-surface);
 }
 
 .app-header-brand {
@@ -66,10 +84,11 @@ body {
   width: 30px;
   height: 30px;
   border-radius: 8px;
-  background: var(--p-primary-color);
-  color: #fff;
+  background: var(--app-primary-wash);
+  color: var(--app-primary-wash-text);
+  border: 1px solid rgba(30, 90, 168, 0.12);
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1;
   user-select: none;
 }
@@ -77,7 +96,7 @@ body {
 .app-header-title {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--p-text-color);
+  color: var(--app-text);
   letter-spacing: -0.01em;
 }
 
@@ -89,9 +108,9 @@ body {
   align-items: center;
   gap: 0.2rem;
   padding: 0.2rem;
-  border: 1px solid var(--p-content-border-color);
+  border: 1px solid var(--app-border);
   border-radius: 8px;
-  background: var(--p-surface-50, rgba(0, 0, 0, 0.03));
+  background: rgba(var(--v-theme-on-surface), 0.03);
   transform: translate(-50%, -50%);
 }
 
@@ -104,24 +123,20 @@ body {
   border-radius: 6px;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--app-text-muted);
   text-decoration: none;
   transition: color 120ms, background 120ms, box-shadow 120ms;
 }
 
 .app-nav-link:hover {
-  color: var(--p-text-color);
-  background: var(--p-content-hover-background, rgba(0,0,0,0.05));
+  color: var(--app-text);
+  background: rgba(var(--v-theme-on-surface), 0.05);
 }
 
 .app-nav-link.router-link-active {
-  color: var(--p-text-color);
-  background: var(--p-content-background);
+  color: var(--app-text);
+  background: var(--app-surface);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
-}
-
-.app-nav-link .pi {
-  font-size: 0.85rem;
 }
 
 .summary-cards {
@@ -133,8 +148,8 @@ body {
 .summary-card {
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
-  background: var(--p-content-background);
-  border: 1px solid var(--p-content-border-color);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
 }
 
 .summary-card--tooltip {
@@ -142,7 +157,7 @@ body {
 }
 
 .summary-card--tooltip:focus-visible {
-  outline: 2px solid var(--p-primary-color);
+  outline: 2px solid var(--app-primary);
   outline-offset: 2px;
 }
 

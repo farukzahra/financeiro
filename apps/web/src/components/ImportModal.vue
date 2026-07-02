@@ -1,15 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import Dialog from "primevue/dialog";
-import Button from "primevue/button";
-import Checkbox from "primevue/checkbox";
-import FileUpload, { type FileUploadSelectEvent } from "primevue/fileupload";
-import DataTable from "primevue/datatable";
-import Column from "primevue/column";
-import Select from "primevue/select";
-import Tag from "primevue/tag";
-import ProgressSpinner from "primevue/progressspinner";
-import { useToast } from "primevue/usetoast";
+import { useSnackbar } from "../composables/useSnackbar";
 import { useReferenceStore } from "../stores/reference";
 import {
   preview as previewImport,
@@ -25,7 +16,7 @@ const emit = defineEmits<{
 }>();
 
 const ref_ = useReferenceStore();
-const toast = useToast();
+const snackbar = useSnackbar();
 
 const step = ref<"upload" | "preview" | "confirming">("upload");
 const loading = ref(false);
@@ -36,6 +27,17 @@ const visibleProxy = computed({
   get: () => props.visible,
   set: (v) => emit("update:visible", v),
 });
+
+const previewHeaders = [
+  { title: "", key: "select", sortable: false, width: 44 },
+  { title: "Data", key: "data", width: 100 },
+  { title: "Tipo", key: "tipo", width: 170 },
+  { title: "Detalhe", key: "detalhe" },
+  { title: "Categoria", key: "categoriaSugerida", width: 220, sortable: false },
+  { title: "Valor", key: "valor", width: 130 },
+  { title: "Origem", key: "regraAplicada", width: 110 },
+  { title: "", key: "actions", sortable: false, width: 60 },
+];
 
 function reset() {
   step.value = "upload";
@@ -49,19 +51,18 @@ function removeItem(id: string) {
   preview.value.itens = preview.value.itens.filter((i) => i.identificador !== id);
 }
 
-async function onSelect(e: FileUploadSelectEvent) {
-  const file = (Array.isArray(e.files) ? e.files[0] : e.files) as File | undefined;
+async function onSelect(files: File | File[] | null) {
+  const file = Array.isArray(files) ? files[0] : files;
   if (!file) return;
   loading.value = true;
   try {
     if (!ref_.loaded) await ref_.load();
     const data = await previewImport(file);
     preview.value = data;
-    // Começa com tudo desmarcado
     selectedIds.value = new Set();
     step.value = "preview";
   } catch (err) {
-    toast.add({
+    snackbar.add({
       severity: "error",
       summary: "Erro no preview",
       detail: (err as Error).message,
@@ -101,7 +102,7 @@ async function onConfirm() {
     visibleProxy.value = false;
     reset();
   } catch (err) {
-    toast.add({
+    snackbar.add({
       severity: "error",
       summary: "Erro ao confirmar",
       detail: (err as Error).message,
@@ -136,7 +137,7 @@ const someSelected = computed(
 function toggleItem(id: string) {
   if (selectedIds.value.has(id)) selectedIds.value.delete(id);
   else selectedIds.value.add(id);
-  selectedIds.value = new Set(selectedIds.value); // trigger reactivity
+  selectedIds.value = new Set(selectedIds.value);
 }
 
 function toggleAll() {
@@ -149,131 +150,143 @@ function toggleAll() {
 </script>
 
 <template>
-  <Dialog
-    v-model:visible="visibleProxy"
-    modal
-    header="Importar extrato"
-    :style="{ width: '95vw', maxWidth: '1200px' }"
-    @hide="reset"
+  <v-dialog
+    v-model="visibleProxy"
+    max-width="1200"
+    width="95vw"
+    @after-leave="reset"
   >
-    <div v-if="step === 'upload'">
-      <p>Selecione um arquivo CSV do Nubank (formato NU_&lt;conta&gt;_&lt;periodo&gt;.csv).</p>
-      <FileUpload
-        mode="basic"
-        :auto="true"
-        accept=".csv"
-        chooseLabel="Selecionar arquivo"
-        customUpload
-        @select="onSelect"
-        :pt="{ root: { style: 'display: inline-block' } }"
-      />
-      <div v-if="loading" style="margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem">
-        <ProgressSpinner style="width: 24px; height: 24px" /> Processando...
-      </div>
-    </div>
-
-    <div v-else-if="step === 'preview' && preview">
-      <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem">
-        <div><strong>Arquivo:</strong> {{ preview.metadata.nomeArquivo }}</div>
-        <div><strong>Conta:</strong> {{ preview.metadata.conta }}</div>
-        <div>
-            <strong>Período:</strong>
-          {{ fmtDateBR(preview.metadata.periodoInicio) }} -
-          {{ fmtDateBR(preview.metadata.periodoFim) }}
+    <v-card title="Importar extrato">
+      <v-card-text>
+        <div v-if="step === 'upload'">
+          <p>Selecione um arquivo CSV do Nubank (formato NU_&lt;conta&gt;_&lt;periodo&gt;.csv).</p>
+          <v-file-input
+            accept=".csv"
+            label="Selecionar arquivo"
+            prepend-icon="mdi-file-upload"
+            @update:model-value="onSelect"
+          />
+          <div v-if="loading" class="upload-loading">
+            <v-progress-circular indeterminate size="24" />
+            Processando...
+          </div>
         </div>
-        <div><strong>Total:</strong> {{ preview.metadata.totalLinhas }}</div>
-        <Tag severity="success" :value="`Novas: ${novosCount}`" />
-        <Tag severity="warn" :value="`Duplicadas: ${dupCount}`" />
-        <Tag severity="secondary" :value="`Selecionadas: ${selectedCount}`" />
-        <Tag
-          v-if="preview.metadata.jaImportadoEm"
-          severity="info"
-          value="Arquivo ja foi importado antes"
-        />
-      </div>
 
-      <DataTable
-        :value="preview.itens"
-        size="small"
-        scrollable
-        scrollHeight="55vh"
-        stripedRows
-      >
-        <Column header="" :style="{ width: '44px' }">
-          <template #header>
-            <Checkbox
-              :modelValue="allSelected"
-              :indeterminate="someSelected"
-              binary
-              @change="toggleAll"
-              title="Selecionar todos"
-            />
-          </template>
-          <template #body="{ data }">
-            <Checkbox
-              v-if="!data.jaExistente"
-              :modelValue="selectedIds.has(data.identificador)"
-              binary
-              @change="toggleItem(data.identificador)"
-            />
-            <i
-              v-else
-              class="pi pi-clone"
-              style="color: #ca8a04; font-size: 0.85rem"
-              title="Já existe"
-            />
-          </template>
-        </Column>
-        <Column field="data" header="Data" :style="{ width: '100px' }">
-          <template #body="{ data }">{{ fmtDateBR(data.data) }}</template>
-        </Column>
-        <Column field="tipo" header="Tipo" :style="{ width: '170px' }" />
-        <Column field="detalhe" header="Detalhe" />
-        <Column field="categoriaSugerida" header="Categoria" :style="{ width: '220px' }">
-          <template #body="{ data }">
-            <Select
-              v-model="data.categoriaSugerida"
-              :options="categoryOptions"
-              optionLabel="label"
-              optionValue="value"
-              filter
-              :pt="{ root: { style: 'width: 100%' } }"
-            />
-          </template>
-        </Column>
-        <Column field="valor" header="Valor" :style="{ width: '130px' }">
-          <template #body="{ data }">
-            <span :class="classMoney(data.valor)">{{ fmtMoneyBR(data.valor) }}</span>
-          </template>
-        </Column>
-        <Column field="regraAplicada" header="Origem" :style="{ width: '110px' }" />
-        <Column header="" :style="{ width: '60px' }">
-          <template #body="{ data }">
-            <Button
-              icon="pi pi-trash"
-              severity="danger"
-              text
-              rounded
-              aria-label="Remover"
-              @click="removeItem(data.identificador)"
-            />
-          </template>
-        </Column>
-      </DataTable>
-    </div>
+        <div v-else-if="step === 'preview' && preview">
+          <div class="preview-meta">
+            <div><strong>Arquivo:</strong> {{ preview.metadata.nomeArquivo }}</div>
+            <div><strong>Conta:</strong> {{ preview.metadata.conta }}</div>
+            <div>
+              <strong>Período:</strong>
+              {{ fmtDateBR(preview.metadata.periodoInicio) }} -
+              {{ fmtDateBR(preview.metadata.periodoFim) }}
+            </div>
+            <div><strong>Total:</strong> {{ preview.metadata.totalLinhas }}</div>
+            <v-chip color="success" size="small">Novas: {{ novosCount }}</v-chip>
+            <v-chip color="warning" size="small">Duplicadas: {{ dupCount }}</v-chip>
+            <v-chip size="small">Selecionadas: {{ selectedCount }}</v-chip>
+            <v-chip
+              v-if="preview.metadata.jaImportadoEm"
+              color="info"
+              size="small"
+            >
+              Arquivo já foi importado antes
+            </v-chip>
+          </div>
 
-    <div v-else-if="step === 'confirming'" style="padding: 2rem; text-align: center">
-      <ProgressSpinner /> Confirmando...
-    </div>
+          <v-data-table
+            :headers="previewHeaders"
+            :items="preview.itens"
+            item-value="identificador"
+            height="55vh"
+            fixed-header
+            striped="even"
+          >
+            <template #header.select>
+              <v-checkbox-btn
+                :model-value="allSelected"
+                :indeterminate="someSelected"
+                @update:model-value="toggleAll"
+              />
+            </template>
+            <template #item.select="{ item }">
+              <v-checkbox-btn
+                v-if="!item.jaExistente"
+                :model-value="selectedIds.has(item.identificador)"
+                @update:model-value="toggleItem(item.identificador)"
+              />
+              <v-icon
+                v-else
+                icon="mdi-content-copy"
+                color="warning"
+                size="small"
+                title="Já existe"
+              />
+            </template>
+            <template #item.data="{ item }">{{ fmtDateBR(item.data) }}</template>
+            <template #item.categoriaSugerida="{ item }">
+              <v-autocomplete
+                v-model="item.categoriaSugerida"
+                :items="categoryOptions"
+                item-title="label"
+                item-value="value"
+                density="compact"
+                hide-details
+              />
+            </template>
+            <template #item.valor="{ item }">
+              <span :class="classMoney(item.valor)">{{ fmtMoneyBR(item.valor) }}</span>
+            </template>
+            <template #item.actions="{ item }">
+              <v-btn
+                icon="mdi-delete"
+                variant="text"
+                color="error"
+                size="small"
+                aria-label="Remover"
+                @click="removeItem(item.identificador)"
+              />
+            </template>
+          </v-data-table>
+        </div>
 
-    <template #footer>
-      <Button label="Cancelar" severity="secondary" @click="visibleProxy = false" />
-      <Button
-        v-if="step === 'preview'"
-        :label="selectedCount === 0 ? 'Confirmar' : `Confirmar (${selectedCount})`"
-        :disabled="selectedCount === 0"
-        @click="onConfirm"
-      />
-    </template>
-  </Dialog>
+        <div v-else-if="step === 'confirming'" class="confirming">
+          <v-progress-circular indeterminate />
+          Confirmando...
+        </div>
+      </v-card-text>
+
+      <v-card-actions>
+        <v-spacer />
+        <v-btn variant="text" @click="visibleProxy = false">Cancelar</v-btn>
+        <v-btn
+          v-if="step === 'preview'"
+          color="primary"
+          :disabled="selectedCount === 0"
+          @click="onConfirm"
+        >
+          {{ selectedCount === 0 ? "Confirmar" : `Confirmar (${selectedCount})` }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
+
+<style scoped>
+.upload-loading,
+.confirming {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.preview-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+  align-items: center;
+}
+</style>

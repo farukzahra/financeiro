@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
+import vuetify from "vite-plugin-vuetify";
 import { fileURLToPath, URL } from "node:url";
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -23,7 +24,10 @@ const appGitSha = gitSha();
 const buildTime = new Date().toISOString();
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue(),
+    vuetify({ autoImport: true }),
+  ],
   define: {
     "import.meta.env.VITE_APP_VERSION": JSON.stringify(appVersion),
     "import.meta.env.VITE_APP_GIT_SHA": JSON.stringify(appGitSha),

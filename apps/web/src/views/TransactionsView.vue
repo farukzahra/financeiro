@@ -1,16 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick, watch } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { isBusinessDay as isBrazilBusinessDay } from "febraban-bank-holidays";
-import Button from "primevue/button";
-import DataTable from "primevue/datatable";
-import Column from "primevue/column";
-import InputText from "primevue/inputtext";
-import InputNumber from "primevue/inputnumber";
-import Select from "primevue/select";
-import MultiSelect from "primevue/multiselect";
-import DatePicker from "primevue/datepicker";
-import { useToast } from "primevue/usetoast";
-import { useConfirm } from "primevue/useconfirm";
+import { useSnackbar } from "../composables/useSnackbar";
+import { useConfirm } from "../composables/useConfirm";
 import { useReferenceStore } from "../stores/reference";
 import { useAuthStore } from "../stores/auth";
 import {
@@ -30,7 +22,7 @@ import ManualTransactionModal from "../components/ManualTransactionModal.vue";
 
 const ref_ = useReferenceStore();
 const auth = useAuthStore();
-const toast = useToast();
+const snackbar = useSnackbar();
 const confirm = useConfirm();
 
 const rows = ref<Transaction[]>([]);
@@ -42,13 +34,14 @@ const resumo = ref({
 });
 const loading = ref(false);
 
-type PeriodValue = Array<Date | null> | null;
-const period = ref<PeriodValue>(null);
+type PeriodValue = Date[];
+const period = ref<PeriodValue>([]);
+const periodMenu = ref(false);
 const selectedCategories = ref<string[]>([]);
 const search = ref("");
 const showImport = ref(false);
 const showManual = ref(false);
-const categoryFilterRef = ref<{ hide?: () => void } | null>(null);
+const categoryFilterOpen = ref(false);
 
 type ActivityPanel = "filters" | "cats" | "budget" | null;
 type TransactionSortField = "data" | "tipo" | "detalhe" | "categoriaId" | "valor";
@@ -149,8 +142,8 @@ function toIso(d: Date | null | undefined): string | undefined {
 }
 
 function periodBounds() {
-  const start = Array.isArray(period.value) ? period.value[0] : null;
-  const end = Array.isArray(period.value) ? period.value[1] : null;
+  const start = period.value[0] ?? null;
+  const end = period.value.length > 1 ? period.value[period.value.length - 1] : start;
   return {
     from: toIso(start),
     to: toIso(end),
@@ -262,7 +255,7 @@ function restoreSavedFilters() {
 
   const from = parseIsoDate(saved.from);
   const to = parseIsoDate(saved.to);
-  period.value = from || to ? [from, to] : null;
+  period.value = from && to ? [from, to] : from ? [from] : [];
   selectedCategories.value = saved.categories ?? [];
   search.value = saved.search ?? "";
   activePanel.value = saved.activePanel ?? null;
@@ -270,8 +263,17 @@ function restoreSavedFilters() {
   sortOrder.value = saved.sortOrder ?? 1;
 }
 
-function onPeriodModelUpdate(value: Date | Array<Date | null> | null | undefined) {
-  period.value = Array.isArray(value) ? value : value ? [value, null] : null;
+function periodLabel(): string {
+  const { from, to } = periodBounds();
+  if (!from && !to) return "Selecione";
+  if (from && to && from !== to) return `${fmtDateBR(from)} – ${fmtDateBR(to)}`;
+  if (from) return fmtDateBR(from);
+  return "Selecione";
+}
+
+function clearPeriod() {
+  period.value = [];
+  applyFilters();
 }
 
 function scheduleSaveFilters() {
@@ -332,7 +334,7 @@ function applyFilters() {
     clearTimeout(applyFiltersTimer);
     applyFiltersTimer = null;
   }
-  categoryFilterRef.value?.hide?.();
+  categoryFilterOpen.value = false;
   load();
   scheduleSaveFilters();
 }
@@ -347,19 +349,14 @@ function scheduleApplyFilters() {
 }
 
 function onCategoryFilterChange() {
-  nextTick(() => {
-    setTimeout(() => categoryFilterRef.value?.hide?.(), 0);
-  });
+  categoryFilterOpen.value = false;
 }
 
-function onSort(event: {
-  sortField?: string | ((item: Transaction) => unknown);
-  sortOrder?: 1 | -1 | 0 | null;
-}) {
-  if (typeof event.sortField === "string") {
-    sortField.value = event.sortField as TransactionSortField;
-  }
-  sortOrder.value = event.sortOrder === -1 ? -1 : 1;
+function onSortUpdate(items: { key: string; order: "asc" | "desc" }[]) {
+  const first = items[0];
+  if (!first) return;
+  sortField.value = first.key as TransactionSortField;
+  sortOrder.value = first.order === "desc" ? -1 : 1;
   scheduleSaveFilters();
 }
 
@@ -367,7 +364,7 @@ function saveBudgetOrder() {
   auth.saveSettings({
     budgetOrder: budgetOrder.value,
   }).catch(() => {
-    toast.add({
+    snackbar.add({
       severity: "error",
       summary: "Erro",
       detail: "Não foi possível salvar a ordem do orçamento.",
@@ -418,22 +415,17 @@ onMounted(async () => {
 watch([period, selectedCategories, search], scheduleApplyFilters, { deep: true });
 watch([period, selectedCategories, search, activePanel, sortField, sortOrder], scheduleSaveFilters, { deep: true });
 
-function clearPeriod() {
-  period.value = null;
-  applyFilters();
-}
-
 function limparFiltros() {
-  period.value = null;
+  period.value = [];
   selectedCategories.value = [];
   search.value = "";
-  categoryFilterRef.value?.hide?.();
+  categoryFilterOpen.value = false;
   applyFilters();
 }
 
 const hasFilter = computed(
   () =>
-    (!!period.value && (!!period.value[0] || !!period.value[1])) ||
+    period.value.length > 0 ||
     selectedCategories.value.length > 0 ||
     search.value.trim().length > 0,
 );
@@ -447,9 +439,9 @@ async function onEditField(
     const updated = await patchTransaction(row.identificador, { [field]: value as never });
     Object.assign(row, updated);
     if (field === "valor") recalculateResumo();
-    toast.add({ severity: "success", summary: "Atualizado", life: 1500 });
+    snackbar.add({ severity: "success", summary: "Atualizado", life: 1500 });
   } catch (err) {
-    toast.add({
+    snackbar.add({
       severity: "error",
       summary: "Erro ao salvar",
       detail: (err as Error).message,
@@ -462,18 +454,16 @@ function onDelete(row: Transaction) {
   confirm.require({
       message: `Excluir esta transação? (${row.detalhe || row.tipo})`,
       header: "Confirmar exclusão",
-    icon: "pi pi-exclamation-triangle",
     acceptLabel: "Excluir",
     rejectLabel: "Cancelar",
-    acceptProps: { severity: "danger" },
     accept: async () => {
       try {
         await deleteTransaction(row.identificador);
         rows.value = rows.value.filter((r) => r.identificador !== row.identificador);
         recalculateResumo();
-        toast.add({ severity: "success", summary: "Excluída", life: 1500 });
+        snackbar.add({ severity: "success", summary: "Excluída", life: 1500 });
       } catch (err) {
-        toast.add({
+        snackbar.add({
           severity: "error",
           summary: "Erro ao excluir",
           detail: (err as Error).message,
@@ -487,7 +477,7 @@ function onDelete(row: Transaction) {
 async function onCreateRuleFromRow(row: Transaction) {
   const padrao = (row.chaveNormalizada || row.detalhe || row.descricaoRaw).trim();
   if (!padrao) {
-    toast.add({
+    snackbar.add({
       severity: "warn",
         summary: "Sem padrão",
         detail: "Esta transação não tem texto suficiente para gerar regra.",
@@ -505,14 +495,14 @@ async function onCreateRuleFromRow(row: Transaction) {
       ativa: true,
     });
     await ref_.reloadRules();
-    toast.add({
+    snackbar.add({
       severity: "success",
       summary: "Regra criada",
       detail: `${padrao} -> ${row.categoriaId}`,
       life: 2500,
     });
   } catch (err) {
-    toast.add({
+    snackbar.add({
       severity: "error",
       summary: "Erro ao gerar regra",
       detail: (err as Error).message,
@@ -522,7 +512,7 @@ async function onCreateRuleFromRow(row: Transaction) {
 }
 
 function onImportFinished(stats: { totalImportadas: number; totalDuplicadas: number }) {
-  toast.add({
+  snackbar.add({
     severity: "success",
     summary: "Importado",
     detail: `${stats.totalImportadas} novas, ${stats.totalDuplicadas} duplicadas`,
@@ -583,11 +573,9 @@ function cancelDetalhe() {
 }
 
 const editingCategoriaId = ref<string | null>(null);
-const categoriaSelectRef = ref<{ show?: () => void } | null>(null);
 
 function startEditCategoria(row: Transaction) {
   editingCategoriaId.value = row.identificador;
-  nextTick(() => categoriaSelectRef.value?.show?.());
 }
 
 async function commitCategoria(row: Transaction, novoId: string) {
@@ -691,7 +679,26 @@ async function commitValor(row: Transaction) {
   await onEditField(row, "valor", formatted);
 }
 
-const tipoOptions = computed(() => ref_.tipos.map((t) => ({ label: t, value: t })));
+const tipoOptions = computed(() => ref_.tipos.map((t) => ({ title: t, value: t })));
+
+const transactionHeaders = [
+  { title: "Data", key: "data", width: 130 },
+  { title: "Tipo", key: "tipo", width: 200 },
+  { title: "Detalhe", key: "detalhe", width: 320 },
+  { title: "Valor", key: "valor", width: 160, align: "end" as const },
+  { title: "Categoria", key: "categoriaId", width: 200 },
+  { title: "", key: "actions", sortable: false, width: 90 },
+];
+
+const sortByModel = computed({
+  get: () => [
+    {
+      key: sortField.value,
+      order: (sortOrder.value === -1 ? "desc" : "asc") as "asc" | "desc",
+    },
+  ],
+  set: (items) => onSortUpdate(items),
+});
 
 // budget inline edit
 const editingBudgetId = ref<string | null>(null);
@@ -711,7 +718,7 @@ async function commitBudgetValor(b: BudgetItem) {
     const idx = budgetItems.value.findIndex(x => x.id === b.id);
     if (idx !== -1) budgetItems.value[idx] = updated;
   } catch {
-    toast.add({ severity: 'error', summary: 'Erro', detail: 'Não foi possível salvar.', life: 3000 });
+    snackbar.add({ severity: 'error', summary: 'Erro', detail: 'Não foi possível salvar.', life: 3000 });
   }
 }
 </script>
@@ -731,7 +738,7 @@ async function commitBudgetValor(b: BudgetItem) {
           aria-label="Filtros"
           @click="togglePanel('filters')"
         >
-          <i class="pi pi-filter" />
+          <v-icon icon="mdi-filter" />
         </button>
         <button
           type="button"
@@ -741,7 +748,7 @@ async function commitBudgetValor(b: BudgetItem) {
           aria-label="Resumo por categoria"
           @click="togglePanel('cats')"
         >
-          <i class="pi pi-tags" />
+          <v-icon icon="mdi-tag-multiple" />
         </button>
         <button
           type="button"
@@ -751,7 +758,7 @@ async function commitBudgetValor(b: BudgetItem) {
           aria-label="Orçamento previsto"
           @click="togglePanel('budget')"
         >
-          <i class="pi pi-wallet" />
+          <v-icon icon="mdi-wallet" />
         </button>
       </nav>
 
@@ -763,25 +770,28 @@ async function commitBudgetValor(b: BudgetItem) {
           <div class="filter-group">
             <label class="filter-label">Período</label>
             <div class="filter-row">
-              <DatePicker
-                :modelValue="period"
-                selectionMode="range"
-                dateFormat="dd/mm/yy"
-                showIcon
-                showButtonBar
-                appendTo="body"
-                :numberOfMonths="2"
-                :manualInput="false"
-                placeholder="Selecione"
-                fluid
-                @update:modelValue="onPeriodModelUpdate"
-              />
-              <Button
-                v-if="period && (period[0] || period[1])"
-                icon="pi pi-times"
-                severity="secondary"
-                text
-                rounded
+              <v-menu v-model="periodMenu" :close-on-content-click="false">
+                <template #activator="{ props: menuProps }">
+                  <v-text-field
+                    v-bind="menuProps"
+                    :model-value="periodLabel()"
+                    readonly
+                    prepend-inner-icon="mdi-calendar"
+                    placeholder="Selecione"
+                    hide-details
+                  />
+                </template>
+                <v-date-picker
+                  v-model="period"
+                  multiple="range"
+                  @update:model-value="scheduleApplyFilters"
+                />
+              </v-menu>
+              <v-btn
+                v-if="period.length > 0"
+                icon="mdi-close"
+                variant="text"
+                size="small"
                 aria-label="Limpar período"
                 @click="clearPeriod"
               />
@@ -789,43 +799,41 @@ async function commitBudgetValor(b: BudgetItem) {
           </div>
           <div class="filter-group">
             <label class="filter-label">Categorias</label>
-            <MultiSelect
-              ref="categoryFilterRef"
+            <v-select
               v-model="selectedCategories"
-              :options="categoryOptions"
-              optionLabel="label"
-              optionValue="value"
+              v-model:menu="categoryFilterOpen"
+              :items="categoryOptions"
+              item-title="label"
+              item-value="value"
               placeholder="Todas"
-              display="chip"
-              filter
-              fluid
-              @change="onCategoryFilterChange"
+              multiple
+              chips
+              closable-chips
+              hide-details
+              @update:model-value="onCategoryFilterChange"
             />
           </div>
           <div class="filter-group">
             <label class="filter-label">Buscar</label>
-            <InputText
+            <v-text-field
               v-model="search"
               placeholder="descrição ou detalhe"
-              fluid
+              hide-details
               @keydown.enter="applyFilters"
             />
           </div>
           <div class="filter-actions">
-            <Button
-              label="Filtrar"
-              icon="pi pi-filter"
-              :loading="loading"
-              @click="applyFilters"
-            />
-            <Button
-              label="Limpar"
-              icon="pi pi-eraser"
-              severity="secondary"
-              outlined
+            <v-btn color="primary" prepend-icon="mdi-filter" :loading="loading" @click="applyFilters">
+              Filtrar
+            </v-btn>
+            <v-btn
+              variant="outlined"
+              prepend-icon="mdi-eraser"
               :disabled="!hasFilter"
               @click="limparFiltros"
-            />
+            >
+              Limpar
+            </v-btn>
           </div>
         </div>
       </aside>
@@ -915,7 +923,7 @@ async function commitBudgetValor(b: BudgetItem) {
                     @dragstart="(event) => onBudgetDragStart(event, b.id)"
                     @dragend="onBudgetDragEnd"
                   >
-                    <i class="pi pi-bars" />
+                    <v-icon icon="mdi-drag" size="small" />
                   </span>
                   <span class="budget-item-nome">{{ b.descricao }}</span>
                 </div>
@@ -941,15 +949,14 @@ async function commitBudgetValor(b: BudgetItem) {
                 <span>Gasto: {{ fmtMoneyBR(spentByCategoria(b.categoriaId)) }}</span>
                 <span>
                   de
-                  <InputNumber
+                  <v-number-input
                     v-if="editingBudgetId === b.id"
                     v-model="budgetValorDraft"
-                    mode="decimal"
-                    locale="pt-BR"
-                    :minFractionDigits="2"
-                    :maxFractionDigits="2"
-                    autofocus
-                    :inputStyle="{ width: '90px', padding: '1px 4px', fontSize: '0.72rem' }"
+                    :precision="2"
+                    control-variant="hidden"
+                    density="compact"
+                    hide-details
+                    class="budget-inline-input"
                     @blur="commitBudgetValor(b)"
                     @keydown.enter.prevent="commitBudgetValor(b)"
                     @keydown.esc.prevent="editingBudgetId = null"
@@ -975,19 +982,18 @@ async function commitBudgetValor(b: BudgetItem) {
                     @dragstart="(event) => onBudgetDragStart(event, b.id)"
                     @dragend="onBudgetDragEnd"
                   >
-                    <i class="pi pi-bars" />
+                    <v-icon icon="mdi-drag" size="small" />
                   </span>
                   <span class="budget-item-nome">{{ b.descricao }}</span>
                 </div>
-                <InputNumber
+                <v-number-input
                   v-if="editingBudgetId === b.id"
                   v-model="budgetValorDraft"
-                  mode="decimal"
-                  locale="pt-BR"
-                  :minFractionDigits="2"
-                  :maxFractionDigits="2"
-                  autofocus
-                  :inputStyle="{ width: '100px', padding: '2px 6px', fontSize: '0.85rem' }"
+                  :precision="2"
+                  control-variant="hidden"
+                  density="compact"
+                  hide-details
+                  class="budget-inline-input budget-inline-input--wide"
                   @blur="commitBudgetValor(b)"
                   @keydown.enter.prevent="commitBudgetValor(b)"
                   @keydown.esc.prevent="editingBudgetId = null"
@@ -1006,18 +1012,12 @@ async function commitBudgetValor(b: BudgetItem) {
 
       <div class="center-col">
         <div class="actions-bar">
-          <Button
-            label="Nova transação"
-            icon="pi pi-plus"
-            severity="success"
-            @click="showManual = true"
-          />
-          <Button
-            label="Importar CSV"
-            icon="pi pi-upload"
-            outlined
-            @click="showImport = true"
-          />
+          <v-btn color="success" prepend-icon="mdi-plus" @click="showManual = true">
+            Nova transação
+          </v-btn>
+          <v-btn variant="outlined" prepend-icon="mdi-upload" @click="showImport = true">
+            Importar CSV
+          </v-btn>
         </div>
         <div class="summary-cards">
           <div
@@ -1080,82 +1080,72 @@ async function commitBudgetValor(b: BudgetItem) {
           </div>
         </div>
 
-        <DataTable
-        :value="rows"
-        :loading="loading"
-        :sortField="sortField"
-        :sortOrder="sortOrder"
-        stripedRows
-        size="small"
-        @sort="onSort"
-      >
-        <Column field="data" header="Data" sortable :style="{ width: '130px' }">
-          <template #body="{ data }">
-            <DatePicker
-              v-if="isEditing(data, 'data')"
-              v-model="dataDraft"
-              dateFormat="dd/mm/yy"
-              autofocus
-              fluid
-              @update:modelValue="commitData(data)"
-              @hide="cancelEditCell"
-            />
-            <span
-              v-else
-              class="editable-cell"
-              role="button"
-              tabindex="0"
-              title="Clique para editar"
-              @click="startEditCell(data, 'data')"
-              @keydown.enter.prevent="startEditCell(data, 'data')"
-            >
-              {{ fmtDateBR(data.data) }}
-            </span>
-          </template>
-        </Column>
-        <Column field="tipo" header="Tipo" sortable :style="{ width: '200px' }">
-          <template #body="{ data }">
-            <Select
-              v-if="isEditing(data, 'tipo')"
-              v-model="tipoDraft"
-              :options="tipoOptions"
-              optionLabel="label"
-              optionValue="value"
-              editable
-              filter
-              autofocus
-              @change="commitTipo(data)"
-              @hide="commitTipo(data)"
-              :pt="{ root: { style: 'width: 100%' } }"
-            />
-            <span
-              v-else
-              class="editable-cell"
-              role="button"
-              tabindex="0"
-              title="Clique para editar"
-              @click="startEditCell(data, 'tipo')"
-              @keydown.enter.prevent="startEditCell(data, 'tipo')"
-            >
-              {{ data.tipo || "—" }}
-            </span>
-          </template>
-        </Column>
-        <Column
-          field="detalhe"
-          header="Detalhe"
-          sortable
-          :style="{ width: '320px' }"
-          :headerStyle="{ width: '320px' }"
+        <v-data-table
+          :headers="transactionHeaders"
+          :items="rows"
+          :loading="loading"
+          v-model:sort-by="sortByModel"
+          item-value="identificador"
+          striped="even"
         >
-          <template #body="{ data }">
-            <InputText
-              v-if="editingDetalheId === data.identificador"
-              v-model="detalheDraft"
+          <template #item.data="{ item }">
+            <v-menu v-if="isEditing(item, 'data')" :close-on-content-click="false">
+              <template #activator="{ props: menuProps }">
+                <v-text-field
+                  v-bind="menuProps"
+                  :model-value="dataDraft ? fmtDateBR(toIso(dataDraft) ?? '') : ''"
+                  density="compact"
+                  hide-details
+                  autofocus
+                />
+              </template>
+              <v-date-picker v-model="dataDraft" @update:model-value="commitData(item)" />
+            </v-menu>
+            <span
+              v-else
+              class="editable-cell"
+              role="button"
+              tabindex="0"
+              title="Clique para editar"
+              @click="startEditCell(item, 'data')"
+              @keydown.enter.prevent="startEditCell(item, 'data')"
+            >
+              {{ fmtDateBR(item.data) }}
+            </span>
+          </template>
+          <template #item.tipo="{ item }">
+            <v-combobox
+              v-if="isEditing(item, 'tipo')"
+              v-model="tipoDraft"
+              :items="tipoOptions"
+              item-title="title"
+              item-value="value"
+              density="compact"
+              hide-details
               autofocus
-              fluid
-              @blur="commitDetalhe(data)"
-              @keydown.enter.prevent="commitDetalhe(data)"
+              @update:model-value="commitTipo(item)"
+            />
+            <span
+              v-else
+              class="editable-cell"
+              role="button"
+              tabindex="0"
+              title="Clique para editar"
+              @click="startEditCell(item, 'tipo')"
+              @keydown.enter.prevent="startEditCell(item, 'tipo')"
+            >
+              {{ item.tipo || "—" }}
+            </span>
+          </template>
+          <template #item.detalhe="{ item }">
+            <v-text-field
+              v-if="editingDetalheId === item.identificador"
+              v-model="detalheDraft"
+              density="compact"
+              hide-details
+              autofocus
+              @blur="commitDetalhe(item)"
+              @keydown.enter.prevent="commitDetalhe(item)"
               @keydown.esc.prevent="cancelDetalhe"
             />
             <span
@@ -1164,105 +1154,86 @@ async function commitBudgetValor(b: BudgetItem) {
               role="button"
               tabindex="0"
               title="Clique para editar"
-              @click="startEditDetalhe(data)"
-              @keydown.enter.prevent="startEditDetalhe(data)"
+              @click="startEditDetalhe(item)"
+              @keydown.enter.prevent="startEditDetalhe(item)"
             >
-              {{ data.detalhe || "—" }}
+              {{ item.detalhe || "—" }}
             </span>
           </template>
-        </Column>
-        <Column
-          field="valor"
-          header="Valor"
-          sortable
-          dataType="numeric"
-          headerClass="value-column-header"
-          bodyClass="value-column-body"
-          :style="{ width: '160px', textAlign: 'right' }"
-          :headerStyle="{ width: '160px', textAlign: 'right' }"
-        >
-          <template #body="{ data }">
-            <InputNumber
-              v-if="isEditing(data, 'valor')"
+          <template #item.valor="{ item }">
+            <v-number-input
+              v-if="isEditing(item, 'valor')"
               v-model="valorDraft"
+              :precision="2"
+              control-variant="hidden"
+              density="compact"
+              hide-details
               class="value-editor"
-              mode="decimal"
-              locale="pt-BR"
-              :minFractionDigits="2"
-              :maxFractionDigits="2"
               autofocus
-              @blur="commitValor(data)"
-              @keydown.enter.prevent="commitValor(data)"
+              @blur="commitValor(item)"
+              @keydown.enter.prevent="commitValor(item)"
               @keydown.esc.prevent="cancelEditCell"
             />
             <span
               v-else
               class="editable-cell money-cell"
-              :class="classMoney(data.valor)"
+              :class="classMoney(item.valor)"
               role="button"
               tabindex="0"
               title="Clique para editar"
-              @click="startEditCell(data, 'valor')"
-              @keydown.enter.prevent="startEditCell(data, 'valor')"
+              @click="startEditCell(item, 'valor')"
+              @keydown.enter.prevent="startEditCell(item, 'valor')"
             >
-              {{ fmtMoneyBR(data.valor) }}
+              {{ fmtMoneyBR(item.valor) }}
             </span>
           </template>
-        </Column>
-        <Column field="categoriaId" header="Categoria" sortable :style="{ width: '200px' }">
-          <template #body="{ data }">
-            <Select
-              v-if="editingCategoriaId === data.identificador"
-              ref="categoriaSelectRef"
-              :modelValue="data.categoriaId"
-              :options="categoryOptions"
-              optionLabel="label"
-              optionValue="value"
-              filter
+          <template #item.categoriaId="{ item }">
+            <v-autocomplete
+              v-if="editingCategoriaId === item.identificador"
+              :model-value="item.categoriaId"
+              :items="categoryOptions"
+              item-title="label"
+              item-value="value"
+              density="compact"
+              hide-details
               autofocus
-              @update:modelValue="(v) => commitCategoria(data, v as string)"
-              @hide="cancelCategoria"
-              :pt="{ root: { style: 'width: 100%' } }"
+              menu
+              @update:model-value="(v) => commitCategoria(item, v as string)"
+              @blur="cancelCategoria"
             />
             <button
               v-else
               type="button"
               class="cat-pill"
-              :style="{ background: colorForCategoria(data.categoriaId) }"
-              :title="'Clique para trocar (' + data.categoriaId + ')'"
-              @click="startEditCategoria(data)"
+              :style="{ background: colorForCategoria(item.categoriaId) }"
+              :title="'Clique para trocar (' + item.categoriaId + ')'"
+              @click="startEditCategoria(item)"
             >
-              <span class="cat-pill-nome">{{ categoryDisplayName(data.categoriaId) }}</span>
+              <span class="cat-pill-nome">{{ categoryDisplayName(item.categoriaId) }}</span>
             </button>
           </template>
-        </Column>
-        <Column header="" :style="{ width: '90px' }">
-          <template #body="{ data }">
+          <template #item.actions="{ item }">
             <div class="row-actions">
-              <Button
-                icon="pi pi-sitemap"
-                severity="secondary"
-                text
-                rounded
+              <v-btn
+                icon="mdi-sitemap"
+                variant="text"
                 size="small"
                 aria-label="Gerar regra"
                 title="Gerar regra a partir desta linha"
-                @click="onCreateRuleFromRow(data)"
+                @click="onCreateRuleFromRow(item)"
               />
-              <Button
-                icon="pi pi-trash"
-                severity="danger"
-                text
-                rounded
+              <v-btn
+                icon="mdi-delete"
+                variant="text"
+                color="error"
                 size="small"
                 aria-label="Excluir"
                 title="Excluir transação"
-                @click="onDelete(data)"
+                @click="onDelete(item)"
               />
             </div>
           </template>
-        </Column>
-      </DataTable>
+        </v-data-table>
       <div class="tx-footer">
         <span class="tx-count">{{ resumo.qtd }} {{ resumo.qtd === 1 ? 'transação' : 'transações' }}</span>
       </div>
@@ -1297,8 +1268,8 @@ section {
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0;
-  border-right: 1px solid var(--p-content-border-color);
-  background: var(--p-content-background);
+  border-right: 1px solid var(--app-border);
+  background: var(--app-surface);
 }
 
 .activity-item {
@@ -1310,7 +1281,7 @@ section {
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--app-text-muted);
   cursor: pointer;
   position: relative;
   font-size: 1.1rem;
@@ -1318,11 +1289,11 @@ section {
 }
 
 .activity-item:hover {
-  color: var(--p-text-color);
+  color: var(--app-text);
 }
 
 .activity-item--active {
-  color: var(--p-primary-color);
+  color: var(--app-primary);
 }
 
 .activity-item--active::before {
@@ -1332,13 +1303,13 @@ section {
   top: 4px;
   bottom: 4px;
   width: 2px;
-  background: var(--p-primary-color);
+  background: var(--app-primary);
   border-radius: 0 2px 2px 0;
 }
 
 .side-panel {
-  border-right: 1px solid var(--p-content-border-color);
-  background: var(--p-content-background);
+  border-right: 1px solid var(--app-border);
+  background: var(--app-surface);
   overflow: hidden;
   min-height: 0;
 }
@@ -1373,9 +1344,9 @@ section {
   gap: 0.25rem;
   min-width: 0;
   padding: 0.85rem 1rem;
-  border: 1px solid var(--p-content-border-color);
+  border: 1px solid var(--app-border);
   border-radius: 12px;
-  background: var(--p-content-background);
+  background: var(--app-surface);
 }
 
 .summary-card .label {
@@ -1401,7 +1372,7 @@ section {
 
 .summary-card--tooltip:focus-visible,
 .summary-card--tooltip:hover {
-  border-color: var(--p-primary-color);
+  border-color: var(--app-primary);
 }
 
 .summary-tooltip {
@@ -1432,7 +1403,7 @@ section {
 }
 
 .filters-card {
-  background: var(--p-content-background);
+  background: var(--app-surface);
   overflow: hidden;
   height: 100%;
 }
@@ -1443,7 +1414,7 @@ section {
   justify-content: space-between;
   padding: 0.75rem 1rem;
   font-weight: 600;
-  border-bottom: 1px solid var(--p-content-border-color);
+  border-bottom: 1px solid var(--app-border);
 }
 
 .filters-body {
@@ -1470,7 +1441,7 @@ section {
   gap: 0.25rem;
 }
 
-.filter-row :deep(.p-datepicker) {
+.filter-row :deep(.v-field) {
   flex: 1;
   min-width: 0;
 }
@@ -1481,12 +1452,12 @@ section {
   margin-top: 0.25rem;
 }
 
-.filter-actions .p-button {
+.filter-actions .v-btn {
   flex: 1;
 }
 
 .side-card {
-  background: var(--p-content-background);
+  background: var(--app-surface);
   overflow: hidden;
   height: 100%;
   display: flex;
@@ -1499,7 +1470,7 @@ section {
   justify-content: space-between;
   padding: 0.75rem 1rem;
   font-weight: 600;
-  border-bottom: 1px solid var(--p-content-border-color);
+  border-bottom: 1px solid var(--app-border);
 }
 
 .side-card-header--budget {
@@ -1522,7 +1493,7 @@ section {
 .budget-header-divider {
   width: 100%;
   height: 1px;
-  background: var(--p-content-border-color);
+  background: var(--app-border);
 }
 
 .budget-header-block {
@@ -1536,27 +1507,27 @@ section {
   align-items: flex-end;
   text-align: right;
   padding-left: 0.75rem;
-  border-left: 1px solid var(--p-content-border-color);
+  border-left: 1px solid var(--app-border);
 }
 
 .budget-header-label {
   font-size: 0.72rem;
   font-weight: 500;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--app-text-muted);
   line-height: 1.2;
 }
 
 .budget-header-total {
   font-size: 0.96rem;
   font-weight: 600;
-  color: var(--p-text-color);
+  color: var(--app-text);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .salary-cycle {
   padding: 0.65rem 1rem 0.7rem;
-  border-bottom: 1px solid var(--p-content-border-color);
+  border-bottom: 1px solid var(--app-border);
 }
 
 .salary-cycle-meta {
@@ -1566,15 +1537,15 @@ section {
   gap: 0.5rem;
   padding-bottom: 0.45rem;
   margin-bottom: 0.5rem;
-  border-bottom: 1px solid var(--p-content-border-color);
+  border-bottom: 1px solid var(--app-border);
   font-size: 0.74rem;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--app-text-muted);
 }
 
 .salary-cycle-bar-wrap {
   height: 16px;
   border-radius: 8px;
-  background: var(--p-content-border-color);
+  background: var(--app-border);
   overflow: hidden;
 }
 
@@ -1583,12 +1554,12 @@ section {
   height: 100%;
   min-width: 2rem;
   border-radius: 8px;
-  background: var(--p-green-400, #4ade80);
+  background: var(--app-accent-wash-deep);
   transition: width 400ms;
 }
 
 .salary-cycle-bar--empty {
-  background: var(--p-surface-300, #d1d5db);
+  background: #d1d5db;
 }
 
 .salary-cycle-label {
@@ -1597,9 +1568,9 @@ section {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #1f2937;
+  color: #6B5E54;
   font-size: 0.64rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1;
   font-variant-numeric: tabular-nums;
   pointer-events: none;
@@ -1609,7 +1580,7 @@ section {
   display: flex;
   justify-content: space-between;
   margin-top: 0.35rem;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--app-text-muted);
   font-size: 0.68rem;
   font-variant-numeric: tabular-nums;
 }
@@ -1634,17 +1605,17 @@ section {
   justify-content: space-between;
   padding: 0.5rem 1rem;
   cursor: pointer;
-  border-bottom: 1px solid var(--p-content-border-color);
+  border-bottom: 1px solid var(--app-border);
   border-left: 3px solid transparent;
   transition: background 120ms;
 }
 
 .cat-item:hover {
-  background: var(--p-highlight-background, rgba(0, 0, 0, 0.04));
+  background: var(--app-highlight);
 }
 
 .cat-item--active {
-  background: var(--p-highlight-background, rgba(59, 130, 246, 0.12));
+  background: var(--app-highlight);
 }
 
 .cat-id {
@@ -1678,7 +1649,7 @@ section {
   justify-content: space-between;
   padding: 0.5rem 1rem;
   font-size: 0.85rem;
-  border-bottom: 1px solid var(--p-content-border-color);
+  border-bottom: 1px solid var(--app-border);
 }
 
 .budget-label { opacity: 0.7; }
@@ -1686,7 +1657,7 @@ section {
 
 .budget-item {
   padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--p-content-border-color);
+  border-bottom: 1px solid var(--app-border);
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -1694,11 +1665,11 @@ section {
 }
 
 .budget-item:nth-child(even) {
-  background: var(--p-surface-100, rgba(0, 0, 0, 0.055));
+  background: rgba(0, 0, 0, 0.055);
 }
 
 .budget-item:hover {
-  background: var(--p-highlight-background, rgba(0, 0, 0, 0.075));
+  background: var(--app-highlight);
 }
 
 .budget-item--dragging {
@@ -1706,9 +1677,9 @@ section {
 }
 
 .budget-item--drag-over {
-  outline: 2px solid var(--p-primary-color);
+  outline: 2px solid var(--app-primary);
   outline-offset: -2px;
-  background: var(--p-highlight-background, rgba(59, 130, 246, 0.12));
+  background: var(--app-highlight);
 }
 
 .budget-item-top {
@@ -1732,7 +1703,7 @@ section {
   width: 1.25rem;
   height: 1.25rem;
   border-radius: 4px;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--app-text-muted);
   cursor: grab;
   flex: 0 0 auto;
 }
@@ -1742,8 +1713,8 @@ section {
 }
 
 .budget-drag-handle:hover {
-  background: var(--p-highlight-background, rgba(0, 0, 0, 0.06));
-  color: var(--p-text-color);
+  background: var(--app-highlight);
+  color: var(--app-text);
 }
 
 .budget-item-nome {
@@ -1761,7 +1732,7 @@ section {
 .budget-progress-wrap {
   height: 14px;
   border-radius: 7px;
-  background: var(--p-content-border-color);
+  background: var(--app-border);
   overflow: hidden;
   position: relative;
 }
@@ -1798,12 +1769,12 @@ section {
 
 .budget-edit-val {
   cursor: pointer;
-  border-bottom: 1px dashed var(--p-text-muted-color, #9ca3af);
+  border-bottom: 1px dashed var(--app-text-muted);
   transition: border-color 120ms;
 }
 
 .budget-edit-val:hover {
-  border-bottom-color: var(--p-primary-color);
+  border-bottom-color: var(--app-primary);
 }
 
 @media (max-width: 1100px) {
@@ -1821,7 +1792,7 @@ section {
     flex-wrap: wrap;
   }
 
-  .actions-bar .p-button {
+  .actions-bar .v-btn {
     flex: 1 1 180px;
   }
 
@@ -1838,7 +1809,7 @@ section {
 
 .tx-count {
   font-size: 0.75rem;
-  color: var(--p-text-muted-color, #9ca3af);
+  color: var(--app-text-muted);
   font-style: italic;
 }
 
@@ -1852,8 +1823,8 @@ section {
 }
 
 .editable-cell:hover {
-  background: var(--p-highlight-background, rgba(0, 0, 0, 0.04));
-  outline: 1px dashed var(--p-content-border-color);
+  background: var(--app-highlight);
+  outline: 1px dashed var(--app-border);
   outline-offset: 2px;
 }
 
@@ -1862,17 +1833,18 @@ section {
   font-variant-numeric: tabular-nums;
 }
 
-:deep(.value-column-header .p-datatable-column-header-content) {
-  justify-content: flex-end;
-}
-
-:deep(.value-column-body) {
-  text-align: right;
-}
-
 :deep(.value-editor) {
-  width: 80%;
+  max-width: 140px;
   margin-left: auto;
+}
+
+.budget-inline-input {
+  max-width: 90px;
+  display: inline-block;
+}
+
+.budget-inline-input--wide {
+  max-width: 100px;
 }
 
 .row-actions {
@@ -1880,15 +1852,6 @@ section {
   gap: 0.15rem;
   flex-wrap: nowrap;
   align-items: center;
-}
-
-.row-actions :deep(.p-button) {
-  width: 1.75rem;
-  height: 1.75rem;
-  padding: 0;
-}
-.row-actions :deep(.p-button-icon) {
-  font-size: 0.85rem;
 }
 
 .cat-pill {

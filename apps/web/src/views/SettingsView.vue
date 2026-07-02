@@ -1,16 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
-import TabView from "primevue/tabview";
-import TabPanel from "primevue/tabpanel";
-import DataTable from "primevue/datatable";
-import Column from "primevue/column";
-import Tag from "primevue/tag";
-import Button from "primevue/button";
-import InputText from "primevue/inputtext";
-import InputNumber from "primevue/inputnumber";
-import Select from "primevue/select";
-import Dialog from "primevue/dialog";
-import Checkbox from "primevue/checkbox";
 import { useReferenceStore } from "../stores/reference";
 import { useAuthStore } from "../stores/auth";
 import {
@@ -24,15 +13,16 @@ import {
   type BudgetItem,
   type Category,
 } from "../lib/api";
-import { useConfirm } from "primevue/useconfirm";
-import { useToast } from "primevue/usetoast";
+import { useConfirm } from "../composables/useConfirm";
+import { useSnackbar } from "../composables/useSnackbar";
 import { categoryDisplayName, categoryOptionLabel } from "../lib/categories";
 
 const ref_ = useReferenceStore();
 const auth = useAuthStore();
 const loading = ref(false);
 const confirm = useConfirm();
-const toast = useToast();
+const snackbar = useSnackbar();
+const tab = ref("categorias");
 
 onMounted(async () => {
   loading.value = true;
@@ -78,13 +68,37 @@ const salaryCycleForm = ref({
 });
 
 const ruleTypeOptions = [
-  { label: "Substring", value: "substring" },
-  { label: "Regex", value: "regex" },
+  { title: "Substring", value: "substring" },
+  { title: "Regex", value: "regex" },
 ];
 
 const salaryPaymentModeOptions = [
-  { label: "Dia do mês", value: "dayOfMonth" },
-  { label: "Dia útil do mês", value: "businessDayOfMonth" },
+  { title: "Dia do mês", value: "dayOfMonth" },
+  { title: "Dia útil do mês", value: "businessDayOfMonth" },
+];
+
+const categoryHeaders = [
+  { title: "Categoria", key: "id" },
+  { title: "Descrição", key: "descricao" },
+  { title: "Ativa", key: "ativa", width: 90 },
+  { title: "", key: "actions", sortable: false, width: 70 },
+];
+
+const ruleHeaders = [
+  { title: "Prio", key: "prioridade", width: 70 },
+  { title: "Tipo", key: "tipoPadrao", width: 110 },
+  { title: "Padrão", key: "padrao" },
+  { title: "Categoria", key: "categoriaId", width: 180 },
+  { title: "Ativa", key: "ativa", width: 90 },
+];
+
+const budgetHeaders = [
+  { title: "Dia", key: "diaVencimento", width: 60 },
+  { title: "Descrição", key: "descricao" },
+  { title: "Categoria", key: "categoriaId" },
+  { title: "Previsto/mês", key: "valorMensal", width: 150 },
+  { title: "Ativo", key: "ativo", width: 80 },
+  { title: "", key: "actions", sortable: false, width: 80 },
 ];
 
 async function loadBudget() {
@@ -101,7 +115,7 @@ function hydrateSalaryCycleForm() {
 }
 
 const categoryOptions = computed(() =>
-  ref_.categories.map((c) => ({ label: categoryOptionLabel(c), value: c.id })),
+  ref_.categories.map((c) => ({ title: categoryOptionLabel(c), value: c.id })),
 );
 
 const totalPrevisto = computed(() =>
@@ -155,9 +169,9 @@ async function saveBudget() {
       budgetRows.value.push(created);
     }
     showBudgetDialog.value = false;
-    toast.add({ severity: "success", summary: "Salvo", life: 1500 });
+    snackbar.add({ severity: "success", summary: "Salvo", life: 1500 });
   } catch (err) {
-    toast.add({
+    snackbar.add({
       severity: "error",
       summary: "Erro",
       detail: (err as Error).message,
@@ -170,14 +184,12 @@ function confirmDeleteBudget(row: BudgetItem) {
   confirm.require({
     message: `Excluir "${row.descricao}"?`,
     header: "Confirmar",
-    icon: "pi pi-exclamation-triangle",
     acceptLabel: "Excluir",
     rejectLabel: "Cancelar",
-    acceptProps: { severity: "danger" },
     accept: async () => {
       await deleteBudgetItem(row.id);
       budgetRows.value = budgetRows.value.filter((r) => r.id !== row.id);
-      toast.add({ severity: "success", summary: "Excluído", life: 1500 });
+      snackbar.add({ severity: "success", summary: "Excluído", life: 1500 });
     },
   });
 }
@@ -194,7 +206,7 @@ function openCreateRule() {
 
 async function saveRule() {
   if (!ruleForm.value.categoriaId || !ruleForm.value.padrao.trim()) {
-    toast.add({
+    snackbar.add({
       severity: "warn",
       summary: "Preencha categoria e padrão",
       life: 2500,
@@ -212,9 +224,9 @@ async function saveRule() {
     });
     await ref_.reloadRules();
     showRuleDialog.value = false;
-    toast.add({ severity: "success", summary: "Regra criada", life: 1500 });
+    snackbar.add({ severity: "success", summary: "Regra criada", life: 1500 });
   } catch (err) {
-    toast.add({
+    snackbar.add({
       severity: "error",
       summary: "Erro",
       detail: (err as Error).message,
@@ -250,7 +262,7 @@ async function saveCategory() {
   };
 
   if (!categoryForm.value.id.trim() || !body.descricao) {
-    toast.add({
+    snackbar.add({
       severity: "warn",
       summary: "Preencha os campos obrigatórios",
       life: 2500,
@@ -269,9 +281,9 @@ async function saveCategory() {
     }
     await ref_.reloadCategories();
     showCategoryDialog.value = false;
-    toast.add({ severity: "success", summary: "Categoria salva", life: 1500 });
+    snackbar.add({ severity: "success", summary: "Categoria salva", life: 1500 });
   } catch (err) {
-    toast.add({
+    snackbar.add({
       severity: "error",
       summary: "Erro",
       detail: (err as Error).message,
@@ -291,9 +303,9 @@ async function saveSalaryCycle() {
         },
       },
     });
-    toast.add({ severity: "success", summary: "Dia de pagamento salvo", life: 1500 });
+    snackbar.add({ severity: "success", summary: "Dia de pagamento salvo", life: 1500 });
   } catch (err) {
-    toast.add({
+    snackbar.add({
       severity: "error",
       summary: "Erro",
       detail: (err as Error).message,
@@ -305,302 +317,244 @@ async function saveSalaryCycle() {
 
 <template>
   <section class="settings-page">
-    <TabView>
-      <TabPanel header="Categorias" value="categorias">
+    <v-tabs v-model="tab" color="primary">
+      <v-tab value="categorias">Categorias</v-tab>
+      <v-tab value="regras">Regras</v-tab>
+      <v-tab value="orcamento">Orçamento</v-tab>
+      <v-tab value="preferencias">Preferências</v-tab>
+    </v-tabs>
+
+    <v-window v-model="tab" class="settings-window">
+      <v-window-item value="categorias">
         <div class="table-header">
           <div class="table-title">Categorias disponíveis</div>
-          <Button
-            label="Nova categoria"
-            icon="pi pi-plus"
-            severity="success"
+          <v-btn
+            color="success"
             size="small"
+            prepend-icon="mdi-plus"
             @click="openCreateCategory"
-          />
+          >
+            Nova categoria
+          </v-btn>
         </div>
+        <v-data-table
+          :headers="categoryHeaders"
+          :items="ref_.categories"
+          :loading="loading"
+          striped="even"
+        >
+          <template #item.id="{ item }">
+            <div>{{ categoryDisplayName(item.id) }}</div>
+            <small class="category-code">{{ item.id }}</small>
+          </template>
+          <template #item.ativa="{ item }">
+            <v-chip :color="item.ativa ? 'success' : 'default'" size="small">
+              {{ item.ativa ? "sim" : "não" }}
+            </v-chip>
+          </template>
+          <template #item.actions="{ item }">
+            <v-btn icon="mdi-pencil" variant="text" size="small" @click="openEditCategory(item)" />
+          </template>
+        </v-data-table>
+      </v-window-item>
 
-        <DataTable :value="ref_.categories" :loading="loading" size="small" stripedRows>
-          <Column field="id" header="Categoria">
-            <template #body="{ data }">
-              <div>{{ categoryDisplayName(data.id) }}</div>
-              <small class="category-code">{{ data.id }}</small>
-            </template>
-          </Column>
-          <Column field="descricao" header="Descrição" />
-          <Column field="ativa" header="Ativa" :style="{ width: '90px' }">
-            <template #body="{ data }">
-              <Tag :severity="data.ativa ? 'success' : 'secondary'" :value="data.ativa ? 'sim' : 'não'" />
-            </template>
-          </Column>
-          <Column header="" :style="{ width: '70px' }">
-            <template #body="{ data }">
-              <div class="icon-actions">
-                <Button icon="pi pi-pencil" text rounded size="small" @click="openEditCategory(data)" />
-              </div>
-            </template>
-          </Column>
-        </DataTable>
-      </TabPanel>
-
-      <TabPanel header="Regras" value="regras">
+      <v-window-item value="regras">
         <div class="table-header">
           <div class="table-title">Regras de categorização</div>
-          <Button
-            label="Nova regra"
-            icon="pi pi-plus"
-            severity="success"
-            size="small"
-            @click="openCreateRule"
-          />
+          <v-btn color="success" size="small" prepend-icon="mdi-plus" @click="openCreateRule">
+            Nova regra
+          </v-btn>
         </div>
+        <v-data-table :headers="ruleHeaders" :items="ref_.rules" :loading="loading" striped="even">
+          <template #item.categoriaId="{ item }">
+            {{ categoryDisplayName(item.categoriaId) }}
+          </template>
+          <template #item.ativa="{ item }">
+            <v-chip :color="item.ativa ? 'success' : 'default'" size="small">
+              {{ item.ativa ? "sim" : "não" }}
+            </v-chip>
+          </template>
+        </v-data-table>
+      </v-window-item>
 
-        <DataTable :value="ref_.rules" :loading="loading" size="small" stripedRows>
-          <Column field="prioridade" header="Prio" :style="{ width: '70px' }" />
-          <Column field="tipoPadrao" header="Tipo" :style="{ width: '110px' }" />
-          <Column field="padrao" header="Padrão" />
-          <Column field="categoriaId" header="Categoria" :style="{ width: '180px' }">
-            <template #body="{ data }">{{ categoryDisplayName(data.categoriaId) }}</template>
-          </Column>
-          <Column field="ativa" header="Ativa" :style="{ width: '90px' }">
-            <template #body="{ data }">
-              <Tag :severity="data.ativa ? 'success' : 'secondary'" :value="data.ativa ? 'sim' : 'não'" />
-            </template>
-          </Column>
-        </DataTable>
-      </TabPanel>
-
-      <TabPanel header="Orçamento" value="orcamento">
+      <v-window-item value="orcamento">
         <div class="budget-header">
           <div class="total-previsto">
             Total previsto mensal: <strong>{{ fmtMoney(totalPrevisto) }}</strong>
           </div>
-          <Button
-            label="Novo item"
-            icon="pi pi-plus"
-            severity="success"
-            size="small"
-            @click="openCreateBudget"
-          />
+          <v-btn color="success" size="small" prepend-icon="mdi-plus" @click="openCreateBudget">
+            Novo item
+          </v-btn>
         </div>
+        <v-data-table :headers="budgetHeaders" :items="budgetRows" :loading="loading" striped="even">
+          <template #item.diaVencimento="{ item }">{{ item.diaVencimento ?? "—" }}</template>
+          <template #item.categoriaId="{ item }">
+            {{ item.categoriaId ? categoryDisplayName(item.categoriaId) : "—" }}
+          </template>
+          <template #item.valorMensal="{ item }">
+            <span class="money-neg">{{ fmtMoney(item.valorMensal) }}</span>
+          </template>
+          <template #item.ativo="{ item }">
+            <v-chip :color="item.ativo ? 'success' : 'default'" size="small">
+              {{ item.ativo ? "sim" : "não" }}
+            </v-chip>
+          </template>
+          <template #item.actions="{ item }">
+            <v-btn icon="mdi-pencil" variant="text" size="small" @click="openEditBudget(item)" />
+            <v-btn
+              icon="mdi-delete"
+              variant="text"
+              color="error"
+              size="small"
+              @click="confirmDeleteBudget(item)"
+            />
+          </template>
+        </v-data-table>
+      </v-window-item>
 
-        <DataTable :value="budgetRows" :loading="loading" size="small" stripedRows>
-          <Column field="diaVencimento" header="Dia" :style="{ width: '60px' }">
-            <template #body="{ data }">{{ data.diaVencimento ?? "—" }}</template>
-          </Column>
-          <Column field="descricao" header="Descrição" />
-          <Column field="categoriaId" header="Categoria">
-            <template #body="{ data }">
-              {{ data.categoriaId ? categoryDisplayName(data.categoriaId) : "—" }}
-            </template>
-          </Column>
-          <Column field="valorMensal" header="Previsto/mês" :style="{ width: '150px' }">
-            <template #body="{ data }">
-              <span class="money-neg">{{ fmtMoney(data.valorMensal) }}</span>
-            </template>
-          </Column>
-          <Column field="ativo" header="Ativo" :style="{ width: '80px' }">
-            <template #body="{ data }">
-              <Tag :severity="data.ativo ? 'success' : 'secondary'" :value="data.ativo ? 'sim' : 'não'" />
-            </template>
-          </Column>
-          <Column header="" :style="{ width: '80px' }">
-            <template #body="{ data }">
-              <div class="icon-actions">
-                <Button icon="pi pi-pencil" text rounded size="small" @click="openEditBudget(data)" />
-                <Button
-                  icon="pi pi-trash"
-                  text
-                  rounded
-                  size="small"
-                  severity="danger"
-                  @click="confirmDeleteBudget(data)"
-                />
-              </div>
-            </template>
-          </Column>
-        </DataTable>
-      </TabPanel>
-
-      <TabPanel header="Preferências" value="preferencias">
+      <v-window-item value="preferencias">
         <div class="prefs-card">
           <div class="table-title">Dia de pagamento</div>
           <p class="prefs-copy">
             Defina quando seu pagamento cai. O ciclo no painel será calculado entre o último e o próximo pagamento.
           </p>
-
           <div class="salary-cycle-grid">
             <div class="form-col">
               <label>Como o pagamento acontece</label>
-              <Select
+              <v-select
                 v-model="salaryCycleForm.mode"
-                :options="salaryPaymentModeOptions"
-                optionLabel="label"
-                optionValue="value"
-                fluid
+                :items="salaryPaymentModeOptions"
+                item-title="title"
+                item-value="value"
               />
             </div>
-
             <div v-if="salaryCycleForm.mode === 'dayOfMonth'" class="form-col">
               <label>Dia do pagamento</label>
-              <InputNumber
+              <v-number-input
                 v-model="salaryCycleForm.dayOfMonth"
                 placeholder="ex: 1"
-                fluid
+                control-variant="hidden"
               />
             </div>
-
             <div v-else class="form-col">
               <label>Qual dia útil do mês</label>
-              <InputNumber
+              <v-number-input
                 v-model="salaryCycleForm.businessDayOrdinal"
                 placeholder="ex: 5"
-                fluid
+                control-variant="hidden"
               />
             </div>
           </div>
-
           <div class="prefs-actions">
-            <Button label="Salvar dia de pagamento" icon="pi pi-check" @click="saveSalaryCycle" />
+            <v-btn color="primary" prepend-icon="mdi-check" @click="saveSalaryCycle">
+              Salvar dia de pagamento
+            </v-btn>
           </div>
         </div>
-      </TabPanel>
-    </TabView>
+      </v-window-item>
+    </v-window>
 
-    <Dialog
-      v-model:visible="showBudgetDialog"
-      :header="editingBudget ? 'Editar item' : 'Novo item de orçamento'"
-      modal
-      :style="{ width: '420px' }"
-    >
-      <div class="form-col">
-        <label>Descrição</label>
-        <InputText v-model="budgetForm.descricao" fluid />
+    <!-- Budget dialog -->
+    <v-dialog v-model="showBudgetDialog" max-width="420">
+      <v-card :title="editingBudget ? 'Editar item' : 'Novo item de orçamento'">
+        <v-card-text class="form-col">
+          <label>Descrição</label>
+          <v-text-field v-model="budgetForm.descricao" />
+          <label>Categoria (opcional)</label>
+          <v-autocomplete
+            v-model="budgetForm.categoriaId"
+            :items="categoryOptions"
+            item-title="title"
+            item-value="value"
+            clearable
+            placeholder="Nenhuma"
+          />
+          <label>Dia de vencimento (opcional)</label>
+          <v-number-input
+            v-model="budgetForm.diaVencimento"
+            :min="1"
+            :max="31"
+            placeholder="ex: 15"
+            control-variant="hidden"
+          />
+          <label>Valor mensal previsto (R$)</label>
+          <v-number-input
+            v-model="budgetForm.valorMensal"
+            :precision="2"
+            control-variant="hidden"
+          />
+          <v-checkbox v-model="budgetForm.ativo" label="Ativo" hide-details />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="outlined" @click="showBudgetDialog = false">Cancelar</v-btn>
+          <v-btn color="primary" prepend-icon="mdi-check" @click="saveBudget">Salvar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
-        <label>Categoria (opcional)</label>
-        <Select
-          v-model="budgetForm.categoriaId"
-          :options="categoryOptions"
-          optionLabel="label"
-          optionValue="value"
-          showClear
-          filter
-          placeholder="Nenhuma"
-          fluid
-        />
+    <!-- Category dialog -->
+    <v-dialog v-model="showCategoryDialog" max-width="420">
+      <v-card :title="editingCategory ? 'Editar categoria' : 'Nova categoria'">
+        <v-card-text class="form-col">
+          <label>ID da categoria</label>
+          <v-text-field
+            v-model="categoryForm.id"
+            :disabled="!!editingCategory"
+            placeholder="ex: CASA DE PAO"
+          />
+          <label>Descrição</label>
+          <v-text-field v-model="categoryForm.descricao" placeholder="Nome exibido nas telas" />
+          <v-checkbox v-model="categoryForm.ativa" label="Ativa" hide-details />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="outlined" @click="showCategoryDialog = false">Cancelar</v-btn>
+          <v-btn color="primary" prepend-icon="mdi-check" @click="saveCategory">Salvar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
-        <label>Dia de vencimento (opcional)</label>
-        <InputNumber
-          v-model="budgetForm.diaVencimento"
-          :min="1"
-          :max="31"
-          placeholder="ex: 15"
-          fluid
-        />
-
-        <label>Valor mensal previsto (R$)</label>
-        <InputNumber
-          v-model="budgetForm.valorMensal"
-          mode="decimal"
-          locale="pt-BR"
-          :minFractionDigits="2"
-          :maxFractionDigits="2"
-          fluid
-        />
-
-        <div class="checkbox-row">
-          <Checkbox v-model="budgetForm.ativo" binary inputId="budget-ativo" />
-          <label for="budget-ativo">Ativo</label>
-        </div>
-      </div>
-
-      <template #footer>
-        <Button label="Cancelar" severity="secondary" outlined @click="showBudgetDialog = false" />
-        <Button label="Salvar" icon="pi pi-check" @click="saveBudget" />
-      </template>
-    </Dialog>
-
-    <Dialog
-      v-model:visible="showCategoryDialog"
-      :header="editingCategory ? 'Editar categoria' : 'Nova categoria'"
-      modal
-      :style="{ width: '420px' }"
-    >
-      <div class="form-col">
-        <label>ID da categoria</label>
-        <InputText
-          v-model="categoryForm.id"
-          :disabled="!!editingCategory"
-          placeholder="ex: CASA DE PAO"
-          fluid
-        />
-
-        <label>Descrição</label>
-        <InputText
-          v-model="categoryForm.descricao"
-          placeholder="Nome exibido nas telas"
-          fluid
-        />
-
-        <div class="checkbox-row">
-          <Checkbox v-model="categoryForm.ativa" binary inputId="category-ativa" />
-          <label for="category-ativa">Ativa</label>
-        </div>
-      </div>
-
-      <template #footer>
-        <Button label="Cancelar" severity="secondary" outlined @click="showCategoryDialog = false" />
-        <Button label="Salvar" icon="pi pi-check" @click="saveCategory" />
-      </template>
-    </Dialog>
-
-    <Dialog
-      v-model:visible="showRuleDialog"
-      header="Nova regra"
-      modal
-      :style="{ width: '460px' }"
-    >
-      <div class="form-col">
-        <label>Categoria</label>
-        <Select
-          v-model="ruleForm.categoriaId"
-          :options="categoryOptions"
-          optionLabel="label"
-          optionValue="value"
-          filter
-          placeholder="Selecione"
-          fluid
-        />
-
-        <label>Tipo</label>
-        <Select
-          v-model="ruleForm.tipoPadrao"
-          :options="ruleTypeOptions"
-          optionLabel="label"
-          optionValue="value"
-          fluid
-        />
-
-        <label>Padrão</label>
-        <InputText
-          v-model="ruleForm.padrao"
-          placeholder="ex: CASA DE PAO BETHELEM L"
-          fluid
-          @keydown.enter.prevent="saveRule"
-        />
-
-        <label>Prioridade</label>
-        <InputNumber
-          v-model="ruleForm.prioridade"
-          :min="1"
-          :max="9999"
-          fluid
-        />
-      </div>
-
-      <template #footer>
-        <Button label="Cancelar" severity="secondary" outlined @click="showRuleDialog = false" />
-        <Button label="Salvar" icon="pi pi-check" @click="saveRule" />
-      </template>
-    </Dialog>
+    <!-- Rule dialog -->
+    <v-dialog v-model="showRuleDialog" max-width="460">
+      <v-card title="Nova regra">
+        <v-card-text class="form-col">
+          <label>Categoria</label>
+          <v-autocomplete
+            v-model="ruleForm.categoriaId"
+            :items="categoryOptions"
+            item-title="title"
+            item-value="value"
+            placeholder="Selecione"
+          />
+          <label>Tipo</label>
+          <v-select
+            v-model="ruleForm.tipoPadrao"
+            :items="ruleTypeOptions"
+            item-title="title"
+            item-value="value"
+          />
+          <label>Padrão</label>
+          <v-text-field
+            v-model="ruleForm.padrao"
+            placeholder="ex: CASA DE PAO BETHELEM L"
+            @keydown.enter.prevent="saveRule"
+          />
+          <label>Prioridade</label>
+          <v-number-input
+            v-model="ruleForm.prioridade"
+            :min="1"
+            :max="9999"
+            control-variant="hidden"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="outlined" @click="showRuleDialog = false">Cancelar</v-btn>
+          <v-btn color="primary" prepend-icon="mdi-check" @click="saveRule">Salvar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </section>
 </template>
 
@@ -609,6 +563,10 @@ async function saveSalaryCycle() {
   height: 100%;
   overflow-y: auto;
   padding: 1rem 1.5rem 2rem;
+}
+
+.settings-window {
+  padding-top: 1rem;
 }
 
 .budget-header,
@@ -630,11 +588,6 @@ async function saveSalaryCycle() {
   opacity: 0.6;
 }
 
-.icon-actions {
-  display: flex;
-  gap: 0.25rem;
-}
-
 .form-col {
   display: flex;
   flex-direction: column;
@@ -645,18 +598,6 @@ async function saveSalaryCycle() {
   font-size: 0.78rem;
   opacity: 0.7;
   margin-top: 0.25rem;
-}
-
-.checkbox-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.35rem;
-}
-
-.checkbox-row label {
-  margin-top: 0;
-  opacity: 0.9;
 }
 
 .prefs-card {

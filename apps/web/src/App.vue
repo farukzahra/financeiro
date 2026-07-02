@@ -1,23 +1,21 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { RouterLink, RouterView } from "vue-router";
-import Toast from "primevue/toast";
-import ConfirmDialog from "primevue/confirmdialog";
-import Button from "primevue/button";
-import InputText from "primevue/inputtext";
-import Password from "primevue/password";
-import { useToast } from "primevue/usetoast";
+import AppSnackbar from "./components/AppSnackbar.vue";
+import AppConfirmDialog from "./components/AppConfirmDialog.vue";
+import { useSnackbar } from "./composables/useSnackbar";
 import { useAuthStore } from "./stores/auth";
 import { useReferenceStore } from "./stores/reference";
 
 const auth = useAuthStore();
 const refs = useReferenceStore();
-const toast = useToast();
+const snackbar = useSnackbar();
 
 const mode = ref<"login" | "register">("login");
 const name = ref("");
 const email = ref("");
 const password = ref("");
+const showPassword = ref(false);
 
 onMounted(async () => {
   await auth.load();
@@ -36,7 +34,7 @@ async function submitAuth() {
     }
     await refs.load();
   } catch (err) {
-    toast.add({
+    snackbar.add({
       severity: "error",
       summary: mode.value === "login" ? "Erro ao entrar" : "Erro ao cadastrar",
       detail: (err as Error).message,
@@ -53,11 +51,11 @@ async function onLogout() {
 </script>
 
 <template>
-  <Toast />
-  <ConfirmDialog />
+  <AppSnackbar />
+  <AppConfirmDialog />
 
   <div v-if="auth.loading" class="auth-loading">
-    <i class="pi pi-spin pi-spinner" />
+    <v-progress-circular indeterminate color="primary" size="48" />
   </div>
 
   <template v-else-if="auth.user">
@@ -68,22 +66,22 @@ async function onLogout() {
       </div>
       <nav class="app-header-nav" aria-label="Navegação principal">
         <RouterLink to="/" class="app-nav-link" title="Transações">
-          <i class="pi pi-list" />
+          <v-icon icon="mdi-format-list-bulleted" size="small" />
           <span>Transações</span>
         </RouterLink>
         <RouterLink to="/configuracoes" class="app-nav-link" title="Configurações">
-          <i class="pi pi-cog" />
+          <v-icon icon="mdi-cog" size="small" />
           <span>Configurações</span>
         </RouterLink>
         <RouterLink to="/sobre" class="app-nav-link" title="Sobre">
-          <i class="pi pi-info-circle" />
+          <v-icon icon="mdi-information" size="small" />
           <span>Sobre</span>
         </RouterLink>
       </nav>
       <div class="app-user">
         <span v-if="auth.user.role === 'admin'" class="app-role">admin</span>
         <span class="app-user-email">{{ auth.user.email }}</span>
-        <Button icon="pi pi-sign-out" text rounded aria-label="Sair" @click="onLogout" />
+        <v-btn icon="mdi-logout" variant="text" size="small" aria-label="Sair" @click="onLogout" />
       </div>
     </header>
     <main class="app-shell">
@@ -117,32 +115,34 @@ async function onLogout() {
 
       <div v-if="mode === 'register'" class="field">
         <label>Nome</label>
-        <InputText v-model="name" autocomplete="name" fluid />
+        <v-text-field v-model="name" autocomplete="name" />
       </div>
 
       <div class="field">
         <label>Email</label>
-        <InputText v-model="email" type="email" autocomplete="email" fluid />
+        <v-text-field v-model="email" type="email" autocomplete="email" />
       </div>
 
       <div class="field">
         <label>Senha</label>
-        <Password
+        <v-text-field
           v-model="password"
-          :feedback="mode === 'register'"
-          toggleMask
+          :type="showPassword ? 'text' : 'password'"
+          :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
           autocomplete="current-password"
-          fluid
+          @click:append-inner="showPassword = !showPassword"
         />
       </div>
 
-      <Button
+      <v-btn
         type="submit"
-        :label="mode === 'login' ? 'Entrar' : 'Criar conta'"
-        icon="pi pi-sign-in"
+        color="primary"
+        block
         :loading="auth.loading"
-        fluid
-      />
+        :prepend-icon="mode === 'login' ? 'mdi-login' : 'mdi-account-plus'"
+      >
+        {{ mode === "login" ? "Entrar" : "Criar conta" }}
+      </v-btn>
 
       <p v-if="auth.error" class="login-error">{{ auth.error }}</p>
     </form>
@@ -155,12 +155,7 @@ async function onLogout() {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  background: var(--p-content-background);
-}
-
-.auth-loading {
-  font-size: 2rem;
-  color: var(--p-primary-color);
+  background: var(--app-background);
 }
 
 .login-panel {
@@ -169,9 +164,9 @@ async function onLogout() {
   flex-direction: column;
   gap: 1rem;
   padding: 2rem;
-  border: 1px solid var(--p-content-border-color);
+  border: 1px solid var(--app-border);
   border-radius: 8px;
-  background: var(--p-surface-0, #fff);
+  background: var(--app-surface);
 }
 
 .login-brand {
@@ -185,7 +180,7 @@ async function onLogout() {
 .auth-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  border: 1px solid var(--p-content-border-color);
+  border: 1px solid var(--app-border);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -195,12 +190,12 @@ async function onLogout() {
   background: transparent;
   padding: 0.65rem;
   cursor: pointer;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--app-text-muted);
 }
 
 .auth-tabs button.active {
-  background: var(--p-primary-color);
-  color: var(--p-primary-contrast-color, #fff);
+  background: var(--app-primary-wash);
+  color: var(--app-primary-wash-text);
 }
 
 .field {
@@ -211,18 +206,14 @@ async function onLogout() {
 
 .field label {
   font-size: 0.78rem;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--app-text-muted);
 }
 
 .login-error {
   margin: 0;
   text-align: center;
   font-size: 0.8rem;
-  color: var(--p-text-muted-color, #6b7280);
-}
-
-.login-error {
-  color: var(--p-red-600, #dc2626);
+  color: rgb(var(--v-theme-error));
 }
 
 .app-user {
@@ -236,8 +227,9 @@ async function onLogout() {
 .app-role {
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
-  background: var(--p-primary-color);
-  color: var(--p-primary-contrast-color, #fff);
+  background: var(--app-primary-wash);
+  color: var(--app-primary-wash-text);
+  border: 1px solid rgba(30, 90, 168, 0.12);
   font-size: 0.72rem;
 }
 
@@ -247,6 +239,6 @@ async function onLogout() {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.85rem;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--app-text-muted);
 }
 </style>

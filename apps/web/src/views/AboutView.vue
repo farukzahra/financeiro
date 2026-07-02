@@ -5,6 +5,12 @@ const buildTime = new Date(import.meta.env.VITE_BUILD_TIME);
 
 const historyItems = [
   {
+    build: "0.15.0",
+    title: "UI migrada para Vuetify",
+    detail:
+      "Substituição do PrimeVue por Vuetify 3 com tema azul e laranja, mantendo tabelas, filtros, modais e feedback da interface.",
+  },
+  {
     build: "0.14.2",
     title: "Tooltips nos cards de resumo",
     detail:
@@ -131,8 +137,8 @@ function formatBuildTime(date: Date) {
   height: 100%;
   overflow-y: auto;
   background:
-    radial-gradient(circle at top left, rgba(34, 197, 94, 0.12), transparent 24%),
-    linear-gradient(180deg, #f7faf8 0%, #f3f5f4 100%);
+    radial-gradient(circle at top left, rgba(30, 90, 168, 0.12), transparent 24%),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
 .about-shell {
@@ -145,8 +151,8 @@ function formatBuildTime(date: Date) {
 
 .about-hero,
 .about-section {
-  background: var(--p-content-background);
-  border: 1px solid var(--p-content-border-color);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
   border-radius: 8px;
   padding: 1.1rem 1.2rem;
 }
@@ -163,7 +169,7 @@ function formatBuildTime(date: Date) {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #15803d;
+  color: rgb(var(--v-theme-primary));
 }
 
 h1 {
@@ -174,7 +180,7 @@ h1 {
 
 p {
   margin: 0;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--app-text-muted);
   line-height: 1.6;
 }
 
@@ -183,8 +189,8 @@ p {
   gap: 0.35rem;
   padding: 0.95rem 1rem;
   border-radius: 8px;
-  background: linear-gradient(180deg, rgba(34, 197, 94, 0.08), rgba(21, 128, 61, 0.02));
-  border: 1px solid rgba(21, 128, 61, 0.18);
+  background: linear-gradient(180deg, rgba(30, 90, 168, 0.08), rgba(249, 115, 22, 0.04));
+  border: 1px solid rgba(30, 90, 168, 0.18);
 }
 
 .about-build-label {
@@ -192,7 +198,7 @@ p {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #166534;
+  color: rgb(var(--v-theme-primary));
 }
 
 .about-build-value {
@@ -203,13 +209,13 @@ p {
 
 .about-build-meta {
   font-size: 0.82rem;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--app-text-muted);
 }
 
 .about-build-commit {
   font-size: 0.82rem;
   font-weight: 600;
-  color: #166534;
+  color: rgb(var(--v-theme-primary));
   font-variant-numeric: tabular-nums;
 }
 
@@ -223,7 +229,7 @@ p {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--p-text-muted-color, #6b7280);
+  color: var(--app-text-muted);
 }
 
 .about-history {
@@ -236,7 +242,7 @@ p {
   grid-template-columns: 110px minmax(0, 1fr);
   gap: 0.9rem;
   padding: 0.95rem 0;
-  border-top: 1px solid var(--p-content-border-color);
+  border-top: 1px solid var(--app-border);
 }
 
 .about-history-item:first-child {
