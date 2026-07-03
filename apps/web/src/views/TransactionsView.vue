@@ -1086,6 +1086,8 @@ async function commitBudgetValor(b: BudgetItem) {
           :loading="loading"
           v-model:sort-by="sortByModel"
           item-value="identificador"
+          :items-per-page="-1"
+          hide-default-footer
           striped="even"
         >
           <template #item.data="{ item }">

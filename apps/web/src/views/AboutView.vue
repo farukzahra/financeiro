@@ -5,6 +5,12 @@ const buildTime = new Date(import.meta.env.VITE_BUILD_TIME);
 
 const historyItems = [
   {
+    build: "0.15.1",
+    title: "Tabela de gastos sem paginação",
+    detail:
+      "A tabela principal de transações passa a exibir todas as linhas do período filtrado de uma vez, sem controles de paginação.",
+  },
+  {
     build: "0.15.0",
     title: "UI migrada para Vuetify",
     detail:
