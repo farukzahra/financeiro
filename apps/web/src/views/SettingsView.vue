@@ -93,12 +93,12 @@ const ruleHeaders = [
 ];
 
 const budgetHeaders = [
-  { title: "Dia", key: "diaVencimento", width: 60 },
-  { title: "Descrição", key: "descricao" },
-  { title: "Categoria", key: "categoriaId" },
-  { title: "Previsto/mês", key: "valorMensal", width: 150 },
-  { title: "Ativo", key: "ativo", width: 80 },
-  { title: "", key: "actions", sortable: false, width: 80 },
+  { title: "Dia", key: "diaVencimento", width: 80 },
+  { title: "Descrição", key: "descricao", width: 140 },
+  { title: "Categoria", key: "categoriaId", width: 130 },
+  { title: "Previsto/mês", key: "valorMensal", width: 200 },
+  { title: "Ativo", key: "ativo", width: 95 },
+  { title: "", key: "actions", sortable: false, width: 100 },
 ];
 
 async function loadBudget() {
@@ -341,6 +341,8 @@ async function saveSalaryCycle() {
           :headers="categoryHeaders"
           :items="ref_.categories"
           :loading="loading"
+          :items-per-page="-1"
+          hide-default-footer
           striped="even"
         >
           <template #item.id="{ item }">
@@ -365,7 +367,14 @@ async function saveSalaryCycle() {
             Nova regra
           </v-btn>
         </div>
-        <v-data-table :headers="ruleHeaders" :items="ref_.rules" :loading="loading" striped="even">
+        <v-data-table
+          :headers="ruleHeaders"
+          :items="ref_.rules"
+          :loading="loading"
+          :items-per-page="-1"
+          hide-default-footer
+          striped="even"
+        >
           <template #item.categoriaId="{ item }">
             {{ categoryDisplayName(item.categoriaId) }}
           </template>
@@ -386,10 +395,25 @@ async function saveSalaryCycle() {
             Novo item
           </v-btn>
         </div>
-        <v-data-table :headers="budgetHeaders" :items="budgetRows" :loading="loading" striped="even">
+        <v-data-table
+          :headers="budgetHeaders"
+          :items="budgetRows"
+          :loading="loading"
+          :items-per-page="-1"
+          hide-default-footer
+          striped="even"
+        >
           <template #item.diaVencimento="{ item }">{{ item.diaVencimento ?? "—" }}</template>
+          <template #item.descricao="{ item }">
+            <span class="cell-ellipsis" :title="item.descricao">{{ item.descricao }}</span>
+          </template>
           <template #item.categoriaId="{ item }">
-            {{ item.categoriaId ? categoryDisplayName(item.categoriaId) : "—" }}
+            <span
+              class="cell-ellipsis"
+              :title="item.categoriaId ? categoryDisplayName(item.categoriaId) : ''"
+            >
+              {{ item.categoriaId ? categoryDisplayName(item.categoriaId) : "—" }}
+            </span>
           </template>
           <template #item.valorMensal="{ item }">
             <span class="money-neg">{{ fmtMoney(item.valorMensal) }}</span>
@@ -617,5 +641,13 @@ async function saveSalaryCycle() {
 
 .prefs-actions {
   margin-top: 1rem;
+}
+
+.cell-ellipsis {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 </style>

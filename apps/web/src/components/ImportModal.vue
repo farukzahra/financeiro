@@ -198,6 +198,8 @@ function toggleAll() {
             :headers="previewHeaders"
             :items="preview.itens"
             item-value="identificador"
+            :items-per-page="-1"
+            hide-default-footer
             height="55vh"
             fixed-header
             striped="even"

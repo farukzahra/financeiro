@@ -5,6 +5,12 @@ const buildTime = new Date(import.meta.env.VITE_BUILD_TIME);
 
 const historyItems = [
   {
+    build: "0.15.2",
+    title: "Tabelas sem paginação e orçamento mais compacto",
+    detail:
+      "Todas as data tables exibem todos os itens de uma vez. Na aba de orçamento, descrição e categoria ocupam menos espaço e as demais colunas ganham largura.",
+  },
+  {
     build: "0.15.1",
     title: "Tabela de gastos sem paginação",
     detail:
