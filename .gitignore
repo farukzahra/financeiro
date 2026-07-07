@@ -24,3 +24,11 @@ user-data-*.sql
 dados/output/
 dados/sheets/
 dados/exports/
+
+# Investigacao local com credenciais (nao commitar)
+planos/guia-deploy-vps.local.md
+planos/vps-secrets/
+
+# Playwright
+apps/web/test-results/
+apps/web/playwright-report/

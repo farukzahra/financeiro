@@ -1,0 +1,18 @@
+---
+description: Ao corrigir bugs de UI, criar teste E2E Playwright correspondente
+globs: apps/web/**/*
+alwaysApply: false
+---
+
+# Bugfixes de UI com teste E2E
+
+Quando o usuário reportar um bug de tela/UI neste projeto:
+
+1. Verificar se já existe spec E2E em `apps/web/e2e/` para essa tela.
+2. Se não existir, criar o spec base com mocks de API (`e2e/fixtures/mock-api.ts`).
+3. Se existir, adicionar um caso de teste que reproduza o bug reportado.
+4. Corrigir o bug.
+5. Executar `pnpm test:e2e` antes de concluir.
+
+Testes E2E **nunca** gravam no banco: mockar POST/PATCH/DELETE via `page.route`.
+Auth preferencial: mock de `GET /api/auth/me` com usuário logado.

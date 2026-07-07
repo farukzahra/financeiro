@@ -5,6 +5,12 @@ const buildTime = new Date(import.meta.env.VITE_BUILD_TIME);
 
 const historyItems = [
   {
+    build: "0.15.3",
+    title: "Combo de categoria inline corrigido",
+    detail:
+      "Ao clicar na pill de categoria na tabela de transações, o autocomplete abre o menu na hora e a troca persiste corretamente. Inclui testes E2E Playwright.",
+  },
+  {
     build: "0.15.2",
     title: "Tabelas sem paginação e orçamento mais compacto",
     detail:

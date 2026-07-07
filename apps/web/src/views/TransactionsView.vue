@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, computed, watch, nextTick } from "vue";
 import { isBusinessDay as isBrazilBusinessDay } from "febraban-bank-holidays";
 import { useSnackbar } from "../composables/useSnackbar";
 import { useConfirm } from "../composables/useConfirm";
@@ -573,18 +573,42 @@ function cancelDetalhe() {
 }
 
 const editingCategoriaId = ref<string | null>(null);
+const categoriaMenuOpen = ref(false);
+let categoriaBlurTimer: ReturnType<typeof setTimeout> | null = null;
 
-function startEditCategoria(row: Transaction) {
+async function startEditCategoria(row: Transaction) {
   editingCategoriaId.value = row.identificador;
+  categoriaMenuOpen.value = false;
+  await nextTick();
+  categoriaMenuOpen.value = true;
+}
+
+function scheduleCancelCategoria() {
+  if (categoriaBlurTimer) clearTimeout(categoriaBlurTimer);
+  categoriaBlurTimer = setTimeout(() => {
+    categoriaBlurTimer = null;
+    cancelCategoria();
+  }, 150);
+}
+
+function clearCategoriaBlurTimer() {
+  if (categoriaBlurTimer) {
+    clearTimeout(categoriaBlurTimer);
+    categoriaBlurTimer = null;
+  }
 }
 
 async function commitCategoria(row: Transaction, novoId: string) {
+  clearCategoriaBlurTimer();
+  categoriaMenuOpen.value = false;
   editingCategoriaId.value = null;
   if (novoId === row.categoriaId) return;
   await onEditField(row, "categoriaId", novoId);
 }
 
 function cancelCategoria() {
+  clearCategoriaBlurTimer();
+  categoriaMenuOpen.value = false;
   editingCategoriaId.value = null;
 }
 
@@ -1193,15 +1217,17 @@ async function commitBudgetValor(b: BudgetItem) {
             <v-autocomplete
               v-if="editingCategoriaId === item.identificador"
               :model-value="item.categoriaId"
+              v-model:menu="categoriaMenuOpen"
               :items="categoryOptions"
               item-title="label"
               item-value="value"
               density="compact"
               hide-details
               autofocus
-              menu
+              :menu-props="{ zIndex: 2500 }"
               @update:model-value="(v) => commitCategoria(item, v as string)"
-              @blur="cancelCategoria"
+              @blur="scheduleCancelCategoria"
+              @keydown.esc.prevent="cancelCategoria"
             />
             <button
               v-else
