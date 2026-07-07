@@ -574,40 +574,46 @@ function cancelDetalhe() {
 
 const editingCategoriaId = ref<string | null>(null);
 const categoriaMenuOpen = ref(false);
-let categoriaBlurTimer: ReturnType<typeof setTimeout> | null = null;
+let categoriaMenuCloseTimer: ReturnType<typeof setTimeout> | null = null;
 
 async function startEditCategoria(row: Transaction) {
+  clearCategoriaMenuCloseTimer();
   editingCategoriaId.value = row.identificador;
   categoriaMenuOpen.value = false;
   await nextTick();
   categoriaMenuOpen.value = true;
 }
 
-function scheduleCancelCategoria() {
-  if (categoriaBlurTimer) clearTimeout(categoriaBlurTimer);
-  categoriaBlurTimer = setTimeout(() => {
-    categoriaBlurTimer = null;
-    cancelCategoria();
-  }, 150);
-}
-
-function clearCategoriaBlurTimer() {
-  if (categoriaBlurTimer) {
-    clearTimeout(categoriaBlurTimer);
-    categoriaBlurTimer = null;
+function clearCategoriaMenuCloseTimer() {
+  if (categoriaMenuCloseTimer) {
+    clearTimeout(categoriaMenuCloseTimer);
+    categoriaMenuCloseTimer = null;
   }
 }
 
+function onCategoriaMenuChange(open: boolean) {
+  categoriaMenuOpen.value = open;
+  if (open) {
+    clearCategoriaMenuCloseTimer();
+    return;
+  }
+  clearCategoriaMenuCloseTimer();
+  categoriaMenuCloseTimer = setTimeout(() => {
+    categoriaMenuCloseTimer = null;
+    if (editingCategoriaId.value) cancelCategoria();
+  }, 200);
+}
+
 async function commitCategoria(row: Transaction, novoId: string) {
-  clearCategoriaBlurTimer();
+  if (novoId === row.categoriaId) return;
+  clearCategoriaMenuCloseTimer();
   categoriaMenuOpen.value = false;
   editingCategoriaId.value = null;
-  if (novoId === row.categoriaId) return;
   await onEditField(row, "categoriaId", novoId);
 }
 
 function cancelCategoria() {
-  clearCategoriaBlurTimer();
+  clearCategoriaMenuCloseTimer();
   categoriaMenuOpen.value = false;
   editingCategoriaId.value = null;
 }
@@ -667,11 +673,56 @@ function parseIso(s: string): Date {
   return new Date(y, m - 1, d);
 }
 
-function startEditCell(row: Transaction, field: EditField) {
+const tipoMenuOpen = ref(false);
+let tipoMenuCloseTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearTipoMenuCloseTimer() {
+  if (tipoMenuCloseTimer) {
+    clearTimeout(tipoMenuCloseTimer);
+    tipoMenuCloseTimer = null;
+  }
+}
+
+function tipoText(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+  if (value && typeof value === "object" && "value" in value) {
+    return String((value as { value: string }).value).trim();
+  }
+  return String(value ?? "").trim();
+}
+
+async function startEditCell(row: Transaction, field: EditField) {
   editingCell.value = { id: row.identificador, field };
   if (field === "data") dataDraft.value = parseIso(row.data);
-  else if (field === "tipo") tipoDraft.value = row.tipo;
-  else if (field === "valor") valorDraft.value = Number(row.valor);
+  else if (field === "tipo") {
+    tipoDraft.value = row.tipo;
+    tipoMenuOpen.value = false;
+    await nextTick();
+    tipoMenuOpen.value = true;
+  } else if (field === "valor") valorDraft.value = Number(row.valor);
+}
+
+function onTipoMenuChange(open: boolean) {
+  tipoMenuOpen.value = open;
+  if (open) {
+    clearTipoMenuCloseTimer();
+    return;
+  }
+  clearTipoMenuCloseTimer();
+  tipoMenuCloseTimer = setTimeout(() => {
+    tipoMenuCloseTimer = null;
+    if (editingCell.value?.field === "tipo") cancelEditCell();
+  }, 200);
+}
+
+async function onTipoPick(row: Transaction, value: unknown) {
+  const novo = tipoText(value);
+  tipoDraft.value = novo;
+  if (!novo || novo === row.tipo) return;
+  clearTipoMenuCloseTimer();
+  tipoMenuOpen.value = false;
+  editingCell.value = null;
+  await onEditField(row, "tipo", novo);
 }
 
 function cancelEditCell() {
@@ -689,8 +740,9 @@ async function commitData(row: Transaction) {
 
 async function commitTipo(row: Transaction) {
   const novo = tipoDraft.value.trim();
-  editingCell.value = null;
   if (!novo || novo === row.tipo) return;
+  tipoMenuOpen.value = false;
+  editingCell.value = null;
   await onEditField(row, "tipo", novo);
 }
 
@@ -1143,13 +1195,17 @@ async function commitBudgetValor(b: BudgetItem) {
             <v-combobox
               v-if="isEditing(item, 'tipo')"
               v-model="tipoDraft"
+              v-model:menu="tipoMenuOpen"
               :items="tipoOptions"
               item-title="title"
               item-value="value"
               density="compact"
               hide-details
               autofocus
-              @update:model-value="commitTipo(item)"
+              :menu-props="{ zIndex: 2500 }"
+              @update:model-value="(v) => onTipoPick(item, v)"
+              @update:menu="onTipoMenuChange"
+              @keydown.esc.prevent="cancelEditCell"
             />
             <span
               v-else
@@ -1226,7 +1282,7 @@ async function commitBudgetValor(b: BudgetItem) {
               autofocus
               :menu-props="{ zIndex: 2500 }"
               @update:model-value="(v) => commitCategoria(item, v as string)"
-              @blur="scheduleCancelCategoria"
+              @update:menu="onCategoriaMenuChange"
               @keydown.esc.prevent="cancelCategoria"
             />
             <button

@@ -8,12 +8,14 @@ test.describe("Transações — edição inline de categoria", () => {
     await expect(page.getByText("Mercado Central")).toBeVisible();
   });
 
-  test("clicar na pill abre o autocomplete com menu de categorias", async ({ page }) => {
+  test("menu de categoria permanece aberto após o clique", async ({ page }) => {
     await page.locator(".cat-pill").first().click();
 
-    const autocomplete = page.locator(".v-data-table .v-autocomplete");
-    await expect(autocomplete).toBeVisible();
-    await expect(page.locator(".v-overlay__content .v-list-item").first()).toBeVisible();
+    const menu = page.locator(".v-overlay__content .v-list-item").first();
+    await expect(menu).toBeVisible();
+    await page.waitForTimeout(400);
+    await expect(menu).toBeVisible();
+    await expect(page.locator(".v-data-table .v-autocomplete")).toBeVisible();
   });
 
   test("selecionar outra categoria salva e fecha o editor", async ({ page }) => {

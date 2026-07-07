@@ -5,6 +5,12 @@ const buildTime = new Date(import.meta.env.VITE_BUILD_TIME);
 
 const historyItems = [
   {
+    build: "0.15.4",
+    title: "Combos inline não fecham ao abrir",
+    detail:
+      "Categoria e tipo na tabela de transações mantêm o menu aberto após o clique. Cancelamento passa a ocorrer só ao fechar o menu sem alteração.",
+  },
+  {
     build: "0.15.3",
     title: "Combo de categoria inline corrigido",
     detail:

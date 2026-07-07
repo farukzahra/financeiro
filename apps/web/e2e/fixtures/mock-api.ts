@@ -47,7 +47,7 @@ export async function mockAuthenticatedApp(page: Page) {
       return route.fulfill({ json: [] });
     }
     if (method === "GET" && path === "/transactions/tipos") {
-      return route.fulfill({ json: ["Compra"] });
+      return route.fulfill({ json: ["Compra", "Transferência"] });
     }
     if (method === "GET" && path === "/transactions") {
       return route.fulfill({
