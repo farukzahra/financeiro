@@ -5,15 +5,29 @@ import { z } from "zod";
 // ---------------------------------------------------------------------------
 
 export const CategorySchema = z.object({
-  id: z.string().min(1),
+  id: z.string().uuid(),
+  code: z.string().min(1),
   descricao: z.string().min(1),
   ativa: z.boolean(),
 });
 export type Category = z.infer<typeof CategorySchema>;
 
-export const CategoryUpsertSchema = CategorySchema.extend({
+export const CategoryCreateSchema = z.object({
+  code: z.string().min(1),
+  descricao: z.string().min(1),
   ativa: z.boolean().optional().default(true),
 });
+export type CategoryCreate = z.infer<typeof CategoryCreateSchema>;
+
+export const CategoryUpdateSchema = z.object({
+  code: z.string().min(1).optional(),
+  descricao: z.string().min(1).optional(),
+  ativa: z.boolean().optional(),
+});
+export type CategoryUpdate = z.infer<typeof CategoryUpdateSchema>;
+
+/** @deprecated use CategoryCreateSchema / CategoryUpdateSchema */
+export const CategoryUpsertSchema = CategoryCreateSchema;
 export type CategoryUpsert = z.infer<typeof CategoryUpsertSchema>;
 
 export const RuleTypeSchema = z.enum(["substring", "regex"]);
@@ -21,7 +35,7 @@ export type RuleType = z.infer<typeof RuleTypeSchema>;
 
 export const CategoryRuleSchema = z.object({
   id: z.string().uuid(),
-  categoriaId: z.string(),
+  categoriaId: z.string().uuid(),
   tipoPadrao: RuleTypeSchema,
   padrao: z.string().min(1),
   prioridade: z.number().int(),
@@ -79,7 +93,7 @@ export const ConfirmItemSchema = z.object({
   tipo: z.string(),
   detalhe: z.string(),
   chaveNormalizada: z.string(),
-  categoriaId: z.string(),
+  categoriaId: z.string().uuid(),
   categoryRuleId: z.string().uuid().nullable(),
   regraAplicada: z.string(),
 });
@@ -113,7 +127,7 @@ export const TransactionSchema = z.object({
   tipo: z.string(),
   detalhe: z.string(),
   chaveNormalizada: z.string(),
-  categoriaId: z.string(),
+  categoriaId: z.string().uuid(),
   categoryRuleId: z.string().uuid().nullable(),
   regraAplicada: z.string(),
   importadoEm: z.string(),
@@ -122,7 +136,7 @@ export const TransactionSchema = z.object({
 export type Transaction = z.infer<typeof TransactionSchema>;
 
 export const TransactionUpdateSchema = z.object({
-  categoriaId: z.string().optional(),
+  categoriaId: z.string().uuid().optional(),
   observacao: z.string().nullable().optional(),
   detalhe: z.string().optional(),
   data: z
@@ -142,7 +156,7 @@ export const TransactionCreateSchema = z.object({
   valor: z.string().regex(/^-?\d+(\.\d{1,2})?$/),
   tipo: z.string().min(1),
   detalhe: z.string().default(""),
-  categoriaId: z.string().min(1),
+  categoriaId: z.string().uuid(),
   observacao: z.string().nullable().optional(),
 });
 export type TransactionCreate = z.infer<typeof TransactionCreateSchema>;
@@ -164,7 +178,7 @@ export type TransactionsQuery = z.infer<typeof TransactionsQuerySchema>;
 export const BudgetItemSchema = z.object({
   id: z.string().uuid(),
   descricao: z.string().min(1),
-  categoriaId: z.string().nullable(),
+  categoriaId: z.string().uuid().nullable(),
   diaVencimento: z.number().int().min(1).max(31).nullable(),
   valorMensal: z.string().regex(/^-?\d+(\.\d{1,2})?$/),
   ativo: z.boolean(),
@@ -174,7 +188,7 @@ export type BudgetItem = z.infer<typeof BudgetItemSchema>;
 
 export const BudgetItemCreateSchema = z.object({
   descricao: z.string().min(1),
-  categoriaId: z.string().nullable().optional(),
+  categoriaId: z.string().uuid().nullable().optional(),
   diaVencimento: z.number().int().min(1).max(31).nullable().optional(),
   valorMensal: z.string().regex(/^-?\d+(\.\d{1,2})?$/),
   ativo: z.boolean().optional().default(true),

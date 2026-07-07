@@ -1,9 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import { and, between, eq, gte, ilike, inArray, lte, or, sql as drizzleSql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { transactions, imports } from "../db/schema.js";
+import { transactions, imports, categories } from "../db/schema.js";
 import { TransactionUpdateSchema, TransactionCreateSchema } from "@financeiro/shared";
 import { chaveAgrupamento } from "../services/normalize.js";
+import { indexCategories } from "../services/category-lookup.js";
 import { requireUser } from "../auth.js";
 
 const MANUAL_IMPORT_HASH = "__manual__";
@@ -50,7 +51,14 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
     else if (to) filters.push(lte(transactions.data, to));
 
     const cats = Array.isArray(category) ? category : category ? [category] : [];
-    if (cats.length) filters.push(inArray(transactions.categoriaId, cats));
+    if (cats.length) {
+      const allCategories = await db.select().from(categories);
+      const catIndex = indexCategories(allCategories);
+      const resolved = cats
+        .map((c) => catIndex.resolveId(c))
+        .filter((c): c is string => Boolean(c));
+      if (resolved.length) filters.push(inArray(transactions.categoriaId, resolved));
+    }
 
     if (q) {
       const like = `%${q}%`;
@@ -99,6 +107,9 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
     const importId = await getOrCreateManualImportId(user.id);
     const identificador = crypto.randomUUID();
     const chave = chaveAgrupamento(d.tipo, d.detalhe);
+    const catIndex = indexCategories(await db.select().from(categories));
+    const categoriaId = catIndex.resolveId(d.categoriaId);
+    if (!categoriaId) return reply.code(400).send({ error: "Categoria invalida" });
     const [created] = await db
       .insert(transactions)
       .values({
@@ -111,7 +122,7 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
         tipo: d.tipo,
         detalhe: d.detalhe,
         chaveNormalizada: chave,
-        categoriaId: d.categoriaId,
+        categoriaId,
         categoryRuleId: null,
         regraAplicada: "manual",
         observacao: d.observacao ?? null,
@@ -127,7 +138,10 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
 
     const updates: Record<string, unknown> = {};
     if (parsed.data.categoriaId) {
-      updates.categoriaId = parsed.data.categoriaId;
+      const catIndex = indexCategories(await db.select().from(categories));
+      const resolved = catIndex.resolveId(parsed.data.categoriaId);
+      if (!resolved) return reply.code(400).send({ error: "Categoria invalida" });
+      updates.categoriaId = resolved;
       updates.categoryRuleId = null;
       updates.regraAplicada = "manual";
     }

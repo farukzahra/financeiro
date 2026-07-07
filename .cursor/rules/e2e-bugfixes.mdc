@@ -14,5 +14,21 @@ Quando o usuário reportar um bug de tela/UI neste projeto:
 4. Corrigir o bug.
 5. Executar `pnpm test:e2e` antes de concluir.
 
-Testes E2E **nunca** gravam no banco: mockar POST/PATCH/DELETE via `page.route`.
-Auth preferencial: mock de `GET /api/auth/me` com usuário logado.
+## Cobertura E2E por tela (manter atualizado)
+
+| Tela / fluxo | Spec |
+|--------------|------|
+| Login | `e2e/auth.spec.ts` |
+| Transações — listagem | `e2e/transactions-list.spec.ts` |
+| Transações — categoria inline | `e2e/transactions-category.spec.ts` |
+| Transações — tipo inline | `e2e/transactions-tipo.spec.ts` |
+| Importar extrato (modal) | `e2e/import.spec.ts` |
+| Nova transação manual (modal) | `e2e/manual-transaction.spec.ts` |
+| Configurações — categorias | `e2e/settings-categories.spec.ts` |
+| Configurações — regras | `e2e/settings-rules.spec.ts` |
+| Configurações — orçamento | `e2e/settings-budget.spec.ts` |
+| Configurações — preferências | `e2e/settings-preferences.spec.ts` |
+| Sobre | `e2e/about.spec.ts` |
+
+Testes E2E **nunca** gravam no banco: mockar POST/PATCH/DELETE via `page.route` e estado em memória (`createMockApiState` + `installMockApi`).
+Auth preferencial: mock de `GET /auth/me` com usuário logado.

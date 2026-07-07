@@ -19,10 +19,20 @@ const CATEGORY_LABELS: Record<string, string> = {
   OUTROS: "OUTROS",
 };
 
-export function categoryDisplayName(categoryId: string): string {
+function findCategory(categoryId: string, catalog?: Category[]): Category | undefined {
+  return catalog?.find((c) => c.id === categoryId || c.code === categoryId);
+}
+
+export function categoryDisplayName(categoryId: string, catalog?: Category[]): string {
+  const hit = findCategory(categoryId, catalog);
+  if (hit) return hit.descricao || hit.code;
   return CATEGORY_LABELS[categoryId] ?? categoryId;
 }
 
 export function categoryOptionLabel(category: Category): string {
-  return categoryDisplayName(category.id);
+  return category.descricao || categoryDisplayName(category.code, [category]);
+}
+
+export function categoryCode(categoryId: string, catalog?: Category[]): string {
+  return findCategory(categoryId, catalog)?.code ?? categoryId;
 }

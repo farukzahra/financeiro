@@ -3,24 +3,23 @@ import { db, sql } from "./client.js";
 import { categories } from "./schema.js";
 import { sql as drizzleSql } from "drizzle-orm";
 
-// Categorias simplificadas combinadas com docs/parser-categorizacao-nubank.md / docs/PLANO_SISTEMA.md.
 const SEED_CATEGORIES = [
-  { id: "ALIMENTACAO", descricao: "Alimentacao (mercado e restaurante)" },
-  { id: "FARMACIA", descricao: "Farmacia / remedios" },
-  { id: "SAUDE", descricao: "Saude (consultas, planos)" },
-  { id: "GASOLINA", descricao: "Gasolina / combustivel" },
-  { id: "TRANSPORTE", descricao: "Transporte (estacionamento, app)" },
-  { id: "COMPRAS", descricao: "Compras gerais" },
-  { id: "AGRO", descricao: "Agropecuaria" },
-  { id: "VIAGEM", descricao: "Viagem / hospedagem" },
-  { id: "ACADEMIA", descricao: "Academia / esporte" },
-  { id: "PIX", descricao: "Transferencias Pix / TED" },
-  { id: "APLICACAO RDB", descricao: "Aplicacao em RDB" },
-  { id: "RESGATE RDB", descricao: "Resgate de RDB" },
-  { id: "FATURA GENERICA", descricao: "Pagamento de fatura" },
-  { id: "DEBITO EM CONTA", descricao: "Debito automatico" },
-  { id: "SAQUE", descricao: "Saque em dinheiro" },
-  { id: "OUTROS", descricao: "Sem categoria definida" },
+  { code: "ALIMENTACAO", descricao: "Alimentação (mercado e restaurante)" },
+  { code: "FARMACIA", descricao: "Farmácia / remédios" },
+  { code: "SAUDE", descricao: "Saúde (consultas, planos)" },
+  { code: "GASOLINA", descricao: "Gasolina / combustível" },
+  { code: "TRANSPORTE", descricao: "Transporte (estacionamento, app)" },
+  { code: "COMPRAS", descricao: "Compras gerais" },
+  { code: "AGRO", descricao: "Agropecuária" },
+  { code: "VIAGEM", descricao: "Viagem / hospedagem" },
+  { code: "ACADEMIA", descricao: "Academia / esporte" },
+  { code: "PIX", descricao: "Transferências Pix / TED" },
+  { code: "APLICACAO RDB", descricao: "Aplicação em RDB" },
+  { code: "RESGATE RDB", descricao: "Resgate de RDB" },
+  { code: "FATURA GENERICA", descricao: "Pagamento de fatura" },
+  { code: "DEBITO EM CONTA", descricao: "Débito automático" },
+  { code: "SAQUE", descricao: "Saque em dinheiro" },
+  { code: "OUTROS", descricao: "Sem categoria definida" },
 ];
 
 async function main() {
@@ -29,7 +28,7 @@ async function main() {
       .insert(categories)
       .values({ ...c, ativa: true })
       .onConflictDoUpdate({
-        target: categories.id,
+        target: categories.code,
         set: {
           descricao: drizzleSql`EXCLUDED.descricao`,
         },

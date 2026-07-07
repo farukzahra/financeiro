@@ -929,7 +929,7 @@ async function commitBudgetValor(b: BudgetItem) {
             @click="filtrarPorCategoria(c.id)"
           >
             <div class="cat-id">
-              <span class="cat-nome">{{ categoryDisplayName(c.id) }}</span>
+              <span class="cat-nome">{{ categoryDisplayName(c.id, ref_.categories) }}</span>
               <span class="cat-qtd">{{ c.qtd }}</span>
             </div>
             <div class="cat-valor" :class="classMoney(c.total)">
@@ -1293,7 +1293,7 @@ async function commitBudgetValor(b: BudgetItem) {
               :title="'Clique para trocar (' + item.categoriaId + ')'"
               @click="startEditCategoria(item)"
             >
-              <span class="cat-pill-nome">{{ categoryDisplayName(item.categoriaId) }}</span>
+              <span class="cat-pill-nome">{{ categoryDisplayName(item.categoriaId, ref_.categories) }}</span>
             </button>
           </template>
           <template #item.actions="{ item }">

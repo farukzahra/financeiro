@@ -64,6 +64,7 @@ export async function updateUserSettings(settings: UserSettings): Promise<AuthUs
 
 export type Category = {
   id: string;
+  code: string;
   descricao: string;
   ativa: boolean;
 };
@@ -170,7 +171,7 @@ export async function listCategories(): Promise<Category[]> {
 }
 
 export async function createCategory(body: {
-  id: string;
+  code: string;
   descricao: string;
   ativa?: boolean;
 }): Promise<Category> {

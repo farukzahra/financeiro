@@ -332,24 +332,20 @@ comandos destrutivos (`push --force`, `reset --hard`) sem pedido claro.
 
 ## Verificacao recomendada
 
-Sem suite de testes automatizados evidente neste repositorio. Antes de entregar
-mudancas, rode pelo menos:
+Antes de entregar mudancas, rode na raiz:
 
 ```powershell
+pnpm test
+```
+
+Isso executa testes unitarios da API (Vitest) e E2E da web (Playwright). O `pnpm build` tambem roda `pnpm test` automaticamente antes de compilar.
+
+Comandos individuais:
+
+```powershell
+pnpm --filter @financeiro/api test
+pnpm test:e2e
 pnpm build
-```
-
-Quando a mudanca envolver banco:
-
-```powershell
-pnpm db:migrate
-pnpm db:seed
-```
-
-Quando envolver UI, suba API/web e valide no navegador:
-
-```powershell
-pnpm dev
 ```
 
 Fluxo manual minimo para importacao:

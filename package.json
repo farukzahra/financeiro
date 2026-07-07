@@ -1,11 +1,12 @@
 {
   "name": "financeiro",
   "private": true,
-  "version": "0.15.4",
+  "version": "0.15.5",
   "packageManager": "pnpm@10.0.0",
   "scripts": {
     "dev": "pnpm -r --parallel run dev",
-    "build": "pnpm -r run build",
+    "test": "pnpm --filter @financeiro/api test && pnpm --filter @financeiro/web test:e2e",
+    "build": "pnpm test && pnpm -r run build",
     "release:check": "node scripts/check-release.mjs --staged",
     "hooks:install": "git config core.hooksPath .githooks",
     "db:up": "docker compose up -d db",

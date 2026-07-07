@@ -1,0 +1,16 @@
+---
+description: Usar UUID como chave primária em todas as tabelas novas
+globs: apps/api/src/db/**/*
+alwaysApply: true
+---
+
+# Chave primária UUID
+
+Ao criar ou alterar tabelas neste projeto:
+
+1. **Sempre** usar `uuid` com `defaultRandom()` como PK (`id`), no mesmo padrão de `app_user`, `import`, `category_rule`, `budget_item`.
+2. Identificadores legíveis pelo usuário (slug, código Nubank, e-mail) ficam em colunas **separadas** com `UNIQUE`, nunca como PK.
+3. FKs referenciam o `id` UUID da tabela pai — inclusive em relações **N:N** (tabela de junção com `id` UUID próprio + FKs UUID).
+4. Ao migrar tabela legada com PK textual, renomear a coluna antiga para `code` (ou nome de domínio) e adicionar `id uuid` como nova PK, migrando referências.
+
+Exemplo aplicado em `category`: PK `id` (uuid), código canônico em `code` (text, unique). Transações, regras e orçamento referenciam `category.id`.

@@ -5,6 +5,12 @@ const buildTime = new Date(import.meta.env.VITE_BUILD_TIME);
 
 const historyItems = [
   {
+    build: "0.15.5",
+    title: "Categorias com UUID e import CSV corrigido",
+    detail:
+      "Categorias passam a usar id UUID com código estável (ex.: ALIMENTACAO). O import de extrato volta a mapear categoria no preview e confirmar corretamente. Inclui migração de banco, testes unitários e E2E.",
+  },
+  {
     build: "0.15.4",
     title: "Combos inline não fecham ao abrir",
     detail:

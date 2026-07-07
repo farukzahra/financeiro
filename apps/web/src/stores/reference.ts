@@ -45,6 +45,11 @@ export const useReferenceStore = defineStore("reference", () => {
   const categoryOptions = computed(() =>
     categories.value.map((c) => ({ label: categoryOptionLabel(c), value: c.id })),
   );
+
+  function categoryIdByCode(code: string): string | undefined {
+    return categories.value.find((c) => c.code === code || c.id === code)?.id;
+  }
+
   return {
     categories,
     rules,
@@ -56,5 +61,6 @@ export const useReferenceStore = defineStore("reference", () => {
     reloadTipos,
     reset,
     categoryOptions,
+    categoryIdByCode,
   };
 });

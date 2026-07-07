@@ -1,0 +1,20 @@
+---
+description: Toda mudança relevante exige testes; build roda a suite completa
+alwaysApply: true
+---
+
+# Testes obrigatórios
+
+Ao implementar ou corrigir comportamento neste projeto:
+
+1. **Backend** (`apps/api`): testes unitários Vitest em `src/**/*.test.ts` para funções de domínio relevantes (parser, normalize, categorizer, category-lookup, etc.). Sem banco real.
+2. **Frontend** (`apps/web`): testes E2E Playwright em `apps/web/e2e/` com mocks de API (`e2e/fixtures/mock-api.ts`). Sem gravar no banco.
+3. Ao corrigir bug: adicionar caso de teste que reproduza o bug antes ou junto da correção.
+4. Antes de concluir: rodar `pnpm test` na raiz (unit + E2E).
+5. O script `pnpm build` na raiz já executa `pnpm test` antes do build — não remover essa etapa.
+
+Comandos:
+
+- `pnpm test` — unit (API) + E2E (web)
+- `pnpm --filter @financeiro/api test` — só unitários
+- `pnpm test:e2e` — só E2E

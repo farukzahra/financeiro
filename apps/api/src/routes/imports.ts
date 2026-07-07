@@ -4,6 +4,7 @@ import { db } from "../db/client.js";
 import { categories, categoryRules, imports, transactions } from "../db/schema.js";
 import { extractFileMetadata, parseCsv } from "../services/parser.js";
 import { categorizeAll, type CategoryRuleLite } from "../services/categorizer.js";
+import { indexCategories } from "../services/category-lookup.js";
 import { ConfirmRequestSchema } from "@financeiro/shared";
 import { requireUser } from "../auth.js";
 
@@ -32,16 +33,16 @@ export async function registerImportsRoutes(app: FastifyInstance) {
       where: and(eq(categoryRules.userId, user.id), eq(categoryRules.ativa, true)),
     });
     const allCategories = await db.query.categories.findMany();
-    const catIds = new Set(allCategories.map((c) => c.id));
+    const catIndex = indexCategories(allCategories);
     const lite: CategoryRuleLite[] = allRules.map((r) => ({
       id: r.id,
-      categoriaId: r.categoriaId,
+      categoriaId: catIndex.codeOf(r.categoriaId),
       tipoPadrao: r.tipoPadrao as "substring" | "regex",
       padrao: r.padrao,
       prioridade: r.prioridade,
     }));
 
-    const categorizados = categorizeAll(rows, lite, catIds);
+    const categorizados = categorizeAll(rows, lite, catIndex.codes());
 
     const ids = rows.map((r) => r.identificador);
     const existentes = ids.length
@@ -83,6 +84,9 @@ export async function registerImportsRoutes(app: FastifyInstance) {
     }
     const { metadata, itens } = parsed.data;
 
+    const allCategories = await db.query.categories.findMany();
+    const catIndex = indexCategories(allCategories);
+
     const result = await db.transaction(async (tx) => {
       const [imp] = await tx
         .insert(imports)
@@ -100,6 +104,10 @@ export async function registerImportsRoutes(app: FastifyInstance) {
       let inseridas = 0;
       let duplicadas = 0;
       for (const it of itens) {
+        const categoriaId = catIndex.resolveId(it.categoriaId);
+        if (!categoriaId) {
+          throw new Error(`Categoria invalida: ${it.categoriaId}`);
+        }
         const res = await tx
           .insert(transactions)
           .values({
@@ -112,7 +120,7 @@ export async function registerImportsRoutes(app: FastifyInstance) {
             tipo: it.tipo,
             detalhe: it.detalhe,
             chaveNormalizada: it.chaveNormalizada,
-            categoriaId: it.categoriaId,
+            categoriaId,
             categoryRuleId: it.categoryRuleId,
             regraAplicada: it.regraAplicada,
           })

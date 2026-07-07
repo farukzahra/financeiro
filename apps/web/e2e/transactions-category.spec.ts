@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { mockAuthenticatedApp, mockTransaction } from "./fixtures/mock-api";
+import { mockAuthenticatedApp, mockTransaction, CAT_ALIMENTACAO } from "./fixtures/mock-api";
 
 test.describe("Transações — edição inline de categoria", () => {
   test.beforeEach(async ({ page }) => {
@@ -39,9 +39,9 @@ test.describe("Transações — edição inline de categoria", () => {
     await page.locator(".cat-pill").first().click();
     await page.locator(".v-overlay__content .v-list-item").filter({ hasText: "ALIMENTAÇÃO" }).click();
 
-    await expect.poll(() => patchedBody?.categoriaId).toBe("ALIMENTACAO");
+    await expect.poll(() => patchedBody?.categoriaId).toBe(CAT_ALIMENTACAO);
     await expect(page.locator(".cat-pill")).toBeVisible();
-    await expect(page.locator(".cat-pill-nome").first()).toHaveText("ALIMENTAÇÃO");
+    await expect(page.locator(".cat-pill-nome").first()).toHaveText("Alimentação");
     await expect(page.locator(".v-data-table .v-autocomplete")).toHaveCount(0);
   });
 });

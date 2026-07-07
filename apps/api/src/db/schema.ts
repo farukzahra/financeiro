@@ -33,11 +33,18 @@ export const users = pgTable(
   }),
 );
 
-export const categories = pgTable("category", {
-  id: text("id").primaryKey(),
-  descricao: text("descricao").notNull(),
-  ativa: boolean("ativa").notNull().default(true),
-});
+export const categories = pgTable(
+  "category",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    code: text("code").notNull(),
+    descricao: text("descricao").notNull(),
+    ativa: boolean("ativa").notNull().default(true),
+  },
+  (t) => ({
+    codeUnique: uniqueIndex("idx_category_code_unique").on(t.code),
+  }),
+);
 
 export const categoryRules = pgTable(
   "category_rule",

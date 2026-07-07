@@ -8,6 +8,7 @@ import {
   type PreviewResponse,
 } from "../lib/api";
 import { fmtMoneyBR, fmtDateBR, classMoney } from "../lib/format";
+import { categoryOptionLabel } from "../lib/categories";
 
 const props = defineProps<{ visible: boolean }>();
 const emit = defineEmits<{
@@ -80,9 +81,12 @@ async function onConfirm() {
     const novos = preview.value.itens.filter(
       (i) => !i.jaExistente && selectedIds.value.has(i.identificador),
     );
-    const result = await confirmImport({
-      metadata: preview.value.metadata,
-      itens: novos.map((i) => ({
+    const itens = novos.map((i) => {
+      const categoriaId = ref_.categoryIdByCode(i.categoriaSugerida);
+      if (!categoriaId) {
+        throw new Error(`Categoria desconhecida: ${i.categoriaSugerida}`);
+      }
+      return {
         identificador: i.identificador,
         data: i.data,
         valor: i.valor,
@@ -90,10 +94,14 @@ async function onConfirm() {
         tipo: i.tipo,
         detalhe: i.detalhe,
         chaveNormalizada: i.chaveNormalizada,
-        categoriaId: i.categoriaSugerida,
+        categoriaId,
         categoryRuleId: i.categoryRuleId,
         regraAplicada: i.regraAplicada,
-      })),
+      };
+    });
+    const result = await confirmImport({
+      metadata: preview.value.metadata,
+      itens,
     });
     emit("imported", {
       totalImportadas: result.totalImportadas,
@@ -112,7 +120,14 @@ async function onConfirm() {
   }
 }
 
-const categoryOptions = computed(() => ref_.categoryOptions);
+const previewCategoryOptions = computed(() =>
+  ref_.categories.map((c) => ({
+    label: categoryOptionLabel(c),
+    value: c.code,
+  })),
+);
+
+const categoryOptions = computed(() => previewCategoryOptions.value);
 
 const novosCount = computed(
   () => preview.value?.itens.filter((i) => !i.jaExistente).length ?? 0,

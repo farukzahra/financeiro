@@ -57,7 +57,7 @@ const ruleForm = ref({
 const showCategoryDialog = ref(false);
 const editingCategory = ref<Category | null>(null);
 const categoryForm = ref({
-  id: "",
+  code: "",
   descricao: "",
   ativa: true,
 });
@@ -78,7 +78,7 @@ const salaryPaymentModeOptions = [
 ];
 
 const categoryHeaders = [
-  { title: "Categoria", key: "id" },
+  { title: "Categoria", key: "code" },
   { title: "Descrição", key: "descricao" },
   { title: "Ativa", key: "ativa", width: 90 },
   { title: "", key: "actions", sortable: false, width: 70 },
@@ -238,7 +238,7 @@ async function saveRule() {
 function openCreateCategory() {
   editingCategory.value = null;
   categoryForm.value = {
-    id: "",
+    code: "",
     descricao: "",
     ativa: true,
   };
@@ -248,7 +248,7 @@ function openCreateCategory() {
 function openEditCategory(row: Category) {
   editingCategory.value = row;
   categoryForm.value = {
-    id: row.id,
+    code: row.code,
     descricao: row.descricao,
     ativa: row.ativa,
   };
@@ -261,7 +261,7 @@ async function saveCategory() {
     ativa: categoryForm.value.ativa,
   };
 
-  if (!categoryForm.value.id.trim() || !body.descricao) {
+  if (!categoryForm.value.code.trim() || !body.descricao) {
     snackbar.add({
       severity: "warn",
       summary: "Preencha os campos obrigatórios",
@@ -275,7 +275,7 @@ async function saveCategory() {
       await patchCategory(editingCategory.value.id, body);
     } else {
       await createCategory({
-        id: categoryForm.value.id.trim().toUpperCase(),
+        code: categoryForm.value.code.trim().toUpperCase(),
         ...body,
       });
     }
@@ -345,9 +345,9 @@ async function saveSalaryCycle() {
           hide-default-footer
           striped="even"
         >
-          <template #item.id="{ item }">
-            <div>{{ categoryDisplayName(item.id) }}</div>
-            <small class="category-code">{{ item.id }}</small>
+          <template #item.code="{ item }">
+            <div>{{ categoryDisplayName(item.id, ref_.categories) }}</div>
+            <small class="category-code">{{ item.code }}</small>
           </template>
           <template #item.ativa="{ item }">
             <v-chip :color="item.ativa ? 'success' : 'default'" size="small">
@@ -376,7 +376,7 @@ async function saveSalaryCycle() {
           striped="even"
         >
           <template #item.categoriaId="{ item }">
-            {{ categoryDisplayName(item.categoriaId) }}
+            {{ categoryDisplayName(item.categoriaId, ref_.categories) }}
           </template>
           <template #item.ativa="{ item }">
             <v-chip :color="item.ativa ? 'success' : 'default'" size="small">
@@ -410,9 +410,9 @@ async function saveSalaryCycle() {
           <template #item.categoriaId="{ item }">
             <span
               class="cell-ellipsis"
-              :title="item.categoriaId ? categoryDisplayName(item.categoriaId) : ''"
+              :title="item.categoriaId ? categoryDisplayName(item.categoriaId, ref_.categories) : ''"
             >
-              {{ item.categoriaId ? categoryDisplayName(item.categoriaId) : "—" }}
+              {{ item.categoriaId ? categoryDisplayName(item.categoriaId, ref_.categories) : "—" }}
             </span>
           </template>
           <template #item.valorMensal="{ item }">
@@ -521,9 +521,9 @@ async function saveSalaryCycle() {
     <v-dialog v-model="showCategoryDialog" max-width="420">
       <v-card :title="editingCategory ? 'Editar categoria' : 'Nova categoria'">
         <v-card-text class="form-col">
-          <label>ID da categoria</label>
+          <label>Código da categoria</label>
           <v-text-field
-            v-model="categoryForm.id"
+            v-model="categoryForm.code"
             :disabled="!!editingCategory"
             placeholder="ex: CASA DE PAO"
           />
