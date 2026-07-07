@@ -16,7 +16,7 @@ import {
   type BudgetItem,
 } from "../lib/api";
 import { fmtMoneyBR, fmtDateBR, classMoney } from "../lib/format";
-import { categoryDisplayName } from "../lib/categories";
+import { categoryDisplayName, categoryPillLabel, categoryCode } from "../lib/categories";
 import ImportModal from "../components/ImportModal.vue";
 import ManualTransactionModal from "../components/ManualTransactionModal.vue";
 
@@ -619,8 +619,9 @@ function cancelCategoria() {
 }
 
 function colorForCategoria(id: string): string {
+  const key = categoryCode(id, ref_.categories);
   let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
   return `hsl(${h % 360} 45% 82%)`;
 }
 
@@ -1290,10 +1291,10 @@ async function commitBudgetValor(b: BudgetItem) {
               type="button"
               class="cat-pill"
               :style="{ background: colorForCategoria(item.categoriaId) }"
-              :title="'Clique para trocar (' + item.categoriaId + ')'"
+              :title="'Clique para trocar (' + categoryCode(item.categoriaId, ref_.categories) + ')'"
               @click="startEditCategoria(item)"
             >
-              <span class="cat-pill-nome">{{ categoryDisplayName(item.categoriaId, ref_.categories) }}</span>
+              <span class="cat-pill-nome">{{ categoryPillLabel(item.categoriaId, ref_.categories) }}</span>
             </button>
           </template>
           <template #item.actions="{ item }">

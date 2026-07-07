@@ -29,6 +29,12 @@ export function categoryDisplayName(categoryId: string, catalog?: Category[]): s
   return CATEGORY_LABELS[categoryId] ?? categoryId;
 }
 
+export function categoryPillLabel(categoryId: string, catalog?: Category[]): string {
+  const hit = findCategory(categoryId, catalog);
+  if (hit) return CATEGORY_LABELS[hit.code] ?? hit.code;
+  return CATEGORY_LABELS[categoryId] ?? categoryId;
+}
+
 export function categoryOptionLabel(category: Category): string {
   return category.descricao || categoryDisplayName(category.code, [category]);
 }

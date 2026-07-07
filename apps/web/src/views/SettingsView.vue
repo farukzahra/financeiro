@@ -256,12 +256,14 @@ function openEditCategory(row: Category) {
 }
 
 async function saveCategory() {
+  const code = categoryForm.value.code.trim().toUpperCase();
   const body = {
+    code,
     descricao: categoryForm.value.descricao.trim(),
     ativa: categoryForm.value.ativa,
   };
 
-  if (!categoryForm.value.code.trim() || !body.descricao) {
+  if (!code || !body.descricao) {
     snackbar.add({
       severity: "warn",
       summary: "Preencha os campos obrigatórios",
@@ -274,10 +276,7 @@ async function saveCategory() {
     if (editingCategory.value) {
       await patchCategory(editingCategory.value.id, body);
     } else {
-      await createCategory({
-        code: categoryForm.value.code.trim().toUpperCase(),
-        ...body,
-      });
+      await createCategory(body);
     }
     await ref_.reloadCategories();
     showCategoryDialog.value = false;
@@ -524,7 +523,6 @@ async function saveSalaryCycle() {
           <label>Código da categoria</label>
           <v-text-field
             v-model="categoryForm.code"
-            :disabled="!!editingCategory"
             placeholder="ex: CASA DE PAO"
           />
           <label>Descrição</label>

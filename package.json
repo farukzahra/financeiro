@@ -1,7 +1,7 @@
 {
   "name": "financeiro",
   "private": true,
-  "version": "0.15.5",
+  "version": "0.15.6",
   "packageManager": "pnpm@10.0.0",
   "scripts": {
     "dev": "pnpm -r --parallel run dev",

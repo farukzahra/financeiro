@@ -10,6 +10,21 @@ test.describe("Configurações — categorias", () => {
     await expect(page.locator(".category-code", { hasText: "OUTROS" })).toBeVisible();
   });
 
+  test("edita código da categoria", async ({ page }) => {
+    const state = createMockApiState();
+    await mockAuthenticatedApp(page, state);
+    await page.goto("/configuracoes");
+
+    await page.locator("tbody tr").filter({ hasText: "ALIMENTACAO" }).getByRole("button").click();
+    await page.getByPlaceholder("ex: CASA DE PAO").fill("MERCADO");
+    await page.getByRole("button", { name: "Salvar" }).click();
+
+    await expect(page.locator(".category-code", { hasText: "MERCADO" })).toBeVisible();
+    expect(state.categories.find((c) => c.id === "00000000-0000-4000-8000-000000000002")?.code).toBe(
+      "MERCADO",
+    );
+  });
+
   test("cria categoria nova só em memória", async ({ page }) => {
     const state = createMockApiState();
     await mockAuthenticatedApp(page, state);

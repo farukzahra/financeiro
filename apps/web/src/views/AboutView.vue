@@ -5,6 +5,12 @@ const buildTime = new Date(import.meta.env.VITE_BUILD_TIME);
 
 const historyItems = [
   {
+    build: "0.15.6",
+    title: "Código de categoria editável e pílula curta",
+    detail:
+      "O código da categoria volta a ser editável em Configurações. Na lista de transações, a pílula exibe de novo o rótulo curto (ex.: ALIMENTAÇÃO) com cor estável por código.",
+  },
+  {
     build: "0.15.5",
     title: "Categorias com UUID e import CSV corrigido",
     detail:

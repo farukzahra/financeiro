@@ -1,11 +1,17 @@
 import { test, expect } from "@playwright/test";
-import { mockAuthenticatedApp, mockTransaction, CAT_ALIMENTACAO } from "./fixtures/mock-api";
+import { mockAuthenticatedApp, mockTransaction, CAT_ALIMENTACAO, CAT_OUTROS } from "./fixtures/mock-api";
 
 test.describe("Transações — edição inline de categoria", () => {
   test.beforeEach(async ({ page }) => {
     await mockAuthenticatedApp(page);
     await page.goto("/");
     await expect(page.getByText("Mercado Central")).toBeVisible();
+  });
+
+  test("pill exibe rótulo curto do código", async ({ page }) => {
+    const pill = page.getByRole("row", { name: /Mercado Central/ }).locator(".cat-pill-nome");
+    await expect(pill).toHaveText("OUTROS");
+    await expect(pill).not.toContainText(CAT_OUTROS);
   });
 
   test("menu de categoria permanece aberto após o clique", async ({ page }) => {
@@ -41,7 +47,9 @@ test.describe("Transações — edição inline de categoria", () => {
 
     await expect.poll(() => patchedBody?.categoriaId).toBe(CAT_ALIMENTACAO);
     await expect(page.locator(".cat-pill")).toBeVisible();
-    await expect(page.locator(".cat-pill-nome").first()).toHaveText("Alimentação");
+    await expect(page.getByRole("row", { name: /Mercado Central/ }).locator(".cat-pill-nome")).toHaveText(
+      "ALIMENTAÇÃO",
+    );
     await expect(page.locator(".v-data-table .v-autocomplete")).toHaveCount(0);
   });
 });

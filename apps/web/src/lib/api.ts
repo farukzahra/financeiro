@@ -182,6 +182,7 @@ export async function createCategory(body: {
 export async function patchCategory(
   id: string,
   body: Partial<{
+    code: string;
     descricao: string;
     ativa: boolean;
   }>,
