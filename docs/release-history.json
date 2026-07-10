@@ -1,0 +1,182 @@
+{
+  "currentVersion": "0.15.9",
+  "updatedAt": "2026-07-10T12:32:40.089Z",
+  "entries": [
+    {
+      "version": "0.15.9",
+      "date": "2026-07-10",
+      "title": "Sobre lê o histórico de releases do arquivo",
+      "summary": "A tela Sobre passa a consumir docs/release-history.json (skill semantic-version), com o mesmo conteúdo do histórico anterior. release:check valida esse arquivo.",
+      "type": "chore",
+      "commit": null
+    },
+    {
+      "version": "0.15.8",
+      "date": "2026-07-10",
+      "title": "Ordenação estável, code no painel e Actions Node 24",
+      "summary": "Clique repetido no header da tabela de transações volta a alternar asc/desc. O painel Por categoria exibe o código curto (como a pílula). Workflow Deploy VPS atualizado para actions com runtime Node 24.",
+      "type": "fix",
+      "commit": "4957c39"
+    },
+    {
+      "version": "0.15.7",
+      "date": "2026-07-10",
+      "title": "Saldo atual independente de filtros",
+      "summary": "O card Saldo atual passa a somar todas as entradas e saídas do usuário, sem aplicar período, categoria ou busca — alinhado ao extrato do banco. Entradas e saídas do período continuam filtradas.",
+      "type": "fix",
+      "commit": "8a27976"
+    },
+    {
+      "version": "0.15.6",
+      "date": "2026-07-07",
+      "title": "Código de categoria editável e pílula curta",
+      "summary": "O código da categoria volta a ser editável em Configurações. Na lista de transações, a pílula exibe de novo o rótulo curto (ex.: ALIMENTAÇÃO) com cor estável por código.",
+      "type": "fix",
+      "commit": "ed64c56"
+    },
+    {
+      "version": "0.15.5",
+      "date": "2026-07-07",
+      "title": "Categorias com UUID e import CSV corrigido",
+      "summary": "Categorias passam a usar id UUID com código estável (ex.: ALIMENTACAO). O import de extrato volta a mapear categoria no preview e confirmar corretamente. Inclui migração de banco, testes unitários e E2E.",
+      "type": "feat",
+      "commit": "1063505"
+    },
+    {
+      "version": "0.15.4",
+      "date": "2026-07-07",
+      "title": "Combos inline não fecham ao abrir",
+      "summary": "Categoria e tipo na tabela de transações mantêm o menu aberto após o clique. Cancelamento passa a ocorrer só ao fechar o menu sem alteração.",
+      "type": "fix",
+      "commit": "da3bfbe"
+    },
+    {
+      "version": "0.15.3",
+      "date": "2026-07-07",
+      "title": "Combo de categoria inline corrigido",
+      "summary": "Ao clicar na pill de categoria na tabela de transações, o autocomplete abre o menu na hora e a troca persiste corretamente. Inclui testes E2E Playwright.",
+      "type": "fix",
+      "commit": "b86caae"
+    },
+    {
+      "version": "0.15.2",
+      "date": "2026-07-03",
+      "title": "Tabelas sem paginação e orçamento mais compacto",
+      "summary": "Todas as data tables exibem todos os itens de uma vez. Na aba de orçamento, descrição e categoria ocupam menos espaço e as demais colunas ganham largura.",
+      "type": "fix",
+      "commit": "3b80eb7"
+    },
+    {
+      "version": "0.15.1",
+      "date": "2026-07-03",
+      "title": "Tabela de gastos sem paginação",
+      "summary": "A tabela principal de transações passa a exibir todas as linhas do período filtrado de uma vez, sem controles de paginação.",
+      "type": "fix",
+      "commit": "d49c543"
+    },
+    {
+      "version": "0.15.0",
+      "date": "2026-07-02",
+      "title": "UI migrada para Vuetify",
+      "summary": "Substituição do PrimeVue por Vuetify 3 com tema azul e laranja, mantendo tabelas, filtros, modais e feedback da interface.",
+      "type": "feat",
+      "commit": "c78ad1b"
+    },
+    {
+      "version": "0.14.2",
+      "date": "2026-06-25",
+      "title": "Tooltips nos cards de resumo",
+      "summary": "Cards de saldo, entradas e saídas agora exibem descrições curtas com fórmulas e contexto do período filtrado.",
+      "type": "feat",
+      "commit": "e014bb3"
+    },
+    {
+      "version": "0.14.1",
+      "date": "2026-06-25",
+      "title": "Tooltip do saldo líquido ajustado",
+      "summary": "Tooltip do saldo líquido foi reposicionado para melhorar leitura e evitar abertura para baixo do card.",
+      "type": "fix",
+      "commit": "c11fd16"
+    },
+    {
+      "version": "0.14.0",
+      "date": "2026-06-25",
+      "title": "Resumo com entradas e saídas",
+      "summary": "Painel principal agora mostra totais de entradas e saídas do período filtrado, mantendo os cards alinhados em telas grandes.",
+      "type": "feat",
+      "commit": "19d11f9"
+    },
+    {
+      "version": "0.13.0",
+      "date": "2026-06-25",
+      "title": "Dia de pagamento configurável",
+      "summary": "Ciclo salarial passa a usar dia de pagamento configurável, incluindo dia útil do mês com feriados bancários nacionais do Brasil.",
+      "type": "feat",
+      "commit": "062dbbd"
+    },
+    {
+      "version": "0.12.0",
+      "date": "2026-06-17",
+      "title": "Resumo de orçamento e saldo líquido",
+      "summary": "Tooltip com fórmula dinâmica, saldo líquido baseado no orçamento restante e cabeçalho de orçamento refinado.",
+      "type": "feat",
+      "commit": "190262f"
+    },
+    {
+      "version": "0.11.0",
+      "date": "2026-06-16",
+      "title": "Deploy multi-site na VPS",
+      "summary": "Financeiro preparado para rodar atrás de proxy e convivendo com faruk.dev.br e outros projetos no mesmo host.",
+      "type": "feat",
+      "commit": "91ee0ab"
+    },
+    {
+      "version": "0.10.0",
+      "date": "2026-06-15",
+      "title": "Organização do repositório",
+      "summary": "README na raiz, documentação movida para docs, scripts em scripts/ e dados legados em dados/.",
+      "type": "chore",
+      "commit": "c40c01a"
+    },
+    {
+      "version": "0.9.0",
+      "date": "2026-06-15",
+      "title": "Autenticação e multiusuário",
+      "summary": "Login interno, logout, escopo por usuário e persistência de preferências em settings.",
+      "type": "feat",
+      "commit": "9dae9b0"
+    },
+    {
+      "version": "0.8.0",
+      "date": "2026-06-15",
+      "title": "Deploy automático",
+      "summary": "Docker de produção, workflow de deploy na VPS e ambiente preparado para build e migrações automáticas.",
+      "type": "feat",
+      "commit": "f52b612"
+    },
+    {
+      "version": "0.7.0",
+      "date": "2026-06-15",
+      "title": "Configurações persistentes",
+      "summary": "Filtros, ordenação, layout e ordem do orçamento salvos por usuário.",
+      "type": "feat",
+      "commit": null
+    },
+    {
+      "version": "0.6.0",
+      "date": "2026-06-15",
+      "title": "Orçamento previsto mais visual",
+      "summary": "Cores alternadas, progresso por item, porcentagens na barra e ciclo salarial no painel lateral.",
+      "type": "feat",
+      "commit": null
+    },
+    {
+      "version": "0.5.0",
+      "date": "2026-06-15",
+      "title": "Produtividade na lista",
+      "summary": "Ordenação por colunas, geração de regra direto da linha e melhorias de alinhamento na tabela.",
+      "type": "feat",
+      "commit": null
+    }
+  ]
+}

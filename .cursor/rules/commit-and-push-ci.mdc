@@ -7,7 +7,7 @@ alwaysApply: true
 
 Quando o usuário pedir **commit and push** (ou equivalente):
 
-1. Fazer commit e push normalmente (versão + AboutView se `release:check` exigir).
+1. Fazer commit e push normalmente (versão + `docs/release-history.json` se `release:check` exigir).
 2. **Após o push**, verificar o workflow **Deploy VPS** no GitHub:
    - PAT em `planos/vps-secrets/github-pat.txt` (gitignored; nunca commitar).
    - API: `GET /repos/farukzahra/financeiro/actions/runs?per_page=3` com `Authorization: Bearer <PAT>`.

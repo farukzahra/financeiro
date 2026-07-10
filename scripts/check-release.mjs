@@ -20,7 +20,7 @@ const userVisiblePrefixes = [
   "apps/web/src/components/",
 ];
 
-const aboutViewPath = "apps/web/src/views/AboutView.vue";
+const releaseHistoryPath = "docs/release-history.json";
 
 function git(argsList) {
   return execFileSync("git", argsList, {
@@ -52,11 +52,6 @@ function readHeadFile(relativePath) {
   }
 }
 
-function firstBuildEntry(content) {
-  const match = content.match(/build:\s*"([^"]+)"/);
-  return match?.[1] ?? null;
-}
-
 const changedFiles = getChangedFiles();
 const userVisibleChanged = changedFiles.some((file) =>
   userVisiblePrefixes.some((prefix) => file.startsWith(prefix)),
@@ -78,9 +73,27 @@ if (distinctVersions.length > 1) {
   );
 }
 
+const releaseHistoryExists = fs.existsSync(path.join(repoRoot, releaseHistoryPath));
+if (!releaseHistoryExists) {
+  errors.push(`Arquivo ausente: ${releaseHistoryPath}`);
+} else {
+  const history = readJson(releaseHistoryPath);
+  if (currentVersion && history.currentVersion !== currentVersion) {
+    errors.push(
+      `${releaseHistoryPath} currentVersion=${history.currentVersion} difere dos package.json (${currentVersion}).`,
+    );
+  }
+  const firstEntry = Array.isArray(history.entries) ? history.entries[0] : null;
+  if (currentVersion && firstEntry?.version !== currentVersion) {
+    errors.push(
+      `A primeira entrada de ${releaseHistoryPath} deve ser a versão atual (${currentVersion}). Encontrado: ${firstEntry?.version ?? "nenhuma"}.`,
+    );
+  }
+}
+
 if (userVisibleChanged) {
-  if (!changedFiles.includes(aboutViewPath)) {
-    errors.push("Mudança visível ao usuário sem atualização de apps/web/src/views/AboutView.vue.");
+  if (!changedFiles.includes(releaseHistoryPath)) {
+    errors.push(`Mudança visível ao usuário sem atualização de ${releaseHistoryPath}.`);
   }
 
   const previousRoot = readHeadFile("package.json");
@@ -91,14 +104,6 @@ if (userVisibleChanged) {
         `Mudança visível ao usuário sem bump de versão. Versão atual ainda está em ${currentVersion}.`,
       );
     }
-  }
-
-  const aboutContent = fs.readFileSync(path.join(repoRoot, aboutViewPath), "utf8");
-  const firstAboutBuild = firstBuildEntry(aboutContent);
-  if (currentVersion && firstAboutBuild !== currentVersion) {
-    errors.push(
-      `A primeira entrada do AboutView.vue deve apontar para a versão atual (${currentVersion}). Encontrado: ${firstAboutBuild ?? "nenhuma"}.`,
-    );
   }
 }
 

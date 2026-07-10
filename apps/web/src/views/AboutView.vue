@@ -1,136 +1,11 @@
 <script setup lang="ts">
+import releaseHistory from "../../../../docs/release-history.json";
+
 const buildVersion = import.meta.env.VITE_APP_VERSION;
 const buildGitSha = import.meta.env.VITE_APP_GIT_SHA;
 const buildTime = new Date(import.meta.env.VITE_BUILD_TIME);
 
-const historyItems = [
-  {
-    build: "0.15.8",
-    title: "Ordenação estável, code no painel e Actions Node 24",
-    detail:
-      "Clique repetido no header da tabela de transações volta a alternar asc/desc. O painel Por categoria exibe o código curto (como a pílula). Workflow Deploy VPS atualizado para actions com runtime Node 24.",
-  },
-  {
-    build: "0.15.7",
-    title: "Saldo atual independente de filtros",
-    detail:
-      "O card Saldo atual passa a somar todas as entradas e saídas do usuário, sem aplicar período, categoria ou busca — alinhado ao extrato do banco. Entradas e saídas do período continuam filtradas.",
-  },
-  {
-    build: "0.15.6",
-    title: "Código de categoria editável e pílula curta",
-    detail:
-      "O código da categoria volta a ser editável em Configurações. Na lista de transações, a pílula exibe de novo o rótulo curto (ex.: ALIMENTAÇÃO) com cor estável por código.",
-  },
-  {
-    build: "0.15.5",
-    title: "Categorias com UUID e import CSV corrigido",
-    detail:
-      "Categorias passam a usar id UUID com código estável (ex.: ALIMENTACAO). O import de extrato volta a mapear categoria no preview e confirmar corretamente. Inclui migração de banco, testes unitários e E2E.",
-  },
-  {
-    build: "0.15.4",
-    title: "Combos inline não fecham ao abrir",
-    detail:
-      "Categoria e tipo na tabela de transações mantêm o menu aberto após o clique. Cancelamento passa a ocorrer só ao fechar o menu sem alteração.",
-  },
-  {
-    build: "0.15.3",
-    title: "Combo de categoria inline corrigido",
-    detail:
-      "Ao clicar na pill de categoria na tabela de transações, o autocomplete abre o menu na hora e a troca persiste corretamente. Inclui testes E2E Playwright.",
-  },
-  {
-    build: "0.15.2",
-    title: "Tabelas sem paginação e orçamento mais compacto",
-    detail:
-      "Todas as data tables exibem todos os itens de uma vez. Na aba de orçamento, descrição e categoria ocupam menos espaço e as demais colunas ganham largura.",
-  },
-  {
-    build: "0.15.1",
-    title: "Tabela de gastos sem paginação",
-    detail:
-      "A tabela principal de transações passa a exibir todas as linhas do período filtrado de uma vez, sem controles de paginação.",
-  },
-  {
-    build: "0.15.0",
-    title: "UI migrada para Vuetify",
-    detail:
-      "Substituição do PrimeVue por Vuetify 3 com tema azul e laranja, mantendo tabelas, filtros, modais e feedback da interface.",
-  },
-  {
-    build: "0.14.2",
-    title: "Tooltips nos cards de resumo",
-    detail:
-      "Cards de saldo, entradas e saídas agora exibem descrições curtas com fórmulas e contexto do período filtrado.",
-  },
-  {
-    build: "0.14.1",
-    title: "Tooltip do saldo líquido ajustado",
-    detail:
-      "Tooltip do saldo líquido foi reposicionado para melhorar leitura e evitar abertura para baixo do card.",
-  },
-  {
-    build: "0.14.0",
-    title: "Resumo com entradas e saídas",
-    detail:
-      "Painel principal agora mostra totais de entradas e saídas do período filtrado, mantendo os cards alinhados em telas grandes.",
-  },
-  {
-    build: "0.13.0",
-    title: "Dia de pagamento configurável",
-    detail:
-      "Ciclo salarial passa a usar dia de pagamento configurável, incluindo dia útil do mês com feriados bancários nacionais do Brasil.",
-  },
-  {
-    build: "0.12.0",
-    title: "Resumo de orçamento e saldo líquido",
-    detail:
-      "Tooltip com fórmula dinâmica, saldo líquido baseado no orçamento restante e cabeçalho de orçamento refinado.",
-  },
-  {
-    build: "0.11.0",
-    title: "Deploy multi-site na VPS",
-    detail:
-      "Financeiro preparado para rodar atrás de proxy e convivendo com faruk.dev.br e outros projetos no mesmo host.",
-  },
-  {
-    build: "0.10.0",
-    title: "Organização do repositório",
-    detail:
-      "README na raiz, documentação movida para docs, scripts em scripts/ e dados legados em dados/.",
-  },
-  {
-    build: "0.9.0",
-    title: "Autenticação e multiusuário",
-    detail:
-      "Login interno, logout, escopo por usuário e persistência de preferências em settings.",
-  },
-  {
-    build: "0.8.0",
-    title: "Deploy automático",
-    detail:
-      "Docker de produção, workflow de deploy na VPS e ambiente preparado para build e migrações automáticas.",
-  },
-  {
-    build: "0.7.0",
-    title: "Configurações persistentes",
-    detail:
-      "Filtros, ordenação, layout e ordem do orçamento salvos por usuário.",
-  },
-  {
-    build: "0.6.0",
-    title: "Orçamento previsto mais visual",
-    detail:
-      "Cores alternadas, progresso por item, porcentagens na barra e ciclo salarial no painel lateral.",
-  },
-  {
-    build: "0.5.0",
-    title: "Produtividade na lista",
-    detail:
-      "Ordenação por colunas, geração de regra direto da linha e melhorias de alinhamento na tabela.",
-  },
-] as const;
+const historyItems = releaseHistory.entries;
 
 function formatBuildTime(date: Date) {
   return date.toLocaleString("pt-BR", {
@@ -165,13 +40,13 @@ function formatBuildTime(date: Date) {
         <div class="about-history">
           <article
             v-for="item in historyItems"
-            :key="item.build"
+            :key="item.version"
             class="about-history-item"
           >
-            <div class="about-history-build">{{ item.build }}</div>
+            <div class="about-history-build">{{ item.version }}</div>
             <div class="about-history-content">
               <h2>{{ item.title }}</h2>
-              <p>{{ item.detail }}</p>
+              <p>{{ item.summary }}</p>
             </div>
           </article>
         </div>

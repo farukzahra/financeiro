@@ -31,6 +31,30 @@ O fluxo central e:
 - `packages/shared`: schemas Zod e tipos compartilhados entre API e web.
 - Scripts Python em `scripts/legacy/` sao legado/apoio da logica de
   categorizacao.
+- Agent skills em `.agents/skills/`; comando `/commit-push` em
+  `.cursor/commands/commit-push.md`.
+
+### Skills do projeto
+
+| Skill | Quando usar |
+|-------|-------------|
+| `brainstorming` | Feature/UI nova — antes de codigo |
+| `writing-plans` | Apos design aprovado |
+| `tdd` | Implementacao com testes |
+| `systematic-debugging` | Bug / teste falhando |
+| `verification-before-completion` | Antes de declarar pronto |
+| `vue-best-practices` | Qualquer trabalho Vue |
+| `vuetify-ui` | Telas, tabelas, dialogs Vuetify |
+| `frontend-design` | Mudanca forte de identidade visual |
+| `fastify-api` | Rotas/auth/contratos da API |
+| `drizzle-orm` | Schema, migrations, queries |
+| `nodejs-backend-patterns` | Padroes de services (opcional) |
+| `playwright-best-practices` | E2E |
+| `caveman-commit` | Mensagens de commit |
+| `semantic-version` | Bump em `docs/release-history.json` (so no `/commit-push`) |
+| `find-skills` | Buscar skills externas |
+
+Nao usar skills Prisma / React Next neste repo.
 
 Arquivos importantes:
 
@@ -242,36 +266,29 @@ migrations antigas ja aplicadas; crie uma nova migration corretiva.
 
 ## Frontend
 
-A web usa Vue SFCs e PrimeVue. O proxy do Vite envia `/api` para
+A web usa Vue SFCs e Vuetify 3. O proxy do Vite envia `/api` para
 `http://localhost:3001` e remove o prefixo antes de chegar na API.
 
 Pontos de orientacao:
 
-- `router.ts` tem duas rotas: `/` e `/configuracoes`.
+- `router.ts` tem rotas: `/`, `/configuracoes`, `/sobre`.
 - `TransactionsView.vue` concentra a experiencia principal.
 - `ImportModal.vue` cuida do upload/preview/confirmacao.
 - `ManualTransactionModal.vue` cria lancamentos manuais.
 - `SettingsView.vue` gerencia categorias, regras e orcamento.
-- `AboutView.vue` mostra a versao atual do build e um historico curto das
-  entregas.
+- `AboutView.vue` mostra a versao do build e o historico a partir de
+  `docs/release-history.json` (skill `semantic-version`).
 - `stores/reference.ts` centraliza dados de referencia, como categorias.
-- `styles.css` contem estilo global; mantenha UI consistente com PrimeVue.
+- `styles.css` contem estilo global; mantenha UI consistente com Vuetify.
 
-Ao fazer um novo commit que altere o produto visivel ao usuario, atualize tambem
-a aba `Sobre`:
+Ao fazer um novo commit que altere o produto visivel ao usuario (via
+`/commit-push`):
 
-- adicione uma nova entrada no historico curto em `AboutView.vue`;
-- mantenha a narrativa curta e objetiva sobre o que entrou naquele build;
-- a versao exibida deve continuar refletindo o build atual automaticamente;
-- a versao semantica do produto comeca em `0.12.0`;
-- para funcionalidades novas, incremente a versao do meio: `0.13.0`, `0.14.0`;
-- para bugfixes e ajustes sem nova feature, incremente a ultima parte:
-  `0.12.1`, `0.12.2`;
-- mantenha `package.json` da raiz e dos apps/pacotes internos alinhados com a
-mesma versao atual.
-- Antes de commitar mudancas visiveis ao usuario, rode `pnpm release:check`.
-- Neste checkout, o hook local `.githooks/pre-commit` deve bloquear commit que
-  mude UI visivel sem bump de versao e sem atualizar `AboutView.vue`.
+- aplique a skill `semantic-version` em `docs/release-history.json`
+  (`title`/`summary` em portugues);
+- alinhe `package.json` da raiz e dos workspaces com `currentVersion`;
+- nao hardcode historico em `AboutView.vue`;
+- rode `pnpm release:check` (o hook pre-commit tambem valida).
 
 Ao mudar a API, ajuste tambem `apps/web/src/lib/api.ts` e os tipos locais.
 
