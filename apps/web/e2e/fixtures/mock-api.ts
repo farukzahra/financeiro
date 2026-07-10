@@ -103,7 +103,7 @@ export function createMockApiState(): MockApiState {
   };
 }
 
-function summarizeTransactions(rows: (typeof mockTransaction)[]) {
+function summarizePeriod(rows: (typeof mockTransaction)[]) {
   const totalEntradas = rows
     .filter((r) => Number(r.valor) > 0)
     .reduce((acc, r) => acc + Number(r.valor), 0);
@@ -113,9 +113,39 @@ function summarizeTransactions(rows: (typeof mockTransaction)[]) {
   return {
     totalEntradas: totalEntradas.toFixed(2),
     totalSaidas: totalSaidas.toFixed(2),
-    saldo: (totalEntradas + totalSaidas).toFixed(2),
     qtd: rows.length,
   };
+}
+
+function saldoAtual(rows: (typeof mockTransaction)[]) {
+  return rows.reduce((acc, r) => acc + Number(r.valor), 0).toFixed(2);
+}
+
+function filterTransactions(
+  rows: (typeof mockTransaction)[],
+  url: URL,
+  state: MockApiState,
+) {
+  const from = url.searchParams.get("from");
+  const to = url.searchParams.get("to");
+  const q = url.searchParams.get("q")?.trim().toLowerCase() ?? "";
+  const categories = url.searchParams.getAll("category");
+
+  return rows.filter((row) => {
+    if (from && row.data < from) return false;
+    if (to && row.data > to) return false;
+    if (q) {
+      const hay = `${row.descricaoRaw} ${row.detalhe}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    if (categories.length) {
+      const resolved = categories
+        .map((c) => resolveCategoryId(state, c))
+        .filter((id): id is string => Boolean(id));
+      if (resolved.length && !resolved.includes(row.categoriaId)) return false;
+    }
+    return true;
+  });
 }
 
 function resolveCategoryId(state: MockApiState, idOrCode: string): string | null {
@@ -232,10 +262,15 @@ export async function installMockApi(page: Page, state: MockApiState) {
     }
 
     if (method === "GET" && path === "/transactions") {
+      const filtered = filterTransactions(state.transactions, url, state);
+      const period = summarizePeriod(filtered);
       return route.fulfill({
         json: {
-          itens: state.transactions,
-          resumo: summarizeTransactions(state.transactions),
+          itens: filtered,
+          resumo: {
+            ...period,
+            saldo: saldoAtual(state.transactions),
+          },
         },
       });
     }

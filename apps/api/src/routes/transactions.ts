@@ -5,6 +5,7 @@ import { transactions, imports, categories } from "../db/schema.js";
 import { TransactionUpdateSchema, TransactionCreateSchema } from "@financeiro/shared";
 import { chaveAgrupamento } from "../services/normalize.js";
 import { indexCategories } from "../services/category-lookup.js";
+import { buildTransactionsResumo } from "../services/transaction-resumo.js";
 import { requireUser } from "../auth.js";
 
 const MANUAL_IMPORT_HASH = "__manual__";
@@ -76,12 +77,14 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
       .where(and(...filters))
       .orderBy(transactions.data);
 
-    const totalEntradas = rows
-      .filter((r) => Number(r.valor) > 0)
-      .reduce((acc, r) => acc + Number(r.valor), 0);
-    const totalSaidas = rows
-      .filter((r) => Number(r.valor) < 0)
-      .reduce((acc, r) => acc + Number(r.valor), 0);
+    // Saldo atual = soma de todas as transações do usuário (bate com extrato do banco).
+    // Entradas/saídas/qtd continuam no recorte filtrado.
+    const [saldoRow] = await db
+      .select({
+        saldo: drizzleSql<string>`coalesce(sum(${transactions.valor}), 0)`,
+      })
+      .from(transactions)
+      .where(eq(transactions.userId, user.id));
 
     return {
       itens: rows.map((r) => ({
@@ -89,12 +92,7 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
         data: r.data as unknown as string,
         importadoEm: r.importadoEm.toISOString(),
       })),
-      resumo: {
-        totalEntradas: totalEntradas.toFixed(2),
-        totalSaidas: totalSaidas.toFixed(2),
-        saldo: (totalEntradas + totalSaidas).toFixed(2),
-        qtd: rows.length,
-      },
+      resumo: buildTransactionsResumo(rows, Number(saldoRow?.saldo ?? 0)),
     };
   });
 

@@ -77,12 +77,10 @@ const saldoLiquido = computed(() =>
 const totalEntradasPeriodo = computed(() => Number(resumo.value.totalEntradas));
 const totalSaidasPeriodo = computed(() => Math.abs(Number(resumo.value.totalSaidas)));
 const saldoAtualTooltip = computed(() => {
-  const entradas = totalEntradasPeriodo.value;
-  const saidas = Number(resumo.value.totalSaidas);
   const saldo = Number(resumo.value.saldo);
   return {
-    linha1: "Saldo atual = entradas + saídas do período filtrado.",
-    linha2: `${fmtMoneyBR(entradas)} + ${fmtMoneyBR(saidas)} = ${fmtMoneyBR(saldo)}`,
+    linha1: "Saldo atual = soma de todas as entradas e saídas (sem filtro).",
+    linha2: `Total acumulado: ${fmtMoneyBR(saldo)}`,
   };
 });
 const entradasTooltip = computed(() => ({
@@ -313,7 +311,7 @@ async function load() {
   }
 }
 
-function recalculateResumo() {
+function recalculateResumo(saldoDelta = 0) {
   let totalEntradas = 0;
   let totalSaidas = 0;
   for (const r of rows.value) {
@@ -324,7 +322,8 @@ function recalculateResumo() {
   resumo.value = {
     totalEntradas: totalEntradas.toFixed(2),
     totalSaidas: totalSaidas.toFixed(2),
-    saldo: (totalEntradas + totalSaidas).toFixed(2),
+    // Saldo atual é global; só ajusta pelo delta da edição/exclusão.
+    saldo: (Number(resumo.value.saldo) + saldoDelta).toFixed(2),
     qtd: rows.value.length,
   };
 }
@@ -436,9 +435,12 @@ async function onEditField(
   value: unknown,
 ) {
   try {
+    const previousValor = Number(row.valor);
     const updated = await patchTransaction(row.identificador, { [field]: value as never });
     Object.assign(row, updated);
-    if (field === "valor") recalculateResumo();
+    if (field === "valor") {
+      recalculateResumo(Number(updated.valor) - previousValor);
+    }
     snackbar.add({ severity: "success", summary: "Atualizado", life: 1500 });
   } catch (err) {
     snackbar.add({
@@ -458,9 +460,10 @@ function onDelete(row: Transaction) {
     rejectLabel: "Cancelar",
     accept: async () => {
       try {
+        const deletedValor = Number(row.valor);
         await deleteTransaction(row.identificador);
         rows.value = rows.value.filter((r) => r.identificador !== row.identificador);
-        recalculateResumo();
+        recalculateResumo(-deletedValor);
         snackbar.add({ severity: "success", summary: "Excluída", life: 1500 });
       } catch (err) {
         snackbar.add({

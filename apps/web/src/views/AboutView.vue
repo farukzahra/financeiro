@@ -5,6 +5,12 @@ const buildTime = new Date(import.meta.env.VITE_BUILD_TIME);
 
 const historyItems = [
   {
+    build: "0.15.7",
+    title: "Saldo atual independente de filtros",
+    detail:
+      "O card Saldo atual passa a somar todas as entradas e saídas do usuário, sem aplicar período, categoria ou busca — alinhado ao extrato do banco. Entradas e saídas do período continuam filtradas.",
+  },
+  {
     build: "0.15.6",
     title: "Código de categoria editável e pílula curta",
     detail:
