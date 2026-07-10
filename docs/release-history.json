@@ -8,7 +8,7 @@
       "title": "Sobre lê o histórico de releases do arquivo",
       "summary": "A tela Sobre passa a consumir docs/release-history.json (skill semantic-version), com o mesmo conteúdo do histórico anterior. release:check valida esse arquivo.",
       "type": "chore",
-      "commit": null
+      "commit": "36c1ffe"
     },
     {
       "version": "0.15.8",
