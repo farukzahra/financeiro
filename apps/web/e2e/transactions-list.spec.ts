@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import {
+  CAT_ALIMENTACAO,
   CAT_OUTROS,
   createMockApiState,
   mockAuthenticatedApp,
@@ -68,5 +69,67 @@ test.describe("Transações — listagem", () => {
     await expect(saldoValue).toHaveText(/R\$\s*950,00/);
     await expect(entradasValue).toHaveText(/R\$\s*0,00/);
     await expect(saidasValue).toHaveText(/R\$\s*50,00/);
+  });
+
+  test("ordenar por data funciona no segundo clique", async ({ page }) => {
+    const state = createMockApiState();
+    state.transactions = [
+      {
+        ...structuredClone(mockTransaction),
+        identificador: "tx-old",
+        data: "2026-05-01",
+        valor: "-10.00",
+        detalhe: "Mais antiga",
+        descricaoRaw: "Compra - Mais antiga",
+        chaveNormalizada: "mais antiga",
+      },
+      {
+        ...structuredClone(mockTransaction),
+        identificador: "tx-new",
+        data: "2026-06-15",
+        valor: "-20.00",
+        detalhe: "Mais recente",
+        descricaoRaw: "Compra - Mais recente",
+        chaveNormalizada: "mais recente",
+      },
+    ];
+    await mockAuthenticatedApp(page, state);
+    await page.goto("/");
+
+    const rows = page.locator("tbody tr");
+    await expect(rows).toHaveCount(2);
+
+    // Default: data asc → mais antiga primeiro
+    await expect(rows.nth(0)).toContainText("Mais antiga");
+    await expect(rows.nth(1)).toContainText("Mais recente");
+
+    const dataHeader = page.getByRole("columnheader", { name: /Data/i });
+    await dataHeader.click();
+    await expect(rows.nth(0)).toContainText("Mais recente");
+    await expect(rows.nth(1)).toContainText("Mais antiga");
+
+    // Bug: segundo clique não ordenava mais
+    await dataHeader.click();
+    await expect(rows.nth(0)).toContainText("Mais antiga");
+    await expect(rows.nth(1)).toContainText("Mais recente");
+  });
+
+  test("painel por categoria exibe code e não descrição", async ({ page }) => {
+    const state = createMockApiState();
+    state.transactions = [
+      {
+        ...structuredClone(mockTransaction),
+        categoriaId: CAT_ALIMENTACAO,
+      },
+    ];
+    await mockAuthenticatedApp(page, state);
+    await page.goto("/");
+
+    await page.getByRole("button", { name: "Resumo por categoria" }).click();
+    await expect(page.getByText("Por categoria")).toBeVisible();
+
+    const catNome = page.locator(".cat-nome");
+    await expect(catNome).toHaveText("ALIMENTAÇÃO");
+    await expect(catNome).not.toHaveText("Alimentação");
   });
 });

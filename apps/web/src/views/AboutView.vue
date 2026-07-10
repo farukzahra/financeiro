@@ -5,6 +5,12 @@ const buildTime = new Date(import.meta.env.VITE_BUILD_TIME);
 
 const historyItems = [
   {
+    build: "0.15.8",
+    title: "Ordenação estável, code no painel e Actions Node 24",
+    detail:
+      "Clique repetido no header da tabela de transações volta a alternar asc/desc. O painel Por categoria exibe o código curto (como a pílula). Workflow Deploy VPS atualizado para actions com runtime Node 24.",
+  },
+  {
     build: "0.15.7",
     title: "Saldo atual independente de filtros",
     detail:

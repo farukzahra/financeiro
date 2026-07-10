@@ -16,7 +16,7 @@ import {
   type BudgetItem,
 } from "../lib/api";
 import { fmtMoneyBR, fmtDateBR, classMoney } from "../lib/format";
-import { categoryDisplayName, categoryPillLabel, categoryCode } from "../lib/categories";
+import { categoryPillLabel, categoryCode } from "../lib/categories";
 import ImportModal from "../components/ImportModal.vue";
 import ManualTransactionModal from "../components/ManualTransactionModal.vue";
 
@@ -353,7 +353,13 @@ function onCategoryFilterChange() {
 
 function onSortUpdate(items: { key: string; order: "asc" | "desc" }[]) {
   const first = items[0];
-  if (!first) return;
+  if (!first) {
+    // Vuetify pode emitir [] no ciclo asc→desc→clear; com must-sort isso
+    // não deve ocorrer, mas se ocorrer mantém a coluna e inverte a ordem.
+    sortOrder.value = sortOrder.value === 1 ? -1 : 1;
+    scheduleSaveFilters();
+    return;
+  }
   sortField.value = first.key as TransactionSortField;
   sortOrder.value = first.order === "desc" ? -1 : 1;
   scheduleSaveFilters();
@@ -933,7 +939,7 @@ async function commitBudgetValor(b: BudgetItem) {
             @click="filtrarPorCategoria(c.id)"
           >
             <div class="cat-id">
-              <span class="cat-nome">{{ categoryDisplayName(c.id, ref_.categories) }}</span>
+              <span class="cat-nome">{{ categoryPillLabel(c.id, ref_.categories) }}</span>
               <span class="cat-qtd">{{ c.qtd }}</span>
             </div>
             <div class="cat-valor" :class="classMoney(c.total)">
@@ -1165,6 +1171,7 @@ async function commitBudgetValor(b: BudgetItem) {
           :items="rows"
           :loading="loading"
           v-model:sort-by="sortByModel"
+          must-sort
           item-value="identificador"
           :items-per-page="-1"
           hide-default-footer
