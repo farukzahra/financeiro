@@ -1,0 +1,12 @@
+---
+description: CRUDs de entidades ficam sempre como aba em Configurações
+alwaysApply: true
+---
+
+# CRUD em Configurações
+
+Todo CRUD de entidade de domínio (categorias, regras, orçamento, assinaturas, etc.) fica **sempre** como uma aba em **Configurações** (`SettingsView` / rota `/configuracoes`).
+
+1. Não criar rotas dedicadas só para CRUD (`/assinaturas`, `/orcamento`, etc.).
+2. Painéis na tela de Transações (filtros, categorias, orçamento) são para **consulta/uso operacional**, não para o CRUD completo.
+3. Novas entidades seguem o mesmo padrão: aba em Configurações + API REST + mocks E2E.
