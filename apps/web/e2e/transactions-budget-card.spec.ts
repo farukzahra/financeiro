@@ -31,4 +31,57 @@ test.describe("Transações — orçamento cartão", () => {
     await locked.click();
     await expect(item.locator(".budget-inline-input")).toHaveCount(0);
   });
+
+  test("clique no ciclo salarial aplica período sem sair do orçamento", async ({ page }) => {
+    const state = createMockApiState();
+    state.user.settings = {
+      ...state.user.settings,
+      salaryCycle: {
+        paymentDay: {
+          mode: "dayOfMonth",
+          dayOfMonth: 10,
+          businessDayOrdinal: null,
+        },
+      },
+      transactionsFilters: {
+        activePanel: "budget",
+      },
+    };
+    await mockAuthenticatedApp(page, state);
+    await page.goto("/");
+
+    const cycle = page.getByRole("button", { name: "Filtrar pelo ciclo salarial" });
+    await expect(cycle).toBeVisible();
+
+    const dateSpans = cycle.locator(".salary-cycle-dates span");
+    const startLabel = (await dateSpans.nth(0).textContent())?.trim() ?? "";
+    const endLabel = (await dateSpans.nth(1).textContent())?.trim() ?? "";
+    expect(startLabel.length).toBeGreaterThan(0);
+    expect(endLabel.length).toBeGreaterThan(0);
+
+    const txReq = page.waitForRequest(
+      (req) =>
+        req.method() === "GET" &&
+        req.url().includes("/api/transactions") &&
+        req.url().includes("from=") &&
+        req.url().includes("to="),
+    );
+    await cycle.click();
+    const req = await txReq;
+    const url = new URL(req.url());
+    expect(url.searchParams.get("from")).toBeTruthy();
+    expect(url.searchParams.get("to")).toBeTruthy();
+
+    await expect(page.getByRole("button", { name: "Filtrar pelo ciclo salarial" })).toBeVisible();
+    await expect(page.locator(".side-card-title").filter({ hasText: "Orçamento" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Filtros" }).click();
+    await expect(page.getByPlaceholder("Selecione")).toHaveValue(
+      new RegExp(`${escapeRegExp(startLabel)}.*${escapeRegExp(endLabel)}`),
+    );
+  });
 });
+
+function escapeRegExp(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}

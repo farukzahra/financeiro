@@ -338,6 +338,13 @@ function applyFilters() {
   scheduleSaveFilters();
 }
 
+function applySalaryCycleFilter() {
+  const cycle = salaryCycle.value;
+  if (!cycle) return;
+  period.value = [cycle.start, cycle.end];
+  applyFilters();
+}
+
 function scheduleApplyFilters() {
   if (restoringSettings) return;
   if (applyFiltersTimer) clearTimeout(applyFiltersTimer);
@@ -965,11 +972,21 @@ async function commitBudgetValor(b: BudgetItem) {
             </div>
           </div>
         </div>
-        <div class="salary-cycle">
+        <div
+          class="salary-cycle"
+          :class="{ 'salary-cycle--clickable': salaryCycle }"
+          :role="salaryCycle ? 'button' : undefined"
+          :tabindex="salaryCycle ? 0 : undefined"
+          :title="salaryCycle ? 'Filtrar pelo ciclo salarial' : undefined"
+          :aria-label="salaryCycle ? 'Filtrar pelo ciclo salarial' : undefined"
+          @click="applySalaryCycleFilter"
+          @keydown.enter.prevent="applySalaryCycleFilter"
+          @keydown.space.prevent="applySalaryCycleFilter"
+        >
           <div class="salary-cycle-meta">
             <span>Ciclo salarial</span>
             <span v-if="salaryCycle">{{ salaryCycle.remainingDays }} dias restantes</span>
-              <span v-else>Defina o ciclo em Preferências</span>
+            <span v-else>Defina o ciclo em Preferências</span>
           </div>
           <div class="salary-cycle-bar-wrap">
             <div
@@ -1626,6 +1643,26 @@ section {
 .salary-cycle {
   padding: 0.65rem 1rem 0.7rem;
   border-bottom: 1px solid var(--app-border);
+}
+
+.salary-cycle--clickable {
+  cursor: pointer;
+}
+
+.salary-cycle--clickable:hover .salary-cycle-meta,
+.salary-cycle--clickable:focus-visible .salary-cycle-meta,
+.salary-cycle--clickable:hover .salary-cycle-dates,
+.salary-cycle--clickable:focus-visible .salary-cycle-dates,
+.salary-cycle--clickable:active .salary-cycle-meta,
+.salary-cycle--clickable:active .salary-cycle-dates {
+  color: var(--app-text, #1a1a1a);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.salary-cycle--clickable:focus-visible {
+  outline: 2px solid var(--app-border, #c5c5c5);
+  outline-offset: -2px;
 }
 
 .salary-cycle-meta {
