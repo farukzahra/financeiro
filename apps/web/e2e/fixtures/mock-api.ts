@@ -5,6 +5,7 @@ export const CAT_ALIMENTACAO = "00000000-0000-4000-8000-000000000002";
 export const CAT_TRANSPORTE = "00000000-0000-4000-8000-000000000003";
 export const CAT_DEBITO = "00000000-0000-4000-8000-000000000004";
 export const CAT_CARTAO = "00000000-0000-4000-8000-000000000005";
+export const CAT_SALARIO = "00000000-0000-4000-8000-000000000006";
 
 export const mockUser = {
   id: "user-1",
@@ -109,6 +110,7 @@ export function createMockApiState(): MockApiState {
       { id: CAT_TRANSPORTE, code: "TRANSPORTE", descricao: "Transporte", ativa: true },
       { id: CAT_DEBITO, code: "DEBITO EM CONTA", descricao: "Débito automático", ativa: true },
       { id: CAT_CARTAO, code: "CARTAO DE CREDITO", descricao: "Cartão de Crédito", ativa: true },
+      { id: CAT_SALARIO, code: "SALARIO", descricao: "Salário", ativa: true },
     ],
     rules: [],
     budget: [],
@@ -311,12 +313,18 @@ export async function installMockApi(page: Page, state: MockApiState) {
     if (method === "GET" && path === "/transactions") {
       const filtered = filterTransactions(state.transactions, url, state);
       const period = summarizePeriod(filtered);
+      const ultimaData =
+        state.transactions.reduce<string | null>((max, row) => {
+          if (!max || row.data > max) return row.data;
+          return max;
+        }, null);
       return route.fulfill({
         json: {
           itens: filtered,
           resumo: {
             ...period,
             saldo: saldoAtual(state.transactions),
+            ultimaData,
           },
         },
       });

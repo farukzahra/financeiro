@@ -1,7 +1,12 @@
-/** Period totals from filtered rows; saldo atual is always all-time. */
+import { csvStaleDays } from "@financeiro/shared";
+
+export { csvStaleDays };
+
+/** Period totals from filtered rows; saldo atual and ultimaData are always all-time. */
 export function buildTransactionsResumo(
   filteredRows: Array<{ valor: string | number }>,
   allTimeSaldo: number,
+  ultimaData: string | null = null,
 ) {
   let totalEntradas = 0;
   let totalSaidas = 0;
@@ -15,6 +20,7 @@ export function buildTransactionsResumo(
     totalSaidas: totalSaidas.toFixed(2),
     saldo: allTimeSaldo.toFixed(2),
     qtd: filteredRows.length,
+    ultimaData,
   };
 }
 

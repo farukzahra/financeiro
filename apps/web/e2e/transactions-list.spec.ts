@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import {
   CAT_ALIMENTACAO,
   CAT_OUTROS,
+  CAT_SALARIO,
   createMockApiState,
   mockAuthenticatedApp,
   mockTransaction,
@@ -112,6 +113,70 @@ test.describe("Transações — listagem", () => {
     await dataHeader.click();
     await expect(rows.nth(0)).toContainText("Mais antiga");
     await expect(rows.nth(1)).toContainText("Mais recente");
+  });
+
+  test("na mesma data SALÁRIO aparece antes das outras categorias", async ({ page }) => {
+    const state = createMockApiState();
+    state.transactions = [
+      {
+        ...structuredClone(mockTransaction),
+        identificador: "tx-food",
+        data: "2026-07-10",
+        valor: "-40.00",
+        detalhe: "Mercado dia 10",
+        descricaoRaw: "Compra - Mercado dia 10",
+        chaveNormalizada: "mercado dia 10",
+        categoriaId: CAT_ALIMENTACAO,
+      },
+      {
+        ...structuredClone(mockTransaction),
+        identificador: "tx-salary",
+        data: "2026-07-10",
+        valor: "5000.00",
+        detalhe: "Salário Faruk",
+        descricaoRaw: "Transferência Recebida - Salário Faruk",
+        tipo: "Transferência Recebida",
+        chaveNormalizada: "salario faruk",
+        categoriaId: CAT_SALARIO,
+      },
+    ];
+    await mockAuthenticatedApp(page, state);
+    await page.goto("/");
+
+    const rows = page.locator("tbody tr");
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0)).toContainText("Salário Faruk");
+    await expect(rows.nth(0)).toContainText("SALÁRIO");
+    await expect(rows.nth(1)).toContainText("Mercado dia 10");
+
+    await page.getByRole("columnheader", { name: /Data/i }).click();
+    await expect(rows.nth(0)).toContainText("Salário Faruk");
+    await expect(rows.nth(1)).toContainText("Mercado dia 10");
+  });
+
+  test("mostra alerta quando CSV está atrás de D-1", async ({ page }) => {
+    const today = new Date();
+    const last = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    last.setDate(last.getDate() - 3);
+    const y = last.getFullYear();
+    const m = String(last.getMonth() + 1).padStart(2, "0");
+    const d = String(last.getDate()).padStart(2, "0");
+    const ultima = `${y}-${m}-${d}`;
+
+    const state = createMockApiState();
+    state.transactions = [
+      {
+        ...structuredClone(mockTransaction),
+        identificador: "tx-stale",
+        data: ultima,
+        detalhe: "Última importada",
+      },
+    ];
+    await mockAuthenticatedApp(page, state);
+    await page.goto("/");
+
+    await expect(page.getByText(/Extrato atrasado 2 dias/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Importar CSV" })).toBeVisible();
   });
 
   test("painel por categoria exibe code e não descrição", async ({ page }) => {

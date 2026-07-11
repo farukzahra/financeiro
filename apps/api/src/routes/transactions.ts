@@ -79,9 +79,10 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
 
     // Saldo atual = soma de todas as transações do usuário (bate com extrato do banco).
     // Entradas/saídas/qtd continuam no recorte filtrado.
-    const [saldoRow] = await db
+    const [totalsRow] = await db
       .select({
         saldo: drizzleSql<string>`coalesce(sum(${transactions.valor}), 0)`,
+        ultimaData: drizzleSql<string | null>`max(${transactions.data})::text`,
       })
       .from(transactions)
       .where(eq(transactions.userId, user.id));
@@ -92,7 +93,11 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
         data: r.data as unknown as string,
         importadoEm: r.importadoEm.toISOString(),
       })),
-      resumo: buildTransactionsResumo(rows, Number(saldoRow?.saldo ?? 0)),
+      resumo: buildTransactionsResumo(
+        rows,
+        Number(totalsRow?.saldo ?? 0),
+        totalsRow?.ultimaData ?? null,
+      ),
     };
   });
 

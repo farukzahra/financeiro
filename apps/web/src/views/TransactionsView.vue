@@ -17,6 +17,7 @@ import {
 } from "../lib/api";
 import { fmtMoneyBR, fmtDateBR, classMoney } from "../lib/format";
 import { categoryPillLabel, categoryCode } from "../lib/categories";
+import { compareTransactionsByDateThenSalario, csvStaleDays } from "@financeiro/shared";
 import ImportModal from "../components/ImportModal.vue";
 import ManualTransactionModal from "../components/ManualTransactionModal.vue";
 
@@ -31,6 +32,7 @@ const resumo = ref({
   totalSaidas: "0",
   saldo: "0",
   qtd: 0,
+  ultimaData: null as string | null,
 });
 const loading = ref(false);
 
@@ -325,6 +327,7 @@ function recalculateResumo(saldoDelta = 0) {
     // Saldo atual é global; só ajusta pelo delta da edição/exclusão.
     saldo: (Number(resumo.value.saldo) + saldoDelta).toFixed(2),
     qtd: rows.value.length,
+    ultimaData: resumo.value.ultimaData,
   };
 }
 
@@ -473,10 +476,8 @@ function onDelete(row: Transaction) {
     rejectLabel: "Cancelar",
     accept: async () => {
       try {
-        const deletedValor = Number(row.valor);
         await deleteTransaction(row.identificador);
-        rows.value = rows.value.filter((r) => r.identificador !== row.identificador);
-        recalculateResumo(-deletedValor);
+        await load();
         snackbar.add({ severity: "success", summary: "Excluída", life: 1500 });
       } catch (err) {
         snackbar.add({
@@ -652,6 +653,18 @@ function budgetPercent(b: BudgetItem): number {
   return Math.min(999, Math.round((spentByCategoria(b.categoriaId) / planned) * 100));
 }
 
+const csvStale = computed(() => csvStaleDays(resumo.value.ultimaData));
+
+const csvStaleMessage = computed(() => {
+  if (resumo.value.ultimaData == null) {
+    return "Ainda sem extrato — importe o CSV do Nubank (até D-1).";
+  }
+  const days = csvStale.value;
+  if (days == null || days <= 0) return null;
+  const label = days === 1 ? "1 dia" : `${days} dias`;
+  return `Extrato atrasado ${label} — o CSV do banco fecha em D-1.`;
+});
+
 const salaryCycle = computed(() => {
   const paymentDay = auth.user?.settings.salaryCycle?.paymentDay;
   const bounds = resolveSalaryCycleBounds(new Date(), paymentDay);
@@ -776,12 +789,29 @@ const tipoOptions = computed(() => ref_.tipos.map((t) => ({ title: t, value: t }
 
 const transactionHeaders = [
   { title: "Data", key: "data", width: 130 },
-  { title: "Tipo", key: "tipo", width: 200 },
-  { title: "Detalhe", key: "detalhe", width: 320 },
-  { title: "Valor", key: "valor", width: 160, align: "end" as const },
-  { title: "Categoria", key: "categoriaId", width: 200 },
+  { title: "Tipo", key: "tipo", width: 200, sortable: false },
+  { title: "Detalhe", key: "detalhe", width: 320, sortable: false },
+  { title: "Valor", key: "valor", width: 160, align: "end" as const, sortable: false },
+  { title: "Categoria", key: "categoriaId", width: 200, sortable: false },
   { title: "", key: "actions", sortable: false, width: 90 },
 ];
+
+const sortedRows = computed(() => {
+  const list = [...rows.value];
+  if (sortField.value !== "data") return list;
+  const order = sortOrder.value;
+  list.sort((a, b) =>
+    compareTransactionsByDateThenSalario(
+      { data: a.data, categoryCode: categoryCode(a.categoriaId, ref_.categories) },
+      { data: b.data, categoryCode: categoryCode(b.categoriaId, ref_.categories) },
+      order,
+    ),
+  );
+  return list;
+});
+
+/** Mantém a ordem de `sortedRows` (desempate SALÁRIO); a direção já foi aplicada. */
+const dateKeySort = () => 0;
 
 const sortByModel = computed({
   get: () => [
@@ -1124,6 +1154,14 @@ async function commitBudgetValor(b: BudgetItem) {
           <v-btn variant="outlined" prepend-icon="mdi-upload" @click="showImport = true">
             Importar CSV
           </v-btn>
+          <p
+            v-if="csvStaleMessage"
+            class="csv-stale-hint"
+            role="status"
+          >
+            <v-icon icon="mdi-calendar-clock" size="small" aria-hidden="true" />
+            <span>{{ csvStaleMessage }}</span>
+          </p>
         </div>
         <div class="summary-cards">
           <div
@@ -1188,9 +1226,10 @@ async function commitBudgetValor(b: BudgetItem) {
 
         <v-data-table
           :headers="transactionHeaders"
-          :items="rows"
+          :items="sortedRows"
           :loading="loading"
           v-model:sort-by="sortByModel"
+          :custom-key-sort="{ data: dateKeySort }"
           must-sort
           item-value="identificador"
           :items-per-page="-1"
@@ -1443,7 +1482,27 @@ section {
 .actions-bar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.csv-stale-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.35rem 0.65rem 0.35rem 0.55rem;
+  border-left: 3px solid var(--app-accent-wash-deep);
+  background: var(--app-accent-wash);
+  color: #6b5344;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  border-radius: 0 8px 8px 0;
+}
+
+.csv-stale-hint .v-icon {
+  color: #8a6a52;
+  flex-shrink: 0;
 }
 
 .summary-cards {

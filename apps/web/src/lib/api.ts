@@ -130,6 +130,7 @@ export type TransactionsResponse = {
     totalSaidas: string;
     saldo: string;
     qtd: number;
+    ultimaData: string | null;
   };
 };
 

@@ -172,6 +172,44 @@ export const TransactionsQuerySchema = z.object({
 export type TransactionsQuery = z.infer<typeof TransactionsQuerySchema>;
 
 // ---------------------------------------------------------------------------
+// Categoria salário (desempate na lista por data)
+// ---------------------------------------------------------------------------
+
+export const CATEGORY_CODE_SALARIO = "SALARIO" as const;
+
+export function salarioSortRank(categoryCode: string | null | undefined): number {
+  return categoryCode === CATEGORY_CODE_SALARIO ? 0 : 1;
+}
+
+export function compareTransactionsByDateThenSalario(
+  a: { data: string; categoryCode: string | null | undefined },
+  b: { data: string; categoryCode: string | null | undefined },
+  order: 1 | -1,
+): number {
+  const byDate = a.data.localeCompare(b.data) * order;
+  if (byDate !== 0) return byDate;
+  return salarioSortRank(a.categoryCode) - salarioSortRank(b.categoryCode);
+}
+
+/** Dias atrás do máximo importável (CSV até D-1 = ontem). null se sem data. */
+export function csvStaleDays(
+  ultimaData: string | null | undefined,
+  today: Date = new Date(),
+): number | null {
+  if (!ultimaData) return null;
+
+  const [y, m, d] = ultimaData.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  const last = new Date(y, m - 1, d);
+
+  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  end.setDate(end.getDate() - 1);
+
+  const diffDays = Math.round((end.getTime() - last.getTime()) / 86_400_000);
+  return Math.max(0, diffDays);
+}
+
+// ---------------------------------------------------------------------------
 // Orcamento previsto
 // ---------------------------------------------------------------------------
 
