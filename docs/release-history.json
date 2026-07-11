@@ -8,7 +8,7 @@
       "title": "Clique no ciclo salarial filtra o período",
       "summary": "No painel Orçamento, clicar no bloco do ciclo salarial aplica as datas de início e fim ao filtro de período e atualiza a lista, sem sair da aba Orçamento.",
       "type": "feat",
-      "commit": null
+      "commit": "8d0e194"
     },
     {
       "version": "0.17.0",
