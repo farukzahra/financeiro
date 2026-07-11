@@ -6,6 +6,28 @@ import {
 } from "./fixtures/mock-api";
 
 test.describe("Transações — orçamento cartão", () => {
+  test("mostra Alimentação com acento no painel de orçamento", async ({ page }) => {
+    const state = createMockApiState();
+    state.budget.push({
+      id: "bud-alim",
+      descricao: "Alimentação",
+      categoriaId: "00000000-0000-4000-8000-000000000002",
+      diaVencimento: null,
+      valorMensal: "5000.00",
+      ativo: true,
+      origem: null,
+      criadoEm: new Date().toISOString(),
+    });
+    await mockAuthenticatedApp(page, state);
+    await page.goto("/");
+    await page.getByRole("button", { name: "Orçamento previsto" }).click();
+
+    const nome = page.locator(".budget-item-nome").filter({ hasText: "Alimentação" });
+    await expect(nome).toBeVisible();
+    await expect(nome).toHaveText("Alimentação");
+    await expect(page.locator(".budget-item-nome").filter({ hasText: /^Alimentacao$/ })).toHaveCount(0);
+  });
+
   test("mostra Cartão de Crédito na categoria cartão sem edição inline", async ({ page }) => {
     const state = createMockApiState();
     state.budget.push({
@@ -75,7 +97,7 @@ test.describe("Transações — orçamento cartão", () => {
     await expect(page.getByRole("button", { name: "Filtrar pelo ciclo salarial" })).toBeVisible();
     await expect(page.locator(".side-card-title").filter({ hasText: "Orçamento" })).toBeVisible();
 
-    await page.getByRole("button", { name: "Filtros" }).click();
+    await page.getByRole("button", { name: "Filtros", exact: true }).click();
     await expect(page.getByPlaceholder("Selecione")).toHaveValue(
       new RegExp(`${escapeRegExp(startLabel)}.*${escapeRegExp(endLabel)}`),
     );

@@ -12,7 +12,7 @@ const baseRow: ParsedRow = {
   chaveNormalizada: "PADARIA TESTE",
 };
 
-const categoryCodes = new Set(["OUTROS", "ALIMENTACAO", "PIX"]);
+const categoryCodes = new Set(["OUTROS", "ALIMENTAÇÃO", "PIX"]);
 
 describe("categorizeOne", () => {
   it("aplica regra de substring com maior prioridade (menor numero)", () => {
@@ -26,7 +26,7 @@ describe("categorizeOne", () => {
       },
       {
         id: "rule-1",
-        categoriaId: "ALIMENTACAO",
+        categoriaId: "ALIMENTAÇÃO",
         tipoPadrao: "substring" as const,
         padrao: "PADARIA",
         prioridade: 10,
@@ -34,7 +34,7 @@ describe("categorizeOne", () => {
     ].sort((a, b) => a.prioridade - b.prioridade);
     const result = categorizeOne(baseRow, rules, categoryCodes);
     expect(result).toEqual({
-      categoria: "ALIMENTACAO",
+      categoria: "ALIMENTAÇÃO",
       ruleId: "rule-1",
       regra: "dicionario",
     });
@@ -42,7 +42,7 @@ describe("categorizeOne", () => {
 
   it("usa heuristica quando nao ha regra e code existe no banco", () => {
     const result = categorizeOne(baseRow, [], categoryCodes);
-    expect(result.categoria).toBe("ALIMENTACAO");
+    expect(result.categoria).toBe("ALIMENTAÇÃO");
     expect(result.regra).toBe("heuristica");
   });
 
@@ -73,7 +73,7 @@ describe("categorizeAll", () => {
   it("retorna categoriaSugerida como code para cada linha", () => {
     const items = categorizeAll([baseRow], [], categoryCodes);
     expect(items).toHaveLength(1);
-    expect(items[0].categoriaSugerida).toBe("ALIMENTACAO");
+    expect(items[0].categoriaSugerida).toBe("ALIMENTAÇÃO");
     expect(items[0].regraAplicada).toBe("heuristica");
   });
 });

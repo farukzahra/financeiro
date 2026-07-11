@@ -6,7 +6,7 @@ import { categories, subscriptions, users } from "./schema.js";
 import { syncCreditCardBudget } from "../services/credit-card-budget.js";
 
 const SEED_CATEGORIES = [
-  { code: "ALIMENTACAO", descricao: "Alimentação (mercado e restaurante)" },
+  { code: "ALIMENTAÇÃO", descricao: "Alimentação (mercado e restaurante)" },
   { code: "FARMACIA", descricao: "Farmácia / remédios" },
   { code: "SAUDE", descricao: "Saúde (consultas, planos)" },
   { code: "GASOLINA", descricao: "Gasolina / combustível" },

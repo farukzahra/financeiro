@@ -20,7 +20,7 @@ import {
 } from "../lib/api";
 import { useConfirm } from "../composables/useConfirm";
 import { useSnackbar } from "../composables/useSnackbar";
-import { categoryDisplayName, categoryOptionLabel } from "../lib/categories";
+import { categoryDisplayName, categoryOptionLabel, categoryPillLabel } from "../lib/categories";
 
 const ref_ = useReferenceStore();
 const auth = useAuthStore();
@@ -410,7 +410,7 @@ async function saveSalaryCycle() {
 
 <template>
   <section class="settings-page">
-    <v-tabs v-model="tab" color="primary">
+    <v-tabs v-model="tab" class="settings-tabs" color="primary" density="comfortable">
       <v-tab value="categorias">Categorias</v-tab>
       <v-tab value="regras">Regras</v-tab>
       <v-tab value="orcamento">Orçamento</v-tab>
@@ -420,184 +420,192 @@ async function saveSalaryCycle() {
 
     <v-window v-model="tab" class="settings-window">
       <v-window-item value="categorias">
-        <div class="table-header">
-          <div class="table-title">Categorias disponíveis</div>
-          <v-btn
-            color="success"
-            size="small"
-            prepend-icon="mdi-plus"
-            @click="openCreateCategory"
+        <div class="app-panel">
+          <div class="table-header">
+            <div class="table-title">Categorias disponíveis</div>
+            <v-btn
+              color="success"
+              size="small"
+              prepend-icon="mdi-plus"
+              @click="openCreateCategory"
+            >
+              Nova categoria
+            </v-btn>
+          </div>
+          <v-data-table
+            :headers="categoryHeaders"
+            :items="ref_.categories"
+            :loading="loading"
+            :items-per-page="-1"
+            hide-default-footer
+            striped="even"
           >
-            Nova categoria
-          </v-btn>
+            <template #item.code="{ item }">
+              <div>{{ categoryDisplayName(item.id, ref_.categories) }}</div>
+              <small class="category-code">{{ item.code }}</small>
+            </template>
+            <template #item.ativa="{ item }">
+              <v-chip :color="item.ativa ? 'success' : 'default'" size="small">
+                {{ item.ativa ? "sim" : "não" }}
+              </v-chip>
+            </template>
+            <template #item.actions="{ item }">
+              <v-btn icon="mdi-pencil" variant="text" size="small" @click="openEditCategory(item)" />
+            </template>
+          </v-data-table>
         </div>
-        <v-data-table
-          :headers="categoryHeaders"
-          :items="ref_.categories"
-          :loading="loading"
-          :items-per-page="-1"
-          hide-default-footer
-          striped="even"
-        >
-          <template #item.code="{ item }">
-            <div>{{ categoryDisplayName(item.id, ref_.categories) }}</div>
-            <small class="category-code">{{ item.code }}</small>
-          </template>
-          <template #item.ativa="{ item }">
-            <v-chip :color="item.ativa ? 'success' : 'default'" size="small">
-              {{ item.ativa ? "sim" : "não" }}
-            </v-chip>
-          </template>
-          <template #item.actions="{ item }">
-            <v-btn icon="mdi-pencil" variant="text" size="small" @click="openEditCategory(item)" />
-          </template>
-        </v-data-table>
       </v-window-item>
 
       <v-window-item value="regras">
-        <div class="table-header">
-          <div class="table-title">Regras de categorização</div>
-          <v-btn color="success" size="small" prepend-icon="mdi-plus" @click="openCreateRule">
-            Nova regra
-          </v-btn>
+        <div class="app-panel">
+          <div class="table-header">
+            <div class="table-title">Regras de categorização</div>
+            <v-btn color="success" size="small" prepend-icon="mdi-plus" @click="openCreateRule">
+              Nova regra
+            </v-btn>
+          </div>
+          <v-data-table
+            class="rules-table"
+            :headers="ruleHeaders"
+            :items="ref_.rules"
+            :loading="loading"
+            :items-per-page="-1"
+            hide-default-footer
+            striped="even"
+          >
+            <template #item.padrao="{ item }">
+              <span class="cell-ellipsis" :title="item.padrao">{{ item.padrao }}</span>
+            </template>
+            <template #item.categoriaId="{ item }">
+              <span
+                class="cell-ellipsis"
+                :title="categoryDisplayName(item.categoriaId, ref_.categories)"
+              >
+                {{ categoryDisplayName(item.categoriaId, ref_.categories) }}
+              </span>
+            </template>
+            <template #item.ativa="{ item }">
+              <v-chip :color="item.ativa ? 'success' : 'default'" size="small">
+                {{ item.ativa ? "sim" : "não" }}
+              </v-chip>
+            </template>
+          </v-data-table>
         </div>
-        <v-data-table
-          class="rules-table"
-          :headers="ruleHeaders"
-          :items="ref_.rules"
-          :loading="loading"
-          :items-per-page="-1"
-          hide-default-footer
-          striped="even"
-        >
-          <template #item.padrao="{ item }">
-            <span class="cell-ellipsis" :title="item.padrao">{{ item.padrao }}</span>
-          </template>
-          <template #item.categoriaId="{ item }">
-            <span
-              class="cell-ellipsis"
-              :title="categoryDisplayName(item.categoriaId, ref_.categories)"
-            >
-              {{ categoryDisplayName(item.categoriaId, ref_.categories) }}
-            </span>
-          </template>
-          <template #item.ativa="{ item }">
-            <v-chip :color="item.ativa ? 'success' : 'default'" size="small">
-              {{ item.ativa ? "sim" : "não" }}
-            </v-chip>
-          </template>
-        </v-data-table>
       </v-window-item>
 
       <v-window-item value="orcamento">
-        <div class="budget-header">
-          <div class="total-previsto">
-            Total previsto mensal: <strong>{{ fmtMoney(totalPrevisto) }}</strong>
+        <div class="app-panel">
+          <div class="budget-header">
+            <div class="total-previsto">
+              Total previsto mensal: <strong>{{ fmtMoney(totalPrevisto) }}</strong>
+            </div>
+            <v-btn color="success" size="small" prepend-icon="mdi-plus" @click="openCreateBudget">
+              Novo item
+            </v-btn>
           </div>
-          <v-btn color="success" size="small" prepend-icon="mdi-plus" @click="openCreateBudget">
-            Novo item
-          </v-btn>
-        </div>
-        <v-data-table
-          :headers="budgetHeaders"
-          :items="budgetRows"
-          :loading="loading"
-          :items-per-page="-1"
-          hide-default-footer
-          striped="even"
-        >
-          <template #item.diaVencimento="{ item }">{{ item.diaVencimento ?? "—" }}</template>
-          <template #item.descricao="{ item }">
-            <span class="cell-ellipsis" :title="item.descricao">{{ item.descricao }}</span>
-          </template>
-          <template #item.categoriaId="{ item }">
-            <span
-              class="cell-ellipsis"
-              :title="item.categoriaId ? categoryDisplayName(item.categoriaId, ref_.categories) : ''"
-            >
-              {{ item.categoriaId ? categoryDisplayName(item.categoriaId, ref_.categories) : "—" }}
-            </span>
-          </template>
-          <template #item.valorMensal="{ item }">
-            <span class="money-neg">{{ fmtMoney(item.valorMensal) }}</span>
-          </template>
-          <template #item.ativo="{ item }">
-            <v-chip :color="item.ativo ? 'success' : 'default'" size="small">
-              {{ item.ativo ? "sim" : "não" }}
-            </v-chip>
-          </template>
-          <template #item.actions="{ item }">
-            <v-btn
-              icon="mdi-pencil"
-              variant="text"
-              size="small"
-              :disabled="isSystemBudget(item)"
-              :title="isSystemBudget(item) ? 'Item sincronizado pelas assinaturas' : 'Editar'"
-              @click="openEditBudget(item)"
-            />
-            <v-btn
-              icon="mdi-delete"
-              variant="text"
-              color="error"
-              size="small"
-              :disabled="isSystemBudget(item)"
-              :title="isSystemBudget(item) ? 'Item sincronizado pelas assinaturas' : 'Excluir'"
-              @click="confirmDeleteBudget(item)"
-            />
-          </template>
-        </v-data-table>
-      </v-window-item>
-
-      <v-window-item value="assinaturas">
-        <div class="budget-header">
-          <div class="total-previsto">
-            Total assinaturas: <strong>{{ fmtMoney(totalAssinaturas) }}</strong>
-          </div>
-          <v-btn color="success" size="small" prepend-icon="mdi-plus" @click="openCreateSubscription">
-            Nova assinatura
-          </v-btn>
-        </div>
-        <v-data-table
-          class="subscriptions-table"
-          :headers="subscriptionHeaders"
-          :items="subscriptionRows"
-          :loading="loading"
-          :items-per-page="-1"
-          hide-default-footer
-          striped="even"
-        >
-          <template #item.nome="{ item }">
-            <span class="cell-ellipsis" :title="item.nome">{{ item.nome }}</span>
-          </template>
-          <template #item.valorMensal="{ item }">
-            <span class="money-neg">{{ fmtMoney(item.valorMensal) }}</span>
-          </template>
-          <template #item.actions="{ item }">
-            <div class="table-actions">
+          <v-data-table
+            :headers="budgetHeaders"
+            :items="budgetRows"
+            :loading="loading"
+            :items-per-page="-1"
+            hide-default-footer
+            striped="even"
+          >
+            <template #item.diaVencimento="{ item }">{{ item.diaVencimento ?? "—" }}</template>
+            <template #item.descricao="{ item }">
+              <span class="cell-ellipsis" :title="item.descricao">{{ item.descricao }}</span>
+            </template>
+            <template #item.categoriaId="{ item }">
+              <span
+                class="cell-ellipsis"
+                :title="item.categoriaId ? categoryDisplayName(item.categoriaId, ref_.categories) : ''"
+              >
+                {{ item.categoriaId ? categoryPillLabel(item.categoriaId, ref_.categories) : "—" }}
+              </span>
+            </template>
+            <template #item.valorMensal="{ item }">
+              <span class="money-neg">{{ fmtMoney(item.valorMensal) }}</span>
+            </template>
+            <template #item.ativo="{ item }">
+              <v-chip :color="item.ativo ? 'success' : 'default'" size="small">
+                {{ item.ativo ? "sim" : "não" }}
+              </v-chip>
+            </template>
+            <template #item.actions="{ item }">
               <v-btn
                 icon="mdi-pencil"
                 variant="text"
                 size="small"
-                aria-label="Editar assinatura"
-                @click="openEditSubscription(item)"
+                :disabled="isSystemBudget(item)"
+                :title="isSystemBudget(item) ? 'Item sincronizado pelas assinaturas' : 'Editar'"
+                @click="openEditBudget(item)"
               />
               <v-btn
                 icon="mdi-delete"
                 variant="text"
                 color="error"
                 size="small"
-                aria-label="Excluir assinatura"
-                @click="confirmDeleteSubscription(item)"
+                :disabled="isSystemBudget(item)"
+                :title="isSystemBudget(item) ? 'Item sincronizado pelas assinaturas' : 'Excluir'"
+                @click="confirmDeleteBudget(item)"
               />
+            </template>
+          </v-data-table>
+        </div>
+      </v-window-item>
+
+      <v-window-item value="assinaturas">
+        <div class="app-panel">
+          <div class="budget-header">
+            <div class="total-previsto">
+              Total assinaturas: <strong>{{ fmtMoney(totalAssinaturas) }}</strong>
             </div>
-          </template>
-        </v-data-table>
+            <v-btn color="success" size="small" prepend-icon="mdi-plus" @click="openCreateSubscription">
+              Nova assinatura
+            </v-btn>
+          </div>
+          <v-data-table
+            class="subscriptions-table"
+            :headers="subscriptionHeaders"
+            :items="subscriptionRows"
+            :loading="loading"
+            :items-per-page="-1"
+            hide-default-footer
+            striped="even"
+          >
+            <template #item.nome="{ item }">
+              <span class="cell-ellipsis" :title="item.nome">{{ item.nome }}</span>
+            </template>
+            <template #item.valorMensal="{ item }">
+              <span class="money-neg">{{ fmtMoney(item.valorMensal) }}</span>
+            </template>
+            <template #item.actions="{ item }">
+              <div class="table-actions">
+                <v-btn
+                  icon="mdi-pencil"
+                  variant="text"
+                  size="small"
+                  aria-label="Editar assinatura"
+                  @click="openEditSubscription(item)"
+                />
+                <v-btn
+                  icon="mdi-delete"
+                  variant="text"
+                  color="error"
+                  size="small"
+                  aria-label="Excluir assinatura"
+                  @click="confirmDeleteSubscription(item)"
+                />
+              </div>
+            </template>
+          </v-data-table>
+        </div>
       </v-window-item>
 
       <v-window-item value="preferencias">
-        <div class="prefs-card">
-          <div class="table-title">Dia de pagamento</div>
-          <p class="prefs-copy">
+        <div class="app-panel prefs-panel">
+          <div class="app-panel__title">Dia de pagamento</div>
+          <p class="app-panel__copy">
             Defina quando seu pagamento cai. O ciclo no painel será calculado entre o último e o próximo pagamento.
           </p>
           <div class="salary-cycle-grid">
@@ -767,6 +775,45 @@ async function saveSalaryCycle() {
   padding: 1rem 1.5rem 2rem;
 }
 
+.settings-tabs {
+  margin: 0 -0.25rem;
+  border-bottom: 1px solid var(--app-border);
+}
+
+.settings-tabs :deep(.v-slide-group__content) {
+  gap: 0.15rem;
+}
+
+.settings-tabs :deep(.v-tab) {
+  min-height: 42px;
+  padding: 0 1rem;
+  border-radius: 8px 8px 0 0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--app-text-muted) !important;
+  opacity: 1;
+}
+
+.settings-tabs :deep(.v-tab:hover) {
+  color: var(--app-text) !important;
+  background: rgba(30, 90, 168, 0.05);
+}
+
+.settings-tabs :deep(.v-tab--selected) {
+  color: var(--app-primary) !important;
+  font-weight: 600;
+  background: var(--app-primary-wash);
+}
+
+.settings-tabs :deep(.v-tab__slider) {
+  height: 3px;
+  border-radius: 2px 2px 0 0;
+  background: var(--app-primary) !important;
+  color: var(--app-primary) !important;
+}
+
 .settings-window {
   padding-top: 1rem;
 }
@@ -802,13 +849,8 @@ async function saveSalaryCycle() {
   margin-top: 0.25rem;
 }
 
-.prefs-card {
+.prefs-panel {
   max-width: 720px;
-}
-
-.prefs-copy {
-  margin: 0 0 1rem;
-  opacity: 0.75;
 }
 
 .salary-cycle-grid {

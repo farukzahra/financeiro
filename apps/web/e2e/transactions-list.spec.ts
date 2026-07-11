@@ -179,6 +179,25 @@ test.describe("Transações — listagem", () => {
     await expect(page.getByRole("button", { name: "Importar CSV" })).toBeVisible();
   });
 
+  test("empty state com filtro oferece limpar filtros", async ({ page }) => {
+    const state = createMockApiState();
+    state.transactions = [
+      {
+        ...structuredClone(mockTransaction),
+        detalhe: "Mercado Central",
+      },
+    ];
+    await mockAuthenticatedApp(page, state);
+    await page.goto("/");
+
+    await page.getByPlaceholder("descrição ou detalhe").fill("xyz-inexistente");
+    await page.getByRole("button", { name: "Filtrar" }).click();
+
+    await expect(page.getByText("Nenhuma transação neste filtro.")).toBeVisible();
+    await page.getByRole("button", { name: "Limpar filtros" }).click();
+    await expect(page.getByText("Mercado Central")).toBeVisible();
+  });
+
   test("painel por categoria exibe code e não descrição", async ({ page }) => {
     const state = createMockApiState();
     state.transactions = [

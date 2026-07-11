@@ -6,7 +6,7 @@ test.describe("Configurações — categorias", () => {
     await mockAuthenticatedApp(page);
     await page.goto("/configuracoes");
     await expect(page.getByText("Categorias disponíveis")).toBeVisible();
-    await expect(page.locator(".category-code", { hasText: "ALIMENTACAO" })).toBeVisible();
+    await expect(page.locator(".category-code", { hasText: "ALIMENTAÇÃO" })).toBeVisible();
     await expect(page.locator(".category-code", { hasText: "OUTROS" })).toBeVisible();
   });
 
@@ -15,7 +15,7 @@ test.describe("Configurações — categorias", () => {
     await mockAuthenticatedApp(page, state);
     await page.goto("/configuracoes");
 
-    await page.locator("tbody tr").filter({ hasText: "ALIMENTACAO" }).getByRole("button").click();
+    await page.locator("tbody tr").filter({ hasText: "ALIMENTAÇÃO" }).getByRole("button").click();
     await page.getByPlaceholder("ex: CASA DE PAO").fill("MERCADO");
     await page.getByRole("button", { name: "Salvar" }).click();
 

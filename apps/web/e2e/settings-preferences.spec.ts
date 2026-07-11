@@ -2,6 +2,19 @@ import { test, expect } from "@playwright/test";
 import { createMockApiState, mockAuthenticatedApp } from "./fixtures/mock-api";
 
 test.describe("Configurações — preferências", () => {
+  test("formulário de preferências usa painel com fundo (app-panel)", async ({ page }) => {
+    await mockAuthenticatedApp(page);
+    await page.goto("/configuracoes");
+    await page.getByRole("tab", { name: "Preferências" }).click();
+
+    const panel = page.locator(".app-panel.prefs-panel");
+    await expect(panel).toBeVisible();
+    await expect(panel.locator(".app-panel__title")).toHaveText("Dia de pagamento");
+    await expect
+      .poll(async () => panel.evaluate((el) => getComputedStyle(el).backgroundColor))
+      .toBe("rgb(255, 255, 255)");
+  });
+
   test("salva dia de pagamento via PATCH mockado", async ({ page }) => {
     const state = createMockApiState();
     await mockAuthenticatedApp(page, state);

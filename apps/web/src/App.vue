@@ -61,7 +61,7 @@ async function onLogout() {
   <template v-else-if="auth.user">
     <header class="app-header">
       <div class="app-header-brand">
-        <span class="app-header-logo">C</span>
+        <span class="app-header-logo">Fi</span>
         <span class="app-header-title">Financeiro</span>
       </div>
       <nav class="app-header-nav" aria-label="Navegação principal">
@@ -92,8 +92,11 @@ async function onLogout() {
   <main v-else class="login-shell">
     <form class="login-panel" @submit.prevent="submitAuth">
       <div class="login-brand">
-        <span class="app-header-logo">C</span>
-        <span class="app-header-title">Financeiro</span>
+        <span class="app-header-logo">Fi</span>
+        <div class="login-brand-text">
+          <span class="app-header-title">Financeiro</span>
+          <p class="login-tagline">Extrato, orçamento e categorias num só lugar.</p>
+        </div>
       </div>
 
       <div class="auth-tabs">
@@ -155,26 +158,42 @@ async function onLogout() {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  background: var(--app-background);
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, var(--app-primary-wash) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 90% 90%, rgba(30, 90, 168, 0.06) 0%, transparent 50%),
+    var(--app-background);
 }
 
 .login-panel {
-  width: min(380px, calc(100vw - 2rem));
+  width: min(400px, calc(100vw - 2rem));
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 2rem;
+  padding: 2rem 2rem 1.75rem;
   border: 1px solid var(--app-border);
-  border-radius: 8px;
+  border-radius: var(--app-radius-surface);
   background: var(--app-surface);
 }
 
 .login-brand {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.65rem;
-  margin-bottom: 0.25rem;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.login-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding-top: 0.15rem;
+}
+
+.login-tagline {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--app-text-muted);
 }
 
 .auth-tabs {

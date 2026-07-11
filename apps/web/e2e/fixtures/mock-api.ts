@@ -40,7 +40,7 @@ export const mockPreviewItem = {
   tipo: "Compra no débito",
   detalhe: "PADARIA TESTE",
   chaveNormalizada: "padaria teste",
-  categoriaSugerida: "ALIMENTACAO",
+  categoriaSugerida: "ALIMENTAÇÃO",
   categoryRuleId: null,
   regraAplicada: "heuristica",
   jaExistente: false,
@@ -106,7 +106,7 @@ export function createMockApiState(): MockApiState {
     user: structuredClone(mockUser),
     categories: [
       { id: CAT_OUTROS, code: "OUTROS", descricao: "Outros", ativa: true },
-      { id: CAT_ALIMENTACAO, code: "ALIMENTACAO", descricao: "Alimentação", ativa: true },
+      { id: CAT_ALIMENTACAO, code: "ALIMENTAÇÃO", descricao: "Alimentação", ativa: true },
       { id: CAT_TRANSPORTE, code: "TRANSPORTE", descricao: "Transporte", ativa: true },
       { id: CAT_DEBITO, code: "DEBITO EM CONTA", descricao: "Débito automático", ativa: true },
       { id: CAT_CARTAO, code: "CARTAO DE CREDITO", descricao: "Cartão de Crédito", ativa: true },

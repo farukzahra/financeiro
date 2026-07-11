@@ -1,5 +1,5 @@
 ﻿:root {
-  font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+  font-family: "IBM Plex Sans", system-ui, -apple-system, Segoe UI, sans-serif;
   color-scheme: light;
 
   /* aliases para CSS customizado (shell) — espelham o tema Vuetify */
@@ -11,12 +11,15 @@
   --app-text: rgba(var(--v-theme-on-surface), var(--v-high-emphasis-opacity));
   --app-text-muted: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
   --app-highlight: rgba(var(--v-theme-primary), 0.08);
+  --app-radius-surface: 8px;
+  --app-radius-control: 10px;
+  --app-font-ui: "IBM Plex Sans", system-ui, sans-serif;
 
-  /* tons lavados — logo, badges, ciclo salarial */
-  --app-primary-wash: #E4EEF8;
-  --app-primary-wash-text: #3D6FA3;
-  --app-accent-wash: #F3E8DE;
-  --app-accent-wash-deep: #E2D0C2;
+  /* tons lavados — logo, badges, ciclo salarial, avisos */
+  --app-primary-wash: #e4eef8;
+  --app-primary-wash-text: #3d6fa3;
+  --app-accent-wash: #f3e8de;
+  --app-accent-wash-deep: #e2d0c2;
 }
 
 * {
@@ -30,6 +33,7 @@ body {
   overflow: hidden;
   background: var(--app-background);
   color: var(--app-text);
+  font-family: var(--app-font-ui);
 }
 
 #app {
@@ -83,12 +87,13 @@ body {
   justify-content: center;
   width: 30px;
   height: 30px;
-  border-radius: 8px;
+  border-radius: var(--app-radius-surface);
   background: var(--app-primary-wash);
   color: var(--app-primary-wash-text);
   border: 1px solid rgba(30, 90, 168, 0.12);
-  font-size: 1rem;
+  font-size: 0.78rem;
   font-weight: 600;
+  letter-spacing: -0.02em;
   line-height: 1;
   user-select: none;
 }
@@ -97,7 +102,7 @@ body {
   font-size: 1rem;
   font-weight: 600;
   color: var(--app-text);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .app-header-nav {
@@ -106,15 +111,12 @@ body {
   top: 50%;
   display: flex;
   align-items: center;
-  gap: 0.2rem;
-  padding: 0.2rem;
-  border: 1px solid var(--app-border);
-  border-radius: 8px;
-  background: rgba(var(--v-theme-on-surface), 0.03);
+  gap: 0.15rem;
   transform: translate(-50%, -50%);
 }
 
 .app-nav-link {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -125,18 +127,31 @@ body {
   font-weight: 500;
   color: var(--app-text-muted);
   text-decoration: none;
-  transition: color 120ms, background 120ms, box-shadow 120ms;
+  transition: color 140ms ease;
 }
 
 .app-nav-link:hover {
   color: var(--app-text);
-  background: rgba(var(--v-theme-on-surface), 0.05);
 }
 
 .app-nav-link.router-link-active {
-  color: var(--app-text);
-  background: var(--app-surface);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+  color: var(--app-primary);
+}
+
+.app-nav-link.router-link-active::after {
+  content: "";
+  position: absolute;
+  left: 0.65rem;
+  right: 0.65rem;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--app-primary);
+}
+
+.app-nav-link:focus-visible {
+  outline: 2px solid var(--app-primary);
+  outline-offset: 2px;
 }
 
 .summary-cards {
@@ -147,7 +162,7 @@ body {
 
 .summary-card {
   padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
+  border-radius: var(--app-radius-surface);
   background: var(--app-surface);
   border: 1px solid var(--app-border);
 }
@@ -169,7 +184,7 @@ body {
   width: max-content;
   max-width: min(320px, calc(100vw - 3rem));
   padding: 0.65rem 0.8rem;
-  border-radius: 0.5rem;
+  border-radius: var(--app-radius-surface);
   background: rgba(28, 25, 23, 0.96);
   color: #fff;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
@@ -178,7 +193,7 @@ body {
   opacity: 0;
   pointer-events: none;
   transform: translateY(6px);
-  transition: opacity 120ms, transform 120ms;
+  transition: opacity 140ms ease, transform 140ms ease;
 }
 
 .summary-card--tooltip:hover .summary-tooltip,
@@ -207,6 +222,37 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Painel de conteúdo sobre o background da página (formulários, blocos de settings) */
+.app-panel {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-surface);
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.app-panel__title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--app-text);
+}
+
+.app-panel__copy {
+  margin: 0.35rem 0 1rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--app-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 @media (max-width: 760px) {
   .app-header {
     padding: 0 0.75rem;
@@ -226,5 +272,10 @@ body {
     width: 36px;
     justify-content: center;
     padding: 0;
+  }
+
+  .app-nav-link.router-link-active::after {
+    left: 8px;
+    right: 8px;
   }
 }

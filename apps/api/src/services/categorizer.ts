@@ -1,5 +1,6 @@
 import type { ParsedRow } from "./parser.js";
 import { TIPOS_AUTOMATICOS } from "./normalize.js";
+import { resolveCategoryCodeAlias } from "./category-lookup.js";
 
 export type RegraAplicada =
   | "dicionario"
@@ -40,7 +41,7 @@ const HEURISTICS: Array<[string, string[]]> = [
   ],
   ["GASOLINA", ["AUTO POSTO", "POSTO ", "POSTO", "MALCA COMERCIO DE COMB"]],
   [
-    "ALIMENTACAO",
+    "ALIMENTAÇÃO",
     [
       "RESTAURANTE",
       "LANCHES",
@@ -122,13 +123,15 @@ export function categorizeOne(
   }
 
   const auto = TIPOS_AUTOMATICOS[row.tipo];
-  if (auto && existingCategoryIds.has(auto)) {
-    return { categoria: auto, ruleId: null, regra: "tipo_automatico" };
+  const autoResolved = auto ? resolveCategoryCodeAlias(auto, existingCategoryIds) : null;
+  if (autoResolved) {
+    return { categoria: autoResolved, ruleId: null, regra: "tipo_automatico" };
   }
 
   const heur = categorizarHeuristica(row.chaveNormalizada);
-  if (heur && existingCategoryIds.has(heur)) {
-    return { categoria: heur, ruleId: null, regra: "heuristica" };
+  const heurResolved = heur ? resolveCategoryCodeAlias(heur, existingCategoryIds) : null;
+  if (heurResolved) {
+    return { categoria: heurResolved, ruleId: null, regra: "heuristica" };
   }
 
   return { categoria: "OUTROS", ruleId: null, regra: "fallback" };

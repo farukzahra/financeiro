@@ -1,5 +1,12 @@
 import { test, expect } from "@playwright/test";
-import { mockAuthenticatedApp, mockTransaction, CAT_ALIMENTACAO, CAT_OUTROS } from "./fixtures/mock-api";
+import {
+  mockAuthenticatedApp,
+  mockTransaction,
+  createMockApiState,
+  CAT_ALIMENTACAO,
+  CAT_OUTROS,
+  CAT_SALARIO,
+} from "./fixtures/mock-api";
 
 test.describe("Transações — edição inline de categoria", () => {
   test.beforeEach(async ({ page }) => {
@@ -12,6 +19,35 @@ test.describe("Transações — edição inline de categoria", () => {
     const pill = page.getByRole("row", { name: /Mercado Central/ }).locator(".cat-pill-nome");
     await expect(pill).toHaveText("OUTROS");
     await expect(pill).not.toContainText(CAT_OUTROS);
+  });
+
+  test("pílulas ALIMENTAÇÃO e SALÁRIO não cortam o texto", async ({ page }) => {
+    const state = createMockApiState();
+    state.transactions = [
+      {
+        ...structuredClone(mockTransaction),
+        identificador: "tx-alim",
+        detalhe: "Mercado com acento",
+        categoriaId: CAT_ALIMENTACAO,
+      },
+      {
+        ...structuredClone(mockTransaction),
+        identificador: "tx-sal",
+        detalhe: "Folha",
+        valor: "1000.00",
+        categoriaId: CAT_SALARIO,
+      },
+    ];
+    await mockAuthenticatedApp(page, state);
+    await page.goto("/");
+
+    for (const label of ["ALIMENTAÇÃO", "SALÁRIO"] as const) {
+      const nome = page.locator(".cat-pill-nome").filter({ hasText: label });
+      await expect(nome).toBeVisible();
+      await expect(nome).toHaveText(label);
+      const clipped = await nome.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+      expect(clipped, `${label} não deve ser cortada na pílula`).toBe(false);
+    }
   });
 
   test("menu de categoria permanece aberto após o clique", async ({ page }) => {

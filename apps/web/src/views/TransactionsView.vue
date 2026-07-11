@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch, nextTick } from "vue";
+import { RouterLink } from "vue-router";
 import { isBusinessDay as isBrazilBusinessDay } from "febraban-bank-holidays";
 import { useSnackbar } from "../composables/useSnackbar";
 import { useConfirm } from "../composables/useConfirm";
@@ -792,7 +793,7 @@ const transactionHeaders = [
   { title: "Tipo", key: "tipo", width: 200, sortable: false },
   { title: "Detalhe", key: "detalhe", width: 320, sortable: false },
   { title: "Valor", key: "valor", width: 160, align: "end" as const, sortable: false },
-  { title: "Categoria", key: "categoriaId", width: 200, sortable: false },
+  { title: "Categoria", key: "categoriaId", width: 240, minWidth: 240, sortable: false },
   { title: "", key: "actions", sortable: false, width: 90 },
 ];
 
@@ -965,7 +966,17 @@ async function commitBudgetValor(b: BudgetItem) {
       <aside v-else-if="activePanel === 'cats'" class="side-panel side-card">
         <div class="side-card-header">Por categoria</div>
         <div v-if="categoriasResumo.length === 0" class="side-empty">
-          Sem transações no filtro atual.
+          <p>Nenhuma categoria no filtro atual.</p>
+          <v-btn
+            v-if="hasFilter"
+            variant="text"
+            size="small"
+            color="primary"
+            prepend-icon="mdi-eraser"
+            @click="limparFiltros"
+          >
+            Limpar filtros
+          </v-btn>
         </div>
         <ul v-else class="cat-list">
           <li
@@ -997,7 +1008,7 @@ async function commitBudgetValor(b: BudgetItem) {
               <span class="budget-header-total">{{ fmtMoneyBR(-totalPrevisto) }}</span>
             </div>
             <div class="budget-header-block budget-header-block--end">
-              <span class="budget-header-label">Orçamento restante</span>
+              <span class="budget-header-label">Restante</span>
               <span class="budget-header-total">{{ fmtMoneyBR(-totalPrevistoRestante) }}</span>
             </div>
           </div>
@@ -1032,12 +1043,13 @@ async function commitBudgetValor(b: BudgetItem) {
             <span>{{ fmtDateBR(toIso(salaryCycle.end) ?? "") }}</span>
           </div>
         </div>
-        <ul class="cat-list">
+        <ul v-if="activeBudgetItems.length" class="cat-list">
           <li
             v-for="b in activeBudgetItems"
             :key="b.id"
             class="budget-item"
             :class="{
+              'budget-item--system': b.origem === 'assinaturas',
               'budget-item--dragging': draggingBudgetId === b.id,
               'budget-item--drag-over': dragOverBudgetId === b.id && draggingBudgetId !== b.id,
             }"
@@ -1060,6 +1072,13 @@ async function commitBudgetValor(b: BudgetItem) {
                     <v-icon icon="mdi-drag" size="small" />
                   </span>
                   <span class="budget-item-nome">{{ b.descricao }}</span>
+                  <v-icon
+                    v-if="b.origem === 'assinaturas'"
+                    class="budget-lock"
+                    icon="mdi-lock-outline"
+                    size="x-small"
+                    title="Sincronizado pelas assinaturas"
+                  />
                 </div>
                 <span
                   class="budget-item-val"
@@ -1120,6 +1139,13 @@ async function commitBudgetValor(b: BudgetItem) {
                     <v-icon icon="mdi-drag" size="small" />
                   </span>
                   <span class="budget-item-nome">{{ b.descricao }}</span>
+                  <v-icon
+                    v-if="b.origem === 'assinaturas'"
+                    class="budget-lock"
+                    icon="mdi-lock-outline"
+                    size="x-small"
+                    title="Sincronizado pelas assinaturas"
+                  />
                 </div>
                 <v-number-input
                   v-if="editingBudgetId === b.id"
@@ -1144,6 +1170,10 @@ async function commitBudgetValor(b: BudgetItem) {
             </template>
           </li>
         </ul>
+        <div v-else class="side-empty">
+          <p>Nenhum item de orçamento ativo.</p>
+          <RouterLink class="side-empty-link" to="/configuracoes">Abrir Configurações</RouterLink>
+        </div>
       </aside>
 
       <div class="center-col">
@@ -1165,7 +1195,7 @@ async function commitBudgetValor(b: BudgetItem) {
         </div>
         <div class="summary-cards">
           <div
-            class="summary-card summary-card--tooltip"
+            class="summary-card summary-card--primary summary-card--tooltip"
             tabindex="0"
             :aria-label="`${saldoAtualTooltip.linha1} ${saldoAtualTooltip.linha2}`"
           >
@@ -1179,7 +1209,7 @@ async function commitBudgetValor(b: BudgetItem) {
             </div>
           </div>
           <div
-            class="summary-card summary-card--tooltip"
+            class="summary-card summary-card--emphasis summary-card--tooltip"
             tabindex="0"
             :aria-label="`${saldoLiquidoTooltip.linha1} ${saldoLiquidoTooltip.linha2}`"
           >
@@ -1194,7 +1224,7 @@ async function commitBudgetValor(b: BudgetItem) {
           </div>
 
           <div
-            class="summary-card summary-card--tooltip"
+            class="summary-card summary-card--secondary summary-card--tooltip"
             tabindex="0"
             :aria-label="`${entradasTooltip.linha1} ${entradasTooltip.linha2}`"
           >
@@ -1209,7 +1239,7 @@ async function commitBudgetValor(b: BudgetItem) {
           </div>
 
           <div
-            class="summary-card summary-card--tooltip"
+            class="summary-card summary-card--secondary summary-card--tooltip"
             tabindex="0"
             :aria-label="`${saidasTooltip.linha1} ${saidasTooltip.linha2}`"
           >
@@ -1225,6 +1255,7 @@ async function commitBudgetValor(b: BudgetItem) {
         </div>
 
         <v-data-table
+          class="tx-table"
           :headers="transactionHeaders"
           :items="sortedRows"
           :loading="loading"
@@ -1234,8 +1265,38 @@ async function commitBudgetValor(b: BudgetItem) {
           item-value="identificador"
           :items-per-page="-1"
           hide-default-footer
-          striped="even"
+          hover
         >
+          <template #no-data>
+            <div class="tx-empty">
+              <p v-if="hasFilter" class="tx-empty-text">
+                Nenhuma transação neste filtro.
+              </p>
+              <p v-else class="tx-empty-text">
+                Ainda sem extrato neste período.
+              </p>
+              <div class="tx-empty-actions">
+                <v-btn
+                  v-if="hasFilter"
+                  variant="outlined"
+                  size="small"
+                  prepend-icon="mdi-eraser"
+                  @click="limparFiltros"
+                >
+                  Limpar filtros
+                </v-btn>
+                <v-btn
+                  v-else
+                  color="primary"
+                  size="small"
+                  prepend-icon="mdi-upload"
+                  @click="showImport = true"
+                >
+                  Importar CSV
+                </v-btn>
+              </div>
+            </div>
+          </template>
           <template #item.data="{ item }">
             <v-menu v-if="isEditing(item, 'data')" :close-on-content-click="false">
               <template #activator="{ props: menuProps }">
@@ -1519,15 +1580,34 @@ section {
   min-width: 0;
   padding: 0.85rem 1rem;
   border: 1px solid var(--app-border);
-  border-radius: 12px;
+  border-radius: var(--app-radius-surface);
   background: var(--app-surface);
+  transition: border-color 140ms ease;
+}
+
+.summary-card--primary {
+  border-color: rgba(30, 90, 168, 0.28);
+  background: linear-gradient(180deg, var(--app-primary-wash) 0%, var(--app-surface) 72%);
+}
+
+.summary-card--primary .value {
+  font-size: 1.4rem;
+}
+
+.summary-card--emphasis {
+  border-color: rgba(226, 196, 173, 0.95);
+}
+
+.summary-card--secondary .value {
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
 .summary-card .label {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.6;
+  letter-spacing: 0.06em;
+  color: var(--app-text-muted);
 }
 
 .summary-card .value {
@@ -1780,9 +1860,118 @@ section {
 }
 
 .side-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
   padding: 1rem;
-  opacity: 0.7;
   font-size: 0.85rem;
+  color: var(--app-text-muted);
+}
+
+.side-empty p {
+  margin: 0;
+}
+
+.side-empty-link {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--app-primary);
+  text-decoration: none;
+}
+
+.side-empty-link:hover {
+  text-decoration: underline;
+}
+
+.tx-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2.5rem 1rem;
+}
+
+.tx-empty-text {
+  margin: 0;
+  color: var(--app-text-muted);
+  font-size: 0.9rem;
+}
+
+.tx-empty-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tx-table {
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-surface);
+  overflow: hidden;
+  background: var(--app-surface);
+}
+
+.tx-table :deep(.v-table__wrapper) {
+  border-radius: 0;
+}
+
+.tx-table :deep(thead th) {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--app-surface) !important;
+  border-bottom: 1px solid var(--app-border) !important;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--app-text-muted) !important;
+  box-shadow: none !important;
+}
+
+.tx-table :deep(tbody tr:nth-child(even)) {
+  background: rgba(28, 25, 23, 0.025);
+}
+
+.tx-table :deep(tbody tr:hover) {
+  background: var(--app-highlight) !important;
+}
+
+.tx-table :deep(td) {
+  border-bottom-color: rgba(28, 25, 23, 0.06) !important;
+}
+
+.tx-table :deep(.v-data-table__td),
+.tx-table :deep(.v-data-table-rows-no-data) {
+  font-size: 0.875rem;
+}
+
+/* Categoria: pílulas curtas (ALIMENTAÇÃO, SALÁRIO) não podem ser cortadas */
+.tx-table :deep(th:nth-child(5)),
+.tx-table :deep(td:nth-child(5)) {
+  width: 240px;
+  min-width: 240px;
+  white-space: nowrap;
+}
+
+.budget-item--system {
+  background: var(--app-accent-wash);
+  border-left: 3px solid var(--app-accent-wash-deep);
+}
+
+.budget-lock {
+  color: #8a6a52;
+  margin-left: 0.15rem;
+  flex-shrink: 0;
+}
+
+.activity-item:focus-visible {
+  outline: 2px solid var(--app-primary);
+  outline-offset: 2px;
+}
+
+.editable-cell:focus-visible {
+  outline: 2px solid var(--app-primary);
+  outline-offset: 1px;
 }
 
 .cat-list {
@@ -2057,16 +2246,16 @@ section {
 .cat-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.2rem 0.55rem 0.2rem 0.3rem;
+  gap: 0.35rem;
+  padding: 0.15rem 0.55rem 0.15rem 0.45rem;
   border-radius: 999px;
   border: 0;
   color: #1f2937;
   cursor: pointer;
   font: inherit;
-  font-size: 0.8rem;
-  line-height: 1;
-  max-width: 100%;
+  font-size: 0.72rem;
+  line-height: 1.15;
+  max-width: none;
   transition: transform 120ms, filter 120ms;
 }
 
@@ -2077,7 +2266,6 @@ section {
 
 .cat-pill-nome {
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
 }
 </style>

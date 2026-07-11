@@ -21,6 +21,7 @@ description: Vuetify 3 UI patterns for apps/web in this monorepo. Use when build
 4. User-facing copy in **Portuguese** with correct accents.
 5. Money/date formatting via `apps/web/src/lib/format.ts` (`fmtMoneyBR`, `fmtDateBR`, `classMoney`).
 6. Category labels: short code via `categoryPillLabel` / `categoryCode` in lists; description only where explicitly needed (filters/settings).
+7. **Surfaces:** page background stays cool blue `#F8FAFC`; any form or settings content block on that background must use global `.app-panel` (white surface + border). Do not place bare fields on the page background. Single UI font: IBM Plex Sans + `tabular-nums` for money (no second font family).
 
 ## Patterns
 

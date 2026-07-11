@@ -1,6 +1,7 @@
 import type { Category } from "./api";
 
 const CATEGORY_LABELS: Record<string, string> = {
+  ALIMENTAÇÃO: "ALIMENTAÇÃO",
   ALIMENTACAO: "ALIMENTAÇÃO",
   FARMACIA: "FARMÁCIA",
   SAUDE: "SAÚDE",

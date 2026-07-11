@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { createMockApiState, mockAuthenticatedApp } from "./fixtures/mock-api";
+import { CAT_ALIMENTACAO, createMockApiState, mockAuthenticatedApp } from "./fixtures/mock-api";
 
 test.describe("Configurações — orçamento", () => {
   test("cria item de orçamento em memória", async ({ page }) => {
@@ -16,5 +16,28 @@ test.describe("Configurações — orçamento", () => {
 
     await expect(page.getByText("Internet E2E")).toBeVisible();
     expect(state.budget.some((b) => b.descricao === "Internet E2E")).toBe(true);
+  });
+
+  test("lista categoria do item em caixa alta com acento (code)", async ({ page }) => {
+    const state = createMockApiState();
+    state.budget = [
+      {
+        id: "bud-alim-1",
+        descricao: "Mercado mensal",
+        categoriaId: CAT_ALIMENTACAO,
+        diaVencimento: 5,
+        valorMensal: "500.00",
+        ativo: true,
+        origem: null,
+        criadoEm: "2026-06-01T10:00:00.000Z",
+      },
+    ];
+    await mockAuthenticatedApp(page, state);
+    await page.goto("/configuracoes");
+    await page.getByRole("tab", { name: "Orçamento" }).click();
+
+    const row = page.locator("tbody tr").filter({ hasText: "Mercado mensal" });
+    await expect(row).toContainText("ALIMENTAÇÃO");
+    await expect(row).not.toContainText("ALIMENTACAO");
   });
 });

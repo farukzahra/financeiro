@@ -1,0 +1,36 @@
+---
+description: Superfícies UI — background vs painéis brancos
+globs: apps/web/**/*.{vue,css}
+alwaysApply: true
+---
+
+# Superfícies e tipografia (apps/web)
+
+## Tokens (não reinventar)
+
+| Papel | Token / valor | Uso |
+|-------|----------------|-----|
+| Fundo da página | `background` / `#F8FAFC` (azul-claro) | `body`, shell — **não** areia/bege |
+| Conteúdo | `--app-surface` (`#FFFFFF`) | Formulários, tabelas em bloco, painéis laterais, cards |
+| Fonte única | IBM Plex Sans (`--app-font-ui`) | Toda a UI; números com `font-variant-numeric: tabular-nums` (sem Mono) |
+
+## Painel obrigatório
+
+Formulários e blocos de conteúdo **sobre o fundo da página** usam a classe global **`.app-panel`** (`styles.css`):
+
+- `background: var(--app-surface)`
+- `border: 1px solid var(--app-border)`
+- `border-radius: var(--app-radius-surface)`
+- padding interno
+
+Título / texto de apoio: `.app-panel__title`, `.app-panel__copy`.
+
+**Proibido:** campos (`v-text-field`, `v-select`, botões de salvar) soltos direto no background da página sem `.app-panel` (ou equivalente `v-card`/dialog modal).
+
+## Settings
+
+Cada aba de Configurações envolve o conteúdo em `.app-panel`. Abas ativas: ver `.settings-tabs` (texto primary + wash + underline).
+
+## Novas telas
+
+Antes de merge: conferir contraste fundo vs conteúdo; se parecer “flutuando sem caixa”, falta `.app-panel`.
