@@ -8,7 +8,7 @@
       "title": "Categoria SALÁRIO, ordem na lista e alerta de extrato",
       "summary": "Nova categoria SALÁRIO no seed. Na mesma data, lançamentos de SALÁRIO aparecem primeiro. Aviso ao lado de Importar CSV quando o extrato está atrás de D-1.",
       "type": "feat",
-      "commit": null
+      "commit": "5da6a7b"
     },
     {
       "version": "0.18.0",
