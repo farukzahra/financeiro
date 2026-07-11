@@ -1,0 +1,14 @@
+---
+description: Colunas de ação e texto longo em tabelas
+globs: apps/web/**/*.{vue,css}
+alwaysApply: true
+---
+
+# Tabelas — proporção de colunas e ações
+
+Em `v-data-table` (e equivalentes):
+
+1. Coluna de ações (editar/excluir): largura fixa suficiente (`width`/`minWidth`, ~96px para 2 ícones `size="small"`). Ícones **nunca** quebram de linha.
+2. Colunas de texto longo (nome, serviço, padrão, descrição): ellipsis + `title` no hover; com `table-layout: fixed` quando a coluna flexível dominaria a tabela. O texto cede espaço — não as ações nem colunas curtas (prio, tipo, ativa, valor).
+3. Botões de ação em container `inline-flex` + `flex-wrap: nowrap` (ex.: `.table-actions`).
+4. Validar visualmente: lápis/lixeira na mesma linha; Padrão/Serviço não “explodindo” a largura.

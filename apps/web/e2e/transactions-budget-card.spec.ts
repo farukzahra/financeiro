@@ -1,13 +1,17 @@
 import { test, expect } from "@playwright/test";
-import { createMockApiState, mockAuthenticatedApp } from "./fixtures/mock-api";
+import {
+  CAT_CARTAO,
+  createMockApiState,
+  mockAuthenticatedApp,
+} from "./fixtures/mock-api";
 
 test.describe("Transações — orçamento cartão", () => {
-  test("mostra Cartão de Crédito sem permitir edição inline", async ({ page }) => {
+  test("mostra Cartão de Crédito na categoria cartão sem edição inline", async ({ page }) => {
     const state = createMockApiState();
     state.budget.push({
       id: "bud-cc",
       descricao: "Cartão de Crédito",
-      categoriaId: null,
+      categoriaId: CAT_CARTAO,
       diaVencimento: null,
       valorMensal: "606.04",
       ativo: true,
@@ -20,10 +24,10 @@ test.describe("Transações — orçamento cartão", () => {
 
     const item = page.locator(".budget-item").filter({ hasText: "Cartão de Crédito" });
     await expect(item).toBeVisible();
-    await expect(item.getByText("R$ 606,04")).toBeVisible();
+    await expect(item.locator(".budget-edit-val--locked")).toContainText("606,04");
+    await expect(item.locator(".budget-progress-wrap")).toBeVisible();
 
     const locked = item.locator(".budget-edit-val--locked");
-    await expect(locked).toBeVisible();
     await locked.click();
     await expect(item.locator(".budget-inline-input")).toHaveCount(0);
   });

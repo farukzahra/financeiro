@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BUDGET_ORIGEM_ASSINATURAS } from "@financeiro/shared";
 import {
+  CREDIT_CARD_BUDGET_CATEGORY_CODE,
   CREDIT_CARD_BUDGET_DESCRICAO,
   creditCardBudgetAction,
   isSystemBudgetOrigem,
@@ -45,8 +46,9 @@ describe("isSystemBudgetOrigem", () => {
   });
 });
 
-describe("CREDIT_CARD_BUDGET_DESCRICAO", () => {
-  it("usa o rótulo Cartão de Crédito", () => {
+describe("credit card budget constants", () => {
+  it("usa rótulo e categoria Cartão de Crédito", () => {
     expect(CREDIT_CARD_BUDGET_DESCRICAO).toBe("Cartão de Crédito");
+    expect(CREDIT_CARD_BUDGET_CATEGORY_CODE).toBe("CARTAO DE CREDITO");
   });
 });

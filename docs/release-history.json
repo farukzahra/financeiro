@@ -1,7 +1,15 @@
 {
-  "currentVersion": "0.16.0",
-  "updatedAt": "2026-07-11T13:57:37.629Z",
+  "currentVersion": "0.17.0",
+  "updatedAt": "2026-07-11T18:12:42.573Z",
   "entries": [
+    {
+      "version": "0.17.0",
+      "date": "2026-07-11",
+      "title": "Categoria Cartão de Crédito e tabelas em Configurações",
+      "summary": "O item de orçamento Cartão de Crédito usa a nova categoria CARTÃO DE CRÉDITO. Nas abas Assinaturas e Regras, colunas de texto longo usam ellipsis e as ações deixam de quebrar linha.",
+      "type": "feat",
+      "commit": null
+    },
     {
       "version": "0.16.0",
       "date": "2026-07-11",

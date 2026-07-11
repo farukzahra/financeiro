@@ -20,6 +20,7 @@ const SEED_CATEGORIES = [
   { code: "RESGATE RDB", descricao: "Resgate de RDB" },
   { code: "FATURA GENERICA", descricao: "Pagamento de fatura" },
   { code: "DEBITO EM CONTA", descricao: "Débito automático" },
+  { code: "CARTAO DE CREDITO", descricao: "Cartão de Crédito" },
   { code: "SAQUE", descricao: "Saque em dinheiro" },
   { code: "OUTROS", descricao: "Sem categoria definida" },
 ];

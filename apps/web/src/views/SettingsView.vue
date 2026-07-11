@@ -98,11 +98,11 @@ const categoryHeaders = [
 ];
 
 const ruleHeaders = [
-  { title: "Prio", key: "prioridade", width: 70 },
-  { title: "Tipo", key: "tipoPadrao", width: 110 },
-  { title: "Padrão", key: "padrao" },
-  { title: "Categoria", key: "categoriaId", width: 180 },
-  { title: "Ativa", key: "ativa", width: 90 },
+  { title: "Prio", key: "prioridade", width: "64px" },
+  { title: "Tipo", key: "tipoPadrao", width: "100px" },
+  { title: "Padrão", key: "padrao", width: "36%" },
+  { title: "Categoria", key: "categoriaId", width: "180px" },
+  { title: "Ativa", key: "ativa", width: "80px" },
 ];
 
 const budgetHeaders = [
@@ -116,8 +116,8 @@ const budgetHeaders = [
 
 const subscriptionHeaders = [
   { title: "Serviço", key: "nome" },
-  { title: "Valor", key: "valorMensal", width: 160 },
-  { title: "", key: "actions", sortable: false, width: 100 },
+  { title: "Valor", key: "valorMensal", width: 140, align: "end" as const },
+  { title: "", key: "actions", sortable: false, width: 96, minWidth: "96" },
 ];
 
 async function loadBudget() {
@@ -462,6 +462,7 @@ async function saveSalaryCycle() {
           </v-btn>
         </div>
         <v-data-table
+          class="rules-table"
           :headers="ruleHeaders"
           :items="ref_.rules"
           :loading="loading"
@@ -469,8 +470,16 @@ async function saveSalaryCycle() {
           hide-default-footer
           striped="even"
         >
+          <template #item.padrao="{ item }">
+            <span class="cell-ellipsis" :title="item.padrao">{{ item.padrao }}</span>
+          </template>
           <template #item.categoriaId="{ item }">
-            {{ categoryDisplayName(item.categoriaId, ref_.categories) }}
+            <span
+              class="cell-ellipsis"
+              :title="categoryDisplayName(item.categoriaId, ref_.categories)"
+            >
+              {{ categoryDisplayName(item.categoriaId, ref_.categories) }}
+            </span>
           </template>
           <template #item.ativa="{ item }">
             <v-chip :color="item.ativa ? 'success' : 'default'" size="small">
@@ -549,6 +558,7 @@ async function saveSalaryCycle() {
           </v-btn>
         </div>
         <v-data-table
+          class="subscriptions-table"
           :headers="subscriptionHeaders"
           :items="subscriptionRows"
           :loading="loading"
@@ -563,14 +573,23 @@ async function saveSalaryCycle() {
             <span class="money-neg">{{ fmtMoney(item.valorMensal) }}</span>
           </template>
           <template #item.actions="{ item }">
-            <v-btn icon="mdi-pencil" variant="text" size="small" @click="openEditSubscription(item)" />
-            <v-btn
-              icon="mdi-delete"
-              variant="text"
-              color="error"
-              size="small"
-              @click="confirmDeleteSubscription(item)"
-            />
+            <div class="table-actions">
+              <v-btn
+                icon="mdi-pencil"
+                variant="text"
+                size="small"
+                aria-label="Editar assinatura"
+                @click="openEditSubscription(item)"
+              />
+              <v-btn
+                icon="mdi-delete"
+                variant="text"
+                color="error"
+                size="small"
+                aria-label="Excluir assinatura"
+                @click="confirmDeleteSubscription(item)"
+              />
+            </div>
           </template>
         </v-data-table>
       </v-window-item>
@@ -808,5 +827,70 @@ async function saveSalaryCycle() {
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
+}
+
+.table-actions {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.subscriptions-table :deep(th:last-child),
+.subscriptions-table :deep(td:last-child) {
+  width: 96px;
+  min-width: 96px;
+  max-width: 96px;
+  white-space: nowrap;
+}
+
+.subscriptions-table :deep(th:nth-last-child(2)),
+.subscriptions-table :deep(td:nth-last-child(2)) {
+  width: 140px;
+  min-width: 140px;
+  white-space: nowrap;
+}
+
+.rules-table :deep(.v-table__wrapper) {
+  overflow-x: auto;
+}
+
+.rules-table :deep(table) {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.rules-table :deep(th:nth-child(1)),
+.rules-table :deep(td:nth-child(1)) {
+  width: 64px !important;
+  white-space: nowrap;
+}
+
+.rules-table :deep(th:nth-child(2)),
+.rules-table :deep(td:nth-child(2)) {
+  width: 100px !important;
+  white-space: nowrap;
+}
+
+.rules-table :deep(th:nth-child(3)),
+.rules-table :deep(td:nth-child(3)) {
+  width: 40% !important;
+  max-width: 360px;
+}
+
+.rules-table :deep(th:nth-child(3) .cell-ellipsis),
+.rules-table :deep(td:nth-child(3) .cell-ellipsis) {
+  max-width: 360px;
+}
+
+.rules-table :deep(th:nth-child(4)),
+.rules-table :deep(td:nth-child(4)) {
+  width: 180px !important;
+}
+
+.rules-table :deep(th:nth-child(5)),
+.rules-table :deep(td:nth-child(5)) {
+  width: 80px !important;
+  white-space: nowrap;
 }
 </style>

@@ -3,6 +3,8 @@ import type { Page, Route } from "@playwright/test";
 export const CAT_OUTROS = "00000000-0000-4000-8000-000000000001";
 export const CAT_ALIMENTACAO = "00000000-0000-4000-8000-000000000002";
 export const CAT_TRANSPORTE = "00000000-0000-4000-8000-000000000003";
+export const CAT_DEBITO = "00000000-0000-4000-8000-000000000004";
+export const CAT_CARTAO = "00000000-0000-4000-8000-000000000005";
 
 export const mockUser = {
   id: "user-1",
@@ -105,6 +107,8 @@ export function createMockApiState(): MockApiState {
       { id: CAT_OUTROS, code: "OUTROS", descricao: "Outros", ativa: true },
       { id: CAT_ALIMENTACAO, code: "ALIMENTACAO", descricao: "Alimentação", ativa: true },
       { id: CAT_TRANSPORTE, code: "TRANSPORTE", descricao: "Transporte", ativa: true },
+      { id: CAT_DEBITO, code: "DEBITO EM CONTA", descricao: "Débito automático", ativa: true },
+      { id: CAT_CARTAO, code: "CARTAO DE CREDITO", descricao: "Cartão de Crédito", ativa: true },
     ],
     rules: [],
     budget: [],
@@ -173,6 +177,8 @@ function syncCreditCardBudgetMock(state: MockApiState) {
   const sum = state.subscriptions
     .reduce((acc, s) => acc + Number(s.valorMensal), 0)
     .toFixed(2);
+  const cartaoId =
+    state.categories.find((c) => c.code === "CARTAO DE CREDITO")?.id ?? null;
   const existing = state.budget.find((b) => b.origem === "assinaturas");
   if (Number(sum) <= 0) {
     if (existing) {
@@ -184,14 +190,14 @@ function syncCreditCardBudgetMock(state: MockApiState) {
     existing.descricao = "Cartão de Crédito";
     existing.valorMensal = sum;
     existing.ativo = true;
-    existing.categoriaId = null;
+    existing.categoriaId = cartaoId;
     existing.diaVencimento = null;
     return;
   }
   state.budget.push({
     id: uuid(),
     descricao: "Cartão de Crédito",
-    categoriaId: null,
+    categoriaId: cartaoId,
     diaVencimento: null,
     valorMensal: sum,
     ativo: true,

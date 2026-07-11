@@ -19,4 +19,34 @@ test.describe("Configurações — regras", () => {
     expect(state.rules).toHaveLength(1);
     expect(state.rules[0]?.categoriaId).toBe(CAT_ALIMENTACAO);
   });
+
+  test("padrão longo não estoura a coluna nem esconde categoria", async ({ page }) => {
+    const longPadrao =
+      "CASA DE PAO BETHELEM L COM PADRAO MUITO LONGO PARA NAO ESTOURAR LAYOUT DA TABELA DE REGRAS";
+    const state = createMockApiState();
+    state.rules.push({
+      id: "rule-wide",
+      categoriaId: CAT_ALIMENTACAO,
+      tipoPadrao: "substring",
+      padrao: longPadrao,
+      prioridade: 100,
+      ativa: true,
+    });
+    await mockAuthenticatedApp(page, state);
+    await page.goto("/configuracoes");
+    await page.getByRole("tab", { name: "Regras" }).click();
+
+    const row = page.getByRole("row", { name: /CASA DE PAO/ });
+    const padraoCell = row.locator("td").nth(2);
+    const categoriaCell = row.locator("td").nth(3);
+
+    await expect(categoriaCell).toBeVisible();
+    await expect(categoriaCell).toContainText(/Alimentação/i);
+
+    const padraoBox = await padraoCell.boundingBox();
+    const categoriaBox = await categoriaCell.boundingBox();
+    expect(padraoBox && categoriaBox).toBeTruthy();
+    expect((padraoBox?.width ?? 0)).toBeLessThan(520);
+    expect(Math.abs((padraoBox?.y ?? 0) - (categoriaBox?.y ?? 0))).toBeLessThan(4);
+  });
 });
