@@ -8,7 +8,7 @@
       "title": "Polimento de UI e categoria ALIMENTAÇÃO",
       "summary": "Fonte única IBM Plex Sans, painéis brancos (.app-panel) nas Configurações, abas e pílulas mais legíveis. Código ALIMENTAÇÃO com acento; item de orçamento Alimentação corrigido. Rótulo Restante no painel de orçamento.",
       "type": "feat",
-      "commit": null
+      "commit": "b11db28"
     },
     {
       "version": "0.19.0",
