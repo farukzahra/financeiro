@@ -1,5 +1,6 @@
 import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
+import { BUDGET_ORIGEM_ASSINATURAS } from "@financeiro/shared";
 import { db } from "../db/client.js";
 import { budgetItems, categoryRules, users } from "../db/schema.js";
 
@@ -42,6 +43,7 @@ export async function copyAdminConfigToNewUser(newUserId: string): Promise<void>
 
   const budgetIdMap = new Map<string, string>();
   for (const item of adminBudget) {
+    if (item.origem === BUDGET_ORIGEM_ASSINATURAS) continue;
     const [created] = await db
       .insert(budgetItems)
       .values({

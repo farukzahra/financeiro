@@ -27,7 +27,9 @@ Quando o usuário reportar um bug de tela/UI neste projeto:
 | Configurações — categorias | `e2e/settings-categories.spec.ts` |
 | Configurações — regras | `e2e/settings-rules.spec.ts` |
 | Configurações — orçamento | `e2e/settings-budget.spec.ts` |
+| Configurações — assinaturas | `e2e/settings-subscriptions.spec.ts` |
 | Configurações — preferências | `e2e/settings-preferences.spec.ts` |
+| Transações — orçamento cartão | `e2e/transactions-budget-card.spec.ts` |
 | Sobre | `e2e/about.spec.ts` |
 
 Testes E2E **nunca** gravam no banco: mockar POST/PATCH/DELETE via `page.route` e estado em memória (`createMockApiState` + `installMockApi`).

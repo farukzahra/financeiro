@@ -175,6 +175,8 @@ export type TransactionsQuery = z.infer<typeof TransactionsQuerySchema>;
 // Orcamento previsto
 // ---------------------------------------------------------------------------
 
+export const BUDGET_ORIGEM_ASSINATURAS = "assinaturas" as const;
+
 export const BudgetItemSchema = z.object({
   id: z.string().uuid(),
   descricao: z.string().min(1),
@@ -182,6 +184,7 @@ export const BudgetItemSchema = z.object({
   diaVencimento: z.number().int().min(1).max(31).nullable(),
   valorMensal: z.string().regex(/^-?\d+(\.\d{1,2})?$/),
   ativo: z.boolean(),
+  origem: z.enum([BUDGET_ORIGEM_ASSINATURAS]).nullable().optional(),
   criadoEm: z.string(),
 });
 export type BudgetItem = z.infer<typeof BudgetItemSchema>;
@@ -197,3 +200,24 @@ export type BudgetItemCreate = z.infer<typeof BudgetItemCreateSchema>;
 
 export const BudgetItemUpdateSchema = BudgetItemCreateSchema.partial();
 export type BudgetItemUpdate = z.infer<typeof BudgetItemUpdateSchema>;
+
+// ---------------------------------------------------------------------------
+// Assinaturas
+// ---------------------------------------------------------------------------
+
+export const SubscriptionSchema = z.object({
+  id: z.string().uuid(),
+  nome: z.string().min(1),
+  valorMensal: z.string().regex(/^-?\d+(\.\d{1,2})?$/),
+  criadoEm: z.string(),
+});
+export type Subscription = z.infer<typeof SubscriptionSchema>;
+
+export const SubscriptionCreateSchema = z.object({
+  nome: z.string().min(1),
+  valorMensal: z.string().regex(/^-?\d+(\.\d{1,2})?$/),
+});
+export type SubscriptionCreate = z.infer<typeof SubscriptionCreateSchema>;
+
+export const SubscriptionUpdateSchema = SubscriptionCreateSchema.partial();
+export type SubscriptionUpdate = z.infer<typeof SubscriptionUpdateSchema>;

@@ -286,6 +286,7 @@ export type BudgetItem = {
   diaVencimento: number | null;
   valorMensal: string;
   ativo: boolean;
+  origem?: "assinaturas" | null;
   criadoEm: string;
 };
 
@@ -321,4 +322,40 @@ export async function patchBudgetItem(
 
 export async function deleteBudgetItem(id: string): Promise<void> {
   await api.delete(`/budget/${id}`);
+}
+
+// ---------------------------------------------------------------------------
+// Assinaturas
+// ---------------------------------------------------------------------------
+
+export type Subscription = {
+  id: string;
+  nome: string;
+  valorMensal: string;
+  criadoEm: string;
+};
+
+export async function listSubscriptions(): Promise<Subscription[]> {
+  const { data } = await api.get<Subscription[]>("/subscriptions");
+  return data;
+}
+
+export async function createSubscription(body: {
+  nome: string;
+  valorMensal: string;
+}): Promise<Subscription> {
+  const { data } = await api.post<Subscription>("/subscriptions", body);
+  return data;
+}
+
+export async function patchSubscription(
+  id: string,
+  body: Partial<{ nome: string; valorMensal: string }>,
+): Promise<Subscription> {
+  const { data } = await api.patch<Subscription>(`/subscriptions/${id}`, body);
+  return data;
+}
+
+export async function deleteSubscription(id: string): Promise<void> {
+  await api.delete(`/subscriptions/${id}`);
 }

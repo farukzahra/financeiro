@@ -791,6 +791,7 @@ const editingBudgetId = ref<string | null>(null);
 const budgetValorDraft = ref<number | null>(null);
 
 function startEditBudgetValor(b: BudgetItem) {
+  if (b.origem === "assinaturas") return;
   editingBudgetId.value = b.id;
   budgetValorDraft.value = Number(b.valorMensal);
 }
@@ -1050,7 +1051,8 @@ async function commitBudgetValor(b: BudgetItem) {
                   <span
                     v-else
                     class="budget-edit-val"
-                    title="Clique para editar o previsto"
+                    :class="{ 'budget-edit-val--locked': b.origem === 'assinaturas' }"
+                    :title="b.origem === 'assinaturas' ? 'Valor das assinaturas' : 'Clique para editar o previsto'"
                     @click="startEditBudgetValor(b)"
                   >{{ fmtMoneyBR(b.valorMensal) }}</span>
                 </span>
@@ -1087,7 +1089,8 @@ async function commitBudgetValor(b: BudgetItem) {
                 <span
                   v-else
                   class="budget-item-val budget-edit-val"
-                  title="Clique para editar o previsto"
+                  :class="{ 'budget-edit-val--locked': b.origem === 'assinaturas' }"
+                  :title="b.origem === 'assinaturas' ? 'Valor das assinaturas' : 'Clique para editar o previsto'"
                   @click="startEditBudgetValor(b)"
                 >{{ fmtMoneyBR(b.valorMensal) }}</span>
               </div>
@@ -1870,6 +1873,12 @@ section {
 
 .budget-edit-val:hover {
   border-bottom-color: var(--app-primary);
+}
+
+.budget-edit-val--locked,
+.budget-edit-val--locked:hover {
+  cursor: default;
+  border-bottom: none;
 }
 
 @media (max-width: 1100px) {

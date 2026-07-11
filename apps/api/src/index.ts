@@ -8,6 +8,7 @@ import { registerTransactionsRoutes } from "./routes/transactions.js";
 import { registerCategoriesRoutes } from "./routes/categories.js";
 import { registerRulesRoutes } from "./routes/rules.js";
 import { registerBudgetRoutes } from "./routes/budget.js";
+import { registerSubscriptionRoutes } from "./routes/subscriptions.js";
 
 async function main() {
   const app = Fastify({ logger: true });
@@ -23,6 +24,7 @@ async function main() {
   await registerCategoriesRoutes(app);
   await registerRulesRoutes(app);
   await registerBudgetRoutes(app);
+  await registerSubscriptionRoutes(app);
 
   const port = Number(process.env.PORT ?? 3001);
   await app.listen({ port, host: "0.0.0.0" });

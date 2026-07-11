@@ -76,6 +76,14 @@ type MockBudgetItem = {
   diaVencimento: number | null;
   valorMensal: string;
   ativo: boolean;
+  origem?: "assinaturas" | null;
+  criadoEm: string;
+};
+
+type MockSubscription = {
+  id: string;
+  nome: string;
+  valorMensal: string;
   criadoEm: string;
 };
 
@@ -85,6 +93,7 @@ export type MockApiState = {
   categories: MockCategory[];
   rules: MockRule[];
   budget: MockBudgetItem[];
+  subscriptions: MockSubscription[];
   transactions: (typeof mockTransaction)[];
 };
 
@@ -99,6 +108,7 @@ export function createMockApiState(): MockApiState {
     ],
     rules: [],
     budget: [],
+    subscriptions: [],
     transactions: [structuredClone(mockTransaction)],
   };
 }
@@ -157,6 +167,37 @@ function resolveCategoryId(state: MockApiState, idOrCode: string): string | null
 
 function uuid(): string {
   return crypto.randomUUID();
+}
+
+function syncCreditCardBudgetMock(state: MockApiState) {
+  const sum = state.subscriptions
+    .reduce((acc, s) => acc + Number(s.valorMensal), 0)
+    .toFixed(2);
+  const existing = state.budget.find((b) => b.origem === "assinaturas");
+  if (Number(sum) <= 0) {
+    if (existing) {
+      state.budget = state.budget.filter((b) => b.id !== existing.id);
+    }
+    return;
+  }
+  if (existing) {
+    existing.descricao = "Cartão de Crédito";
+    existing.valorMensal = sum;
+    existing.ativo = true;
+    existing.categoriaId = null;
+    existing.diaVencimento = null;
+    return;
+  }
+  state.budget.push({
+    id: uuid(),
+    descricao: "Cartão de Crédito",
+    categoriaId: null,
+    diaVencimento: null,
+    valorMensal: sum,
+    ativo: true,
+    origem: "assinaturas",
+    criadoEm: new Date().toISOString(),
+  });
 }
 
 export async function installMockApi(page: Page, state: MockApiState) {
@@ -354,6 +395,9 @@ export async function installMockApi(page: Page, state: MockApiState) {
       const body = route.request().postDataJSON() as Partial<MockBudgetItem>;
       const row = state.budget.find((b) => b.id === budgetPatch[1]);
       if (!row) return route.fulfill({ status: 404, json: { error: "Nao encontrado" } });
+      if (row.origem === "assinaturas") {
+        return route.fulfill({ status: 403, json: { error: "Item de sistema não pode ser editado" } });
+      }
       if (body.categoriaId !== undefined) {
         row.categoriaId = body.categoriaId
           ? resolveCategoryId(state, body.categoriaId)
@@ -365,11 +409,57 @@ export async function installMockApi(page: Page, state: MockApiState) {
 
     const budgetDelete = path.match(/^\/budget\/([^/]+)$/);
     if (method === "DELETE" && budgetDelete) {
-      const before = state.budget.length;
-      state.budget = state.budget.filter((b) => b.id !== budgetDelete[1]);
-      if (state.budget.length === before) {
+      const row = state.budget.find((b) => b.id === budgetDelete[1]);
+      if (!row) {
         return route.fulfill({ status: 404, json: { error: "Nao encontrado" } });
       }
+      if (row.origem === "assinaturas") {
+        return route.fulfill({ status: 403, json: { error: "Item de sistema não pode ser excluído" } });
+      }
+      state.budget = state.budget.filter((b) => b.id !== budgetDelete[1]);
+      return route.fulfill({ json: { ok: true } });
+    }
+
+    if (method === "GET" && path === "/subscriptions") {
+      return route.fulfill({
+        json: [...state.subscriptions].sort((a, b) => a.nome.localeCompare(b.nome)),
+      });
+    }
+
+    if (method === "POST" && path === "/subscriptions") {
+      const body = route.request().postDataJSON() as { nome: string; valorMensal: string };
+      if (state.subscriptions.some((s) => s.nome === body.nome)) {
+        return route.fulfill({ status: 409, json: { error: "Já existe assinatura com esse nome" } });
+      }
+      const row: MockSubscription = {
+        id: uuid(),
+        nome: body.nome,
+        valorMensal: body.valorMensal,
+        criadoEm: new Date().toISOString(),
+      };
+      state.subscriptions.push(row);
+      syncCreditCardBudgetMock(state);
+      return route.fulfill({ json: row });
+    }
+
+    const subPatch = path.match(/^\/subscriptions\/([^/]+)$/);
+    if (method === "PATCH" && subPatch) {
+      const body = route.request().postDataJSON() as Partial<MockSubscription>;
+      const row = state.subscriptions.find((s) => s.id === subPatch[1]);
+      if (!row) return route.fulfill({ status: 404, json: { error: "Nao encontrado" } });
+      if (body.nome !== undefined) row.nome = body.nome;
+      if (body.valorMensal !== undefined) row.valorMensal = body.valorMensal;
+      syncCreditCardBudgetMock(state);
+      return route.fulfill({ json: row });
+    }
+
+    if (method === "DELETE" && subPatch) {
+      const before = state.subscriptions.length;
+      state.subscriptions = state.subscriptions.filter((s) => s.id !== subPatch[1]);
+      if (state.subscriptions.length === before) {
+        return route.fulfill({ status: 404, json: { error: "Nao encontrado" } });
+      }
+      syncCreditCardBudgetMock(state);
       return route.fulfill({ json: { ok: true } });
     }
 

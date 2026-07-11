@@ -7,10 +7,15 @@ import {
   createBudgetItem,
   patchBudgetItem,
   deleteBudgetItem,
+  listSubscriptions,
+  createSubscription,
+  patchSubscription,
+  deleteSubscription,
   createRule,
   createCategory,
   patchCategory,
   type BudgetItem,
+  type Subscription,
   type Category,
 } from "../lib/api";
 import { useConfirm } from "../composables/useConfirm";
@@ -30,20 +35,28 @@ onMounted(async () => {
     if (!ref_.loaded) await ref_.load();
     hydrateSalaryCycleForm();
     await loadBudget();
+    await loadSubscriptions();
   } finally {
     loading.value = false;
   }
 });
 
 const budgetRows = ref<BudgetItem[]>([]);
+const subscriptionRows = ref<Subscription[]>([]);
 const showBudgetDialog = ref(false);
+const showSubscriptionDialog = ref(false);
 const editingBudget = ref<BudgetItem | null>(null);
+const editingSubscription = ref<Subscription | null>(null);
 const budgetForm = ref({
   descricao: "",
   categoriaId: null as string | null,
   diaVencimento: null as number | null,
   valorMensal: 0,
   ativo: true,
+});
+const subscriptionForm = ref({
+  nome: "",
+  valorMensal: 0,
 });
 
 const showRuleDialog = ref(false);
@@ -101,8 +114,22 @@ const budgetHeaders = [
   { title: "", key: "actions", sortable: false, width: 100 },
 ];
 
+const subscriptionHeaders = [
+  { title: "Serviço", key: "nome" },
+  { title: "Valor", key: "valorMensal", width: 160 },
+  { title: "", key: "actions", sortable: false, width: 100 },
+];
+
 async function loadBudget() {
   budgetRows.value = await listBudget();
+}
+
+async function loadSubscriptions() {
+  subscriptionRows.value = await listSubscriptions();
+}
+
+function isSystemBudget(row: BudgetItem) {
+  return row.origem === "assinaturas";
 }
 
 function hydrateSalaryCycleForm() {
@@ -122,6 +149,10 @@ const totalPrevisto = computed(() =>
   budgetRows.value.filter((b) => b.ativo).reduce((s, b) => s + Number(b.valorMensal), 0),
 );
 
+const totalAssinaturas = computed(() =>
+  subscriptionRows.value.reduce((s, r) => s + Number(r.valorMensal), 0),
+);
+
 function fmtMoney(v: number | string) {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -139,6 +170,7 @@ function openCreateBudget() {
 }
 
 function openEditBudget(row: BudgetItem) {
+  if (isSystemBudget(row)) return;
   editingBudget.value = row;
   budgetForm.value = {
     descricao: row.descricao,
@@ -181,6 +213,7 @@ async function saveBudget() {
 }
 
 function confirmDeleteBudget(row: BudgetItem) {
+  if (isSystemBudget(row)) return;
   confirm.require({
     message: `Excluir "${row.descricao}"?`,
     header: "Confirmar",
@@ -189,6 +222,67 @@ function confirmDeleteBudget(row: BudgetItem) {
     accept: async () => {
       await deleteBudgetItem(row.id);
       budgetRows.value = budgetRows.value.filter((r) => r.id !== row.id);
+      snackbar.add({ severity: "success", summary: "Excluído", life: 1500 });
+    },
+  });
+}
+
+function openCreateSubscription() {
+  editingSubscription.value = null;
+  subscriptionForm.value = { nome: "", valorMensal: 0 };
+  showSubscriptionDialog.value = true;
+}
+
+function openEditSubscription(row: Subscription) {
+  editingSubscription.value = row;
+  subscriptionForm.value = {
+    nome: row.nome,
+    valorMensal: Number(row.valorMensal),
+  };
+  showSubscriptionDialog.value = true;
+}
+
+async function saveSubscription() {
+  const body = {
+    nome: subscriptionForm.value.nome.trim(),
+    valorMensal: subscriptionForm.value.valorMensal.toFixed(2),
+  };
+  if (!body.nome) {
+    snackbar.add({ severity: "warn", summary: "Informe o serviço", life: 2500 });
+    return;
+  }
+  try {
+    if (editingSubscription.value) {
+      const updated = await patchSubscription(editingSubscription.value.id, body);
+      const idx = subscriptionRows.value.findIndex((r) => r.id === updated.id);
+      if (idx !== -1) subscriptionRows.value[idx] = updated;
+    } else {
+      const created = await createSubscription(body);
+      subscriptionRows.value.push(created);
+    }
+    await loadBudget();
+    showSubscriptionDialog.value = false;
+    snackbar.add({ severity: "success", summary: "Salvo", life: 1500 });
+  } catch (err) {
+    snackbar.add({
+      severity: "error",
+      summary: "Erro",
+      detail: (err as Error).message,
+      life: 3000,
+    });
+  }
+}
+
+function confirmDeleteSubscription(row: Subscription) {
+  confirm.require({
+    message: `Excluir "${row.nome}"?`,
+    header: "Confirmar",
+    acceptLabel: "Excluir",
+    rejectLabel: "Cancelar",
+    accept: async () => {
+      await deleteSubscription(row.id);
+      subscriptionRows.value = subscriptionRows.value.filter((r) => r.id !== row.id);
+      await loadBudget();
       snackbar.add({ severity: "success", summary: "Excluído", life: 1500 });
     },
   });
@@ -320,6 +414,7 @@ async function saveSalaryCycle() {
       <v-tab value="categorias">Categorias</v-tab>
       <v-tab value="regras">Regras</v-tab>
       <v-tab value="orcamento">Orçamento</v-tab>
+      <v-tab value="assinaturas">Assinaturas</v-tab>
       <v-tab value="preferencias">Preferências</v-tab>
     </v-tabs>
 
@@ -423,13 +518,58 @@ async function saveSalaryCycle() {
             </v-chip>
           </template>
           <template #item.actions="{ item }">
-            <v-btn icon="mdi-pencil" variant="text" size="small" @click="openEditBudget(item)" />
+            <v-btn
+              icon="mdi-pencil"
+              variant="text"
+              size="small"
+              :disabled="isSystemBudget(item)"
+              :title="isSystemBudget(item) ? 'Item sincronizado pelas assinaturas' : 'Editar'"
+              @click="openEditBudget(item)"
+            />
             <v-btn
               icon="mdi-delete"
               variant="text"
               color="error"
               size="small"
+              :disabled="isSystemBudget(item)"
+              :title="isSystemBudget(item) ? 'Item sincronizado pelas assinaturas' : 'Excluir'"
               @click="confirmDeleteBudget(item)"
+            />
+          </template>
+        </v-data-table>
+      </v-window-item>
+
+      <v-window-item value="assinaturas">
+        <div class="budget-header">
+          <div class="total-previsto">
+            Total assinaturas: <strong>{{ fmtMoney(totalAssinaturas) }}</strong>
+          </div>
+          <v-btn color="success" size="small" prepend-icon="mdi-plus" @click="openCreateSubscription">
+            Nova assinatura
+          </v-btn>
+        </div>
+        <v-data-table
+          :headers="subscriptionHeaders"
+          :items="subscriptionRows"
+          :loading="loading"
+          :items-per-page="-1"
+          hide-default-footer
+          striped="even"
+        >
+          <template #item.nome="{ item }">
+            <span class="cell-ellipsis" :title="item.nome">{{ item.nome }}</span>
+          </template>
+          <template #item.valorMensal="{ item }">
+            <span class="money-neg">{{ fmtMoney(item.valorMensal) }}</span>
+          </template>
+          <template #item.actions="{ item }">
+            <v-btn icon="mdi-pencil" variant="text" size="small" @click="openEditSubscription(item)" />
+            <v-btn
+              icon="mdi-delete"
+              variant="text"
+              color="error"
+              size="small"
+              @click="confirmDeleteSubscription(item)"
             />
           </template>
         </v-data-table>
@@ -512,6 +652,27 @@ async function saveSalaryCycle() {
           <v-spacer />
           <v-btn variant="outlined" @click="showBudgetDialog = false">Cancelar</v-btn>
           <v-btn color="primary" prepend-icon="mdi-check" @click="saveBudget">Salvar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Subscription dialog -->
+    <v-dialog v-model="showSubscriptionDialog" max-width="420">
+      <v-card :title="editingSubscription ? 'Editar assinatura' : 'Nova assinatura'">
+        <v-card-text class="form-col">
+          <label>Serviço</label>
+          <v-text-field v-model="subscriptionForm.nome" />
+          <label>Valor mensal (R$)</label>
+          <v-number-input
+            v-model="subscriptionForm.valorMensal"
+            :precision="2"
+            control-variant="hidden"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="outlined" @click="showSubscriptionDialog = false">Cancelar</v-btn>
+          <v-btn color="primary" prepend-icon="mdi-check" @click="saveSubscription">Salvar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

@@ -190,7 +190,9 @@ Tabelas principais:
 - `category_rule`: regras do usuario por substring ou regex, com prioridade.
 - `import`: uma importacao confirmada de arquivo CSV.
 - `transaction`: linha persistida do extrato, com PK `identificador`.
-- `budget_item`: itens de orcamento previsto mensal.
+- `budget_item`: itens de orcamento previsto mensal (item com `origem = assinaturas`
+  e espelho somente-leitura da soma de `subscription`).
+- `subscription`: assinaturas mensais por usuario; seed so para `farukz@gmail.com`.
 
 Decisoes importantes:
 
@@ -239,6 +241,10 @@ Rotas registradas em `apps/api/src/index.ts`:
 - `POST /budget`
 - `PATCH /budget/:id`
 - `DELETE /budget/:id`
+- `GET /subscriptions`
+- `POST /subscriptions`
+- `PATCH /subscriptions/:id`
+- `DELETE /subscriptions/:id`
 
 Use os schemas de `packages/shared/src/index.ts` para validar contratos. Ao
 adicionar endpoints ou alterar payloads, atualize `packages/shared` e o cliente

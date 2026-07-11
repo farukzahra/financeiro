@@ -119,15 +119,39 @@ export const transactions = pgTable(
   }),
 );
 
-export const budgetItems = pgTable("budget_item", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id),
-  descricao: text("descricao").notNull(),
-  categoriaId: text("categoria_id").references(() => categories.id),
-  diaVencimento: integer("dia_vencimento"),
-  valorMensal: numeric("valor_mensal", { precision: 14, scale: 2 }).notNull(),
-  ativo: boolean("ativo").notNull().default(true),
-  criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
-});
+export const budgetItems = pgTable(
+  "budget_item",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    descricao: text("descricao").notNull(),
+    categoriaId: text("categoria_id").references(() => categories.id),
+    diaVencimento: integer("dia_vencimento"),
+    valorMensal: numeric("valor_mensal", { precision: 14, scale: 2 }).notNull(),
+    ativo: boolean("ativo").notNull().default(true),
+    origem: text("origem"),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userOrigemIdx: index("idx_budget_user_origem").on(t.userId, t.origem),
+  }),
+);
+
+export const subscriptions = pgTable(
+  "subscription",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    nome: text("nome").notNull(),
+    valorMensal: numeric("valor_mensal", { precision: 14, scale: 2 }).notNull(),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userIdx: index("idx_subscription_user").on(t.userId),
+    userNomeUnique: uniqueIndex("idx_subscription_user_nome_unique").on(t.userId, t.nome),
+  }),
+);
