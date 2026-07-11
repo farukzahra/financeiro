@@ -8,7 +8,7 @@
       "title": "Categoria Cartão de Crédito e tabelas em Configurações",
       "summary": "O item de orçamento Cartão de Crédito usa a nova categoria CARTÃO DE CRÉDITO. Nas abas Assinaturas e Regras, colunas de texto longo usam ellipsis e as ações deixam de quebrar linha.",
       "type": "feat",
-      "commit": null
+      "commit": "6e0c689"
     },
     {
       "version": "0.16.0",
