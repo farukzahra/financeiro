@@ -154,6 +154,38 @@ test.describe("Transações — listagem", () => {
     await expect(rows.nth(1)).toContainText("Mercado dia 10");
   });
 
+  test("na mesma data ordena por detalhe alfabético", async ({ page }) => {
+    const state = createMockApiState();
+    state.transactions = [
+      {
+        ...structuredClone(mockTransaction),
+        identificador: "tx-z",
+        data: "2026-07-10",
+        valor: "-40.00",
+        detalhe: "Zebra Loja",
+        descricaoRaw: "Compra - Zebra Loja",
+        chaveNormalizada: "zebra loja",
+        categoriaId: CAT_ALIMENTACAO,
+      },
+      {
+        ...structuredClone(mockTransaction),
+        identificador: "tx-a",
+        data: "2026-07-10",
+        valor: "-20.00",
+        detalhe: "Armazen Sao Goncalo",
+        descricaoRaw: "Compra - Armazen Sao Goncalo",
+        chaveNormalizada: "armazen sao goncalo",
+        categoriaId: CAT_ALIMENTACAO,
+      },
+    ];
+    await mockAuthenticatedApp(page, state);
+    await page.goto("/");
+
+    const rows = page.locator("tbody tr");
+    await expect(rows.nth(0)).toContainText("Armazen Sao Goncalo");
+    await expect(rows.nth(1)).toContainText("Zebra Loja");
+  });
+
   test("mostra alerta quando CSV está atrás de D-1", async ({ page }) => {
     const today = new Date();
     const last = new Date(today.getFullYear(), today.getMonth(), today.getDate());

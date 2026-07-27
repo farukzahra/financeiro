@@ -1,7 +1,15 @@
 {
-  "currentVersion": "0.22.1",
-  "updatedAt": "2026-07-27T13:28:00.000Z",
+  "currentVersion": "0.22.2",
+  "updatedAt": "2026-07-27T13:40:00.000Z",
   "entries": [
+    {
+      "version": "0.22.2",
+      "date": "2026-07-27",
+      "title": "Ordenação por detalhe na mesma data",
+      "summary": "Na tabela de transações, lançamentos do mesmo dia passam a ser desempatados pelo detalhe em ordem alfabética. A regra que mantém Salário no topo do dia foi preservada.",
+      "type": "fix",
+      "commit": null
+    },
     {
       "version": "0.22.1",
       "date": "2026-07-27",

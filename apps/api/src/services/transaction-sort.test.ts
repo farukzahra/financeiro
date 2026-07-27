@@ -33,4 +33,26 @@ describe("compareTransactionsByDateThenSalario", () => {
     expect(compareTransactionsByDateThenSalario(earlier, later, 1)).toBeLessThan(0);
     expect(compareTransactionsByDateThenSalario(earlier, later, -1)).toBeGreaterThan(0);
   });
+
+  it("na mesma data desempata por detalhe após salário", () => {
+    const a = { data: "2026-07-10", categoryCode: "OUTROS", detalhe: "Mercado" };
+    const b = { data: "2026-07-10", categoryCode: "OUTROS", detalhe: "Padaria" };
+    expect(compareTransactionsByDateThenSalario(a, b, 1)).toBeLessThan(0);
+    expect(compareTransactionsByDateThenSalario(b, a, 1)).toBeGreaterThan(0);
+  });
+
+  it("salário fica antes mesmo com detalhe depois no alfabeto", () => {
+    const food = {
+      data: "2026-07-10",
+      categoryCode: "ALIMENTACAO",
+      detalhe: "AAA Mercado",
+    };
+    const salary = {
+      data: "2026-07-10",
+      categoryCode: CATEGORY_CODE_SALARIO,
+      detalhe: "Salário Faruk",
+    };
+    expect(compareTransactionsByDateThenSalario(food, salary, 1)).toBeGreaterThan(0);
+    expect(compareTransactionsByDateThenSalario(salary, food, 1)).toBeLessThan(0);
+  });
 });

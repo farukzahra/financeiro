@@ -786,8 +786,16 @@ const sortedRows = computed(() => {
   const order = sortOrder.value;
   list.sort((a, b) =>
     compareTransactionsByDateThenSalario(
-      { data: a.data, categoryCode: categoryCode(a.categoriaId, ref_.categories) },
-      { data: b.data, categoryCode: categoryCode(b.categoriaId, ref_.categories) },
+      {
+        data: a.data,
+        categoryCode: categoryCode(a.categoriaId, ref_.categories),
+        detalhe: a.detalhe,
+      },
+      {
+        data: b.data,
+        categoryCode: categoryCode(b.categoriaId, ref_.categories),
+        detalhe: b.detalhe,
+      },
       order,
     ),
   );

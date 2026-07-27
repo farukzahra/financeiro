@@ -193,13 +193,23 @@ export function salarioSortRank(categoryCode: string | null | undefined): number
 }
 
 export function compareTransactionsByDateThenSalario(
-  a: { data: string; categoryCode: string | null | undefined },
-  b: { data: string; categoryCode: string | null | undefined },
+  a: {
+    data: string;
+    categoryCode: string | null | undefined;
+    detalhe?: string | null;
+  },
+  b: {
+    data: string;
+    categoryCode: string | null | undefined;
+    detalhe?: string | null;
+  },
   order: 1 | -1,
 ): number {
   const byDate = a.data.localeCompare(b.data) * order;
   if (byDate !== 0) return byDate;
-  return salarioSortRank(a.categoryCode) - salarioSortRank(b.categoryCode);
+  const bySalario = salarioSortRank(a.categoryCode) - salarioSortRank(b.categoryCode);
+  if (bySalario !== 0) return bySalario;
+  return (a.detalhe ?? "").localeCompare(b.detalhe ?? "", "pt-BR");
 }
 
 /** Dias atrás do máximo importável (CSV até D-1 = ontem). null se sem data. */
