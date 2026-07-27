@@ -257,6 +257,21 @@ export async function listTipos(): Promise<string[]> {
   return data;
 }
 
+export type TransactionStats = {
+  qtd: number;
+  saldo: string;
+};
+
+export async function getTransactionStats(): Promise<TransactionStats> {
+  const { data } = await api.get<TransactionStats>("/transactions/stats");
+  return data;
+}
+
+export async function clearAllTransactions(): Promise<{ ok: true; removed: number }> {
+  const { data } = await api.delete<{ ok: true; removed: number }>("/transactions/all");
+  return data;
+}
+
 export async function createRule(body: {
   categoriaId: string;
   tipoPadrao: "substring" | "regex";

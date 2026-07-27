@@ -1,7 +1,15 @@
 {
-  "currentVersion": "0.20.0",
-  "updatedAt": "2026-07-11T21:20:00.000Z",
+  "currentVersion": "0.21.0",
+  "updatedAt": "2026-07-27T12:55:00.000Z",
   "entries": [
+    {
+      "version": "0.21.0",
+      "date": "2026-07-27",
+      "title": "Aba Dados para estatísticas e limpeza de transações",
+      "summary": "Em Configurações, a aba Dados mostra quantidade de registros e saldo total. Botão com confirmação apaga todas as transações da conta de forma permanente.",
+      "type": "feat",
+      "commit": null
+    },
     {
       "version": "0.20.0",
       "date": "2026-07-11",

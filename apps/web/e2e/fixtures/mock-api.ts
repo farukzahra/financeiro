@@ -310,6 +310,21 @@ export async function installMockApi(page: Page, state: MockApiState) {
       return route.fulfill({ json: ["Compra", "Transferência"] });
     }
 
+    if (method === "GET" && path === "/transactions/stats") {
+      return route.fulfill({
+        json: {
+          qtd: state.transactions.length,
+          saldo: saldoAtual(state.transactions),
+        },
+      });
+    }
+
+    if (method === "DELETE" && path === "/transactions/all") {
+      const removed = state.transactions.length;
+      state.transactions = [];
+      return route.fulfill({ json: { ok: true, removed } });
+    }
+
     if (method === "GET" && path === "/transactions") {
       const filtered = filterTransactions(state.transactions, url, state);
       const period = summarizePeriod(filtered);

@@ -14,9 +14,12 @@ import {
   createRule,
   createCategory,
   patchCategory,
+  getTransactionStats,
+  clearAllTransactions,
   type BudgetItem,
   type Subscription,
   type Category,
+  type TransactionStats,
 } from "../lib/api";
 import { useConfirm } from "../composables/useConfirm";
 import { useSnackbar } from "../composables/useSnackbar";
@@ -58,6 +61,9 @@ const subscriptionForm = ref({
   nome: "",
   valorMensal: 0,
 });
+const transactionStats = ref<TransactionStats | null>(null);
+const dataStatsLoading = ref(false);
+const clearingTransactions = ref(false);
 
 const showRuleDialog = ref(false);
 const ruleForm = ref({
@@ -126,6 +132,47 @@ async function loadBudget() {
 
 async function loadSubscriptions() {
   subscriptionRows.value = await listSubscriptions();
+}
+
+async function loadTransactionStats() {
+  dataStatsLoading.value = true;
+  try {
+    transactionStats.value = await getTransactionStats();
+  } finally {
+    dataStatsLoading.value = false;
+  }
+}
+
+function confirmClearTransactions() {
+  confirm.require({
+    message:
+      "Esta ação apaga permanentemente todas as transações da sua conta. Não é possível desfazer.",
+    header: "Apagar todas as transações?",
+    acceptLabel: "Apagar tudo",
+    rejectLabel: "Cancelar",
+    accept: async () => {
+      clearingTransactions.value = true;
+      try {
+        const result = await clearAllTransactions();
+        await loadTransactionStats();
+        snackbar.add({
+          severity: "success",
+          summary: "Transações apagadas",
+          detail: `${result.removed} registro(s) removido(s)`,
+          life: 3000,
+        });
+      } catch (err) {
+        snackbar.add({
+          severity: "error",
+          summary: "Erro",
+          detail: (err as Error).message,
+          life: 3000,
+        });
+      } finally {
+        clearingTransactions.value = false;
+      }
+    },
+  });
 }
 
 function isSystemBudget(row: BudgetItem) {
@@ -416,6 +463,7 @@ async function saveSalaryCycle() {
       <v-tab value="orcamento">Orçamento</v-tab>
       <v-tab value="assinaturas">Assinaturas</v-tab>
       <v-tab value="preferencias">Preferências</v-tab>
+      <v-tab value="dados" @click="loadTransactionStats">Dados</v-tab>
     </v-tabs>
 
     <v-window v-model="tab" class="settings-window">
@@ -599,6 +647,40 @@ async function saveSalaryCycle() {
               </div>
             </template>
           </v-data-table>
+        </div>
+      </v-window-item>
+
+      <v-window-item value="dados">
+        <div class="app-panel data-panel">
+          <div class="app-panel__title">Transações no banco</div>
+          <p class="app-panel__copy">
+            Estatísticas das linhas de transação armazenadas para sua conta.
+          </p>
+          <div v-if="dataStatsLoading" class="data-stats-loading">
+            <v-progress-circular indeterminate size="24" width="2" />
+            <span>Carregando…</span>
+          </div>
+          <div v-else-if="transactionStats" class="data-stats-grid">
+            <div class="data-stat">
+              <span class="data-stat__label">Registros</span>
+              <strong class="data-stat__value">{{ transactionStats.qtd.toLocaleString("pt-BR") }}</strong>
+            </div>
+            <div class="data-stat">
+              <span class="data-stat__label">Saldo total</span>
+              <strong class="data-stat__value">{{ fmtMoney(transactionStats.saldo) }}</strong>
+            </div>
+          </div>
+          <div class="data-actions">
+            <v-btn
+              color="error"
+              variant="flat"
+              prepend-icon="mdi-delete-alert"
+              :loading="clearingTransactions"
+              @click="confirmClearTransactions"
+            >
+              Limpar transações
+            </v-btn>
+          </div>
         </div>
       </v-window-item>
 
@@ -849,8 +931,48 @@ async function saveSalaryCycle() {
   margin-top: 0.25rem;
 }
 
-.prefs-panel {
+.prefs-panel,
+.data-panel {
   max-width: 720px;
+}
+
+.data-stats-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  opacity: 0.75;
+}
+
+.data-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 1.25rem;
+}
+
+.data-stat {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-surface);
+  background: var(--app-surface-muted, #f8fafc);
+}
+
+.data-stat__label {
+  display: block;
+  font-size: 0.78rem;
+  opacity: 0.7;
+  margin-bottom: 0.35rem;
+}
+
+.data-stat__value {
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-actions {
+  margin-top: 0.5rem;
 }
 
 .salary-cycle-grid {

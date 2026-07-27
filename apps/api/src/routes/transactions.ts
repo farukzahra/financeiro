@@ -198,6 +198,30 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
     return { ok: true, id: removed.id };
   });
 
+  app.get("/transactions/stats", async (req, reply) => {
+    const user = await requireUser(req, reply);
+    const [row] = await db
+      .select({
+        qtd: drizzleSql<number>`count(*)::int`,
+        saldo: drizzleSql<string>`coalesce(sum(${transactions.valor}), 0)`,
+      })
+      .from(transactions)
+      .where(eq(transactions.userId, user.id));
+    return {
+      qtd: row?.qtd ?? 0,
+      saldo: Number(row?.saldo ?? 0).toFixed(2),
+    };
+  });
+
+  app.delete("/transactions/all", async (req, reply) => {
+    const user = await requireUser(req, reply);
+    const removed = await db
+      .delete(transactions)
+      .where(eq(transactions.userId, user.id))
+      .returning({ id: transactions.identificador });
+    return { ok: true, removed: removed.length };
+  });
+
   app.get("/transactions/tipos", async (req, reply) => {
     const user = await requireUser(req, reply);
     const baseline = [
