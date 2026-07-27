@@ -8,7 +8,7 @@
       "title": "Ordenação por detalhe na mesma data",
       "summary": "Na tabela de transações, lançamentos do mesmo dia passam a ser desempatados pelo detalhe em ordem alfabética. A regra que mantém Salário no topo do dia foi preservada.",
       "type": "fix",
-      "commit": null
+      "commit": "eb4caad"
     },
     {
       "version": "0.22.1",
