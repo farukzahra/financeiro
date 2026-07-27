@@ -314,24 +314,6 @@ async function load() {
   }
 }
 
-function recalculateResumo(saldoDelta = 0) {
-  let totalEntradas = 0;
-  let totalSaidas = 0;
-  for (const r of rows.value) {
-    const v = Number(r.valor);
-    if (v > 0) totalEntradas += v;
-    else if (v < 0) totalSaidas += v;
-  }
-  resumo.value = {
-    totalEntradas: totalEntradas.toFixed(2),
-    totalSaidas: totalSaidas.toFixed(2),
-    // Saldo atual é global; só ajusta pelo delta da edição/exclusão.
-    saldo: (Number(resumo.value.saldo) + saldoDelta).toFixed(2),
-    qtd: rows.value.length,
-    ultimaData: resumo.value.ultimaData,
-  };
-}
-
 function applyFilters() {
   if (applyFiltersTimer) {
     clearTimeout(applyFiltersTimer);
@@ -452,11 +434,10 @@ async function onEditField(
   value: unknown,
 ) {
   try {
-    const previousValor = Number(row.valor);
     const updated = await patchTransaction(row.identificador, { [field]: value as never });
     Object.assign(row, updated);
     if (field === "valor") {
-      recalculateResumo(Number(updated.valor) - previousValor);
+      await load();
     }
     snackbar.add({ severity: "success", summary: "Atualizado", life: 1500 });
   } catch (err) {
@@ -730,7 +711,7 @@ async function startEditCell(row: Transaction, field: EditField) {
     tipoMenuOpen.value = false;
     await nextTick();
     tipoMenuOpen.value = true;
-  } else if (field === "valor") valorDraft.value = Number(row.valor);
+  } else if (field === "valor") valorDraft.value = Math.abs(Number(row.valor));
 }
 
 function onTipoMenuChange(open: boolean) {
@@ -781,8 +762,10 @@ async function commitValor(row: Transaction) {
   const v = valorDraft.value;
   editingCell.value = null;
   if (v == null) return;
-  const formatted = v.toFixed(2);
-  if (formatted === Number(row.valor).toFixed(2)) return;
+  const previous = Number(row.valor);
+  const sign = previous === 0 ? (v < 0 ? -1 : 1) : Math.sign(previous);
+  const formatted = (sign * Math.abs(v)).toFixed(2);
+  if (formatted === previous.toFixed(2)) return;
   await onEditField(row, "valor", formatted);
 }
 

@@ -27,6 +27,7 @@ Quando o usuário reportar um bug de tela/UI:
 | Transações — listagem | `e2e/transactions-list.spec.ts` |
 | Transações — categoria inline | `e2e/transactions-category.spec.ts` |
 | Transações — tipo inline | `e2e/transactions-tipo.spec.ts` |
+| Transações — valor inline | `e2e/transactions-valor.spec.ts` |
 | Importar extrato (modal) | `e2e/import.spec.ts` |
 | Nova transação manual (modal) | `e2e/manual-transaction.spec.ts` |
 | Configurações — categorias | `e2e/settings-categories.spec.ts` |
