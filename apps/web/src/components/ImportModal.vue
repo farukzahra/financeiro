@@ -5,7 +5,8 @@ import { useReferenceStore } from "../stores/reference";
 import {
   preview as previewImport,
   confirmImport,
-  type PreviewResponse,
+  type PreviewBatchResponse,
+  type ImportMetadata,
 } from "../lib/api";
 import { fmtMoneyBR, fmtDateBR, classMoney } from "../lib/format";
 import { categoryOptionLabel } from "../lib/categories";
@@ -21,7 +22,7 @@ const snackbar = useSnackbar();
 
 const step = ref<"upload" | "preview" | "confirming">("upload");
 const loading = ref(false);
-const preview = ref<PreviewResponse | null>(null);
+const preview = ref<PreviewBatchResponse | null>(null);
 const selectedIds = ref(new Set<string>());
 
 const visibleProxy = computed({
@@ -30,7 +31,7 @@ const visibleProxy = computed({
 });
 
 const previewHeaders = [
-  { title: "", key: "select", sortable: false, width: 44 },
+  { title: "", key: "select", sortable: false, width: 48 },
   { title: "Data", key: "data", width: 100 },
   { title: "Tipo", key: "tipo", width: 170 },
   { title: "Detalhe", key: "detalhe" },
@@ -52,14 +53,18 @@ function removeItem(id: string) {
   preview.value.itens = preview.value.itens.filter((i) => i.identificador !== id);
 }
 
+function normalizeFiles(files: File | File[] | null): File[] {
+  if (!files) return [];
+  return Array.isArray(files) ? files.filter(Boolean) : [files];
+}
+
 async function onSelect(files: File | File[] | null) {
-  const file = Array.isArray(files) ? files[0] : files;
-  if (!file) return;
+  const list = normalizeFiles(files);
+  if (!list.length) return;
   loading.value = true;
   try {
     if (!ref_.loaded) await ref_.load();
-    const data = await previewImport(file);
-    preview.value = data;
+    preview.value = await previewImport(list);
     selectedIds.value = new Set();
     step.value = "preview";
   } catch (err) {
@@ -74,39 +79,61 @@ async function onSelect(files: File | File[] | null) {
   }
 }
 
+function metadataForConfirm(source: ImportMetadata): ImportMetadata {
+  return {
+    nomeArquivo: source.nomeArquivo,
+    hashSha256: source.hashSha256,
+    conta: source.conta,
+    periodoInicio: source.periodoInicio,
+    periodoFim: source.periodoFim,
+    totalLinhas: source.totalLinhas,
+    jaImportadoEm: null,
+  };
+}
+
 async function onConfirm() {
   if (!preview.value) return;
   step.value = "confirming";
   try {
-    const novos = preview.value.itens.filter(
-      (i) => !i.jaExistente && selectedIds.value.has(i.identificador),
-    );
-    const itens = novos.map((i) => {
-      const categoriaId = ref_.categoryIdByCode(i.categoriaSugerida);
-      if (!categoriaId) {
-        throw new Error(`Categoria desconhecida: ${i.categoriaSugerida}`);
-      }
-      return {
-        identificador: i.identificador,
-        data: i.data,
-        valor: i.valor,
-        descricaoRaw: i.descricaoRaw,
-        tipo: i.tipo,
-        detalhe: i.detalhe,
-        chaveNormalizada: i.chaveNormalizada,
-        categoriaId,
-        categoryRuleId: i.categoryRuleId,
-        regraAplicada: i.regraAplicada,
-      };
-    });
-    const result = await confirmImport({
-      metadata: preview.value.metadata,
-      itens,
-    });
-    emit("imported", {
-      totalImportadas: result.totalImportadas,
-      totalDuplicadas: result.totalDuplicadas,
-    });
+    const totals = { totalImportadas: 0, totalDuplicadas: 0 };
+
+    for (const source of preview.value.sources) {
+      const novos = preview.value.itens.filter(
+        (i) =>
+          !i.jaExistente &&
+          i.sourceHashSha256 === source.hashSha256 &&
+          selectedIds.value.has(i.identificador),
+      );
+      if (!novos.length) continue;
+
+      const itens = novos.map((i) => {
+        const categoriaId = ref_.categoryIdByCode(i.categoriaSugerida);
+        if (!categoriaId) {
+          throw new Error(`Categoria desconhecida: ${i.categoriaSugerida}`);
+        }
+        return {
+          identificador: i.identificador,
+          data: i.data,
+          valor: i.valor,
+          descricaoRaw: i.descricaoRaw,
+          tipo: i.tipo,
+          detalhe: i.detalhe,
+          chaveNormalizada: i.chaveNormalizada,
+          categoriaId,
+          categoryRuleId: i.categoryRuleId,
+          regraAplicada: i.regraAplicada,
+        };
+      });
+
+      const result = await confirmImport({
+        metadata: metadataForConfirm(source),
+        itens,
+      });
+      totals.totalImportadas += result.totalImportadas;
+      totals.totalDuplicadas += result.totalDuplicadas;
+    }
+
+    emit("imported", totals);
     visibleProxy.value = false;
     reset();
   } catch (err) {
@@ -149,6 +176,10 @@ const someSelected = computed(
   () => selectedCount.value > 0 && !allSelected.value,
 );
 
+const reimportedSources = computed(
+  () => preview.value?.sources.filter((s) => s.jaImportadoEm) ?? [],
+);
+
 function toggleItem(id: string) {
   if (selectedIds.value.has(id)) selectedIds.value.delete(id);
   else selectedIds.value.add(id);
@@ -174,11 +205,16 @@ function toggleAll() {
     <v-card title="Importar extrato">
       <v-card-text>
         <div v-if="step === 'upload'">
-          <p>Selecione um arquivo CSV do Nubank (formato NU_&lt;conta&gt;_&lt;periodo&gt;.csv).</p>
+          <p>
+            Selecione um ou mais arquivos CSV do Nubank (formato
+            NU_&lt;conta&gt;_&lt;periodo&gt;.csv) ou um ZIP contendo vários CSVs.
+          </p>
           <v-file-input
-            accept=".csv"
-            label="Selecionar arquivo"
+            accept=".csv,.zip,application/zip"
+            label="Selecionar arquivo(s)"
             prepend-icon="mdi-file-upload"
+            multiple
+            show-size
             @update:model-value="onSelect"
           />
           <div v-if="loading" class="upload-loading">
@@ -189,27 +225,42 @@ function toggleAll() {
 
         <div v-else-if="step === 'preview' && preview">
           <div class="preview-meta">
-            <div><strong>Arquivo:</strong> {{ preview.metadata.nomeArquivo }}</div>
-            <div><strong>Conta:</strong> {{ preview.metadata.conta }}</div>
-            <div>
-              <strong>Período:</strong>
-              {{ fmtDateBR(preview.metadata.periodoInicio) }} -
-              {{ fmtDateBR(preview.metadata.periodoFim) }}
-            </div>
-            <div><strong>Total:</strong> {{ preview.metadata.totalLinhas }}</div>
+            <div><strong>Arquivos:</strong> {{ preview.sources.length }}</div>
+            <div><strong>Registros:</strong> {{ preview.itens.length }}</div>
             <v-chip color="success" size="small">Novas: {{ novosCount }}</v-chip>
             <v-chip color="warning" size="small">Duplicadas: {{ dupCount }}</v-chip>
             <v-chip size="small">Selecionadas: {{ selectedCount }}</v-chip>
-            <v-chip
-              v-if="preview.metadata.jaImportadoEm"
-              color="info"
-              size="small"
-            >
-              Arquivo já foi importado antes
-            </v-chip>
           </div>
 
+          <ul v-if="preview.sources.length" class="source-list">
+            <li v-for="source in preview.sources" :key="source.hashSha256">
+              <strong>{{ source.nomeArquivo }}</strong>
+              — conta {{ source.conta }},
+              {{ fmtDateBR(source.periodoInicio) }} a {{ fmtDateBR(source.periodoFim) }}
+              ({{ source.totalLinhas }} linhas)
+              <v-chip
+                v-if="source.jaImportadoEm"
+                color="info"
+                size="x-small"
+                class="source-chip"
+              >
+                já importado
+              </v-chip>
+            </li>
+          </ul>
+          <v-alert
+            v-if="reimportedSources.length"
+            type="info"
+            density="compact"
+            variant="tonal"
+            class="reimport-alert"
+          >
+            {{ reimportedSources.length }} arquivo(s) já foram importados antes; linhas duplicadas
+            aparecem marcadas na tabela.
+          </v-alert>
+
           <v-data-table
+            class="preview-table"
             :headers="previewHeaders"
             :items="preview.itens"
             item-value="identificador"
@@ -220,25 +271,29 @@ function toggleAll() {
             striped="even"
           >
             <template #header.select>
-              <v-checkbox-btn
-                :model-value="allSelected"
-                :indeterminate="someSelected"
-                @update:model-value="toggleAll"
-              />
+              <div class="select-cell">
+                <v-checkbox-btn
+                  :model-value="allSelected"
+                  :indeterminate="someSelected"
+                  @update:model-value="toggleAll"
+                />
+              </div>
             </template>
             <template #item.select="{ item }">
-              <v-checkbox-btn
-                v-if="!item.jaExistente"
-                :model-value="selectedIds.has(item.identificador)"
-                @update:model-value="toggleItem(item.identificador)"
-              />
-              <v-icon
-                v-else
-                icon="mdi-content-copy"
-                color="warning"
-                size="small"
-                title="Já existe"
-              />
+              <div class="select-cell">
+                <v-checkbox-btn
+                  v-if="!item.jaExistente"
+                  :model-value="selectedIds.has(item.identificador)"
+                  @update:model-value="toggleItem(item.identificador)"
+                />
+                <v-icon
+                  v-else
+                  icon="mdi-content-copy"
+                  color="warning"
+                  size="20"
+                  title="Já existe"
+                />
+              </div>
             </template>
             <template #item.data="{ item }">{{ fmtDateBR(item.data) }}</template>
             <template #item.categoriaSugerida="{ item }">
@@ -305,5 +360,48 @@ function toggleAll() {
   flex-wrap: wrap;
   margin-bottom: 0.75rem;
   align-items: center;
+}
+
+.source-list {
+  margin: 0 0 0.75rem;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.source-list li + li {
+  margin-top: 0.25rem;
+}
+
+.source-chip {
+  margin-left: 0.35rem;
+  vertical-align: middle;
+}
+
+.reimport-alert {
+  margin-bottom: 0.75rem;
+}
+
+.select-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.preview-table :deep(th:first-child),
+.preview-table :deep(td:first-child) {
+  width: 48px;
+  min-width: 48px;
+  max-width: 48px;
+  padding-left: 8px;
+  padding-right: 8px;
+  text-align: center;
+}
+
+.preview-table :deep(th:first-child .select-cell),
+.preview-table :deep(td:first-child .select-cell) {
+  margin: 0 auto;
 }
 </style>

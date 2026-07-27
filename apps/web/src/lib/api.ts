@@ -1,9 +1,15 @@
 import axios from "axios";
+import { formatApiError } from "./api-error";
 
 export const api = axios.create({
   baseURL: "/api",
   withCredentials: true,
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => Promise.reject(new Error(formatApiError(error))),
+);
 
 export type UserSettings = {
   salaryCycle?: {
@@ -90,6 +96,7 @@ export type PreviewItem = {
   categoryRuleId: string | null;
   regraAplicada: string;
   jaExistente: boolean;
+  sourceHashSha256: string;
 };
 
 export type ImportMetadata = {
@@ -102,8 +109,8 @@ export type ImportMetadata = {
   jaImportadoEm: string | null;
 };
 
-export type PreviewResponse = {
-  metadata: ImportMetadata;
+export type PreviewBatchResponse = {
+  sources: ImportMetadata[];
   itens: PreviewItem[];
 };
 
@@ -134,10 +141,11 @@ export type TransactionsResponse = {
   };
 };
 
-export async function preview(file: File): Promise<PreviewResponse> {
+export async function preview(files: File | File[]): Promise<PreviewBatchResponse> {
+  const list = Array.isArray(files) ? files : [files];
   const form = new FormData();
-  form.append("file", file);
-  const { data } = await api.post<PreviewResponse>("/imports/preview", form);
+  for (const file of list) form.append("file", file);
+  const { data } = await api.post<PreviewBatchResponse>("/imports/preview", form);
   return data;
 }
 
@@ -260,10 +268,15 @@ export async function listTipos(): Promise<string[]> {
 export type TransactionStats = {
   qtd: number;
   saldo: string;
+  year: number;
+  months: { month: number; mes: string; qtd: number }[];
+  yearQtd: number;
 };
 
-export async function getTransactionStats(): Promise<TransactionStats> {
-  const { data } = await api.get<TransactionStats>("/transactions/stats");
+export async function getTransactionStats(year?: number): Promise<TransactionStats> {
+  const { data } = await api.get<TransactionStats>("/transactions/stats", {
+    params: year != null ? { year } : undefined,
+  });
   return data;
 }
 

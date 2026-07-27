@@ -11,6 +11,21 @@ describe("extractFileMetadata", () => {
     expect(meta.hashSha256).toHaveLength(64);
   });
 
+  it("aceita sufixo (1) de download duplicado no Windows", () => {
+    const buffer = Buffer.from("Data,Valor,Identificador,Descrição\n");
+    const meta = extractFileMetadata("NU_941505780_01MAR2026_31MAR2026 (1).csv", buffer);
+    expect(meta.conta).toBe("941505780");
+    expect(meta.periodoInicio).toBe("2026-03-01");
+    expect(meta.periodoFim).toBe("2026-03-31");
+    expect(meta.nomeArquivo).toBe("NU_941505780_01MAR2026_31MAR2026 (1).csv");
+  });
+
+  it("aceita sufixo - Copy do Windows", () => {
+    const buffer = Buffer.from("");
+    const meta = extractFileMetadata("NU_941505780_01MAR2026_31MAR2026 - Copy.csv", buffer);
+    expect(meta.periodoInicio).toBe("2026-03-01");
+  });
+
   it("rejeita nome de arquivo fora do padrao", () => {
     expect(() => extractFileMetadata("extrato.csv", Buffer.from(""))).toThrow(
       /padrao NU_/,

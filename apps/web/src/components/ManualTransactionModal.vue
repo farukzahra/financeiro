@@ -74,10 +74,19 @@ const sinalOptions = [
   { title: "Entrada (+)", value: "entrada" },
 ];
 
-const tipoOptions = computed(() => ref_.tipos.map((t) => ({ title: t, value: t })));
+const tipoOptions = computed(() => ref_.tipos);
+
+function tipoText(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+  if (value && typeof value === "object" && "value" in value) {
+    return String((value as { value: string }).value).trim();
+  }
+  return String(value ?? "").trim();
+}
 
 async function save() {
-  if (!data.value || valor.value == null || !tipo.value.trim() || !categoriaId.value) {
+  const tipoStr = tipoText(tipo.value);
+  if (!data.value || valor.value == null || !tipoStr || !categoriaId.value) {
     snackbar.add({
       severity: "warn",
       summary: "Campos obrigatórios",
@@ -93,7 +102,7 @@ async function save() {
     const body = {
       data: toIso(data.value),
       valor: signed.toFixed(2),
-      tipo: tipo.value.trim(),
+      tipo: tipoStr,
       detalhe: detalhe.value.trim(),
       categoriaId: categoriaId.value,
       observacao: observacao.value.trim() || null,
@@ -164,8 +173,6 @@ async function save() {
             <v-combobox
               v-model="tipo"
               :items="tipoOptions"
-              item-title="title"
-              item-value="value"
               placeholder="Selecione ou digite"
             />
           </div>

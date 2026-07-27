@@ -1,4 +1,5 @@
 import Papa from "papaparse";
+import path from "node:path";
 import { createHash } from "node:crypto";
 import { chaveAgrupamento, splitDescricao } from "./normalize.js";
 
@@ -38,6 +39,15 @@ const MESES: Record<string, string> = {
 // NU_<conta>_<DDMMMYYYY>_<DDMMMYYYY>.csv
 const NOME_RE = /^NU_(\d+)_(\d{2})([A-Z]{3})(\d{4})_(\d{2})([A-Z]{3})(\d{4})\.csv$/i;
 
+/** Remove sufixos de download duplicado (Windows/macOS) antes de validar o nome. */
+export function normalizeNubankFilename(nomeArquivo: string): string {
+  const base = path.basename(nomeArquivo.trim());
+  if (!/\.csv$/i.test(base)) return base;
+  const stem = base.replace(/\.csv$/i, "");
+  const cleaned = stem.replace(/\s*(?:\(\d+\)|-\s*copy(?:\s*\(\d+\))?)$/i, "");
+  return `${cleaned}.csv`;
+}
+
 function parseDataNome(dd: string, mmm: string, yyyy: string): string {
   const mes = MESES[mmm.toUpperCase()];
   if (!mes) throw new Error(`Mes invalido: ${mmm}`);
@@ -52,7 +62,8 @@ function parseDataLinha(ddmmyyyy: string): string {
 
 export function extractFileMetadata(nomeArquivo: string, buffer: Buffer): FileMetadata {
   const hash = createHash("sha256").update(buffer).digest("hex");
-  const match = NOME_RE.exec(nomeArquivo);
+  const canonical = normalizeNubankFilename(nomeArquivo);
+  const match = NOME_RE.exec(canonical);
   if (!match) {
     throw new Error(
       `Nome de arquivo nao segue padrao NU_<conta>_<DDMMMYYYY>_<DDMMMYYYY>.csv: ${nomeArquivo}`,
@@ -60,7 +71,7 @@ export function extractFileMetadata(nomeArquivo: string, buffer: Buffer): FileMe
   }
   const [, conta, d1, m1, y1, d2, m2, y2] = match;
   return {
-    nomeArquivo,
+    nomeArquivo: path.basename(nomeArquivo.trim()),
     hashSha256: hash,
     conta,
     periodoInicio: parseDataNome(d1, m1, y1),

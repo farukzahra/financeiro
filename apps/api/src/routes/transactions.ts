@@ -6,6 +6,15 @@ import { TransactionUpdateSchema, TransactionCreateSchema } from "@financeiro/sh
 import { chaveAgrupamento } from "../services/normalize.js";
 import { indexCategories } from "../services/category-lookup.js";
 import { buildTransactionsResumo } from "../services/transaction-resumo.js";
+import {
+  buildYearMonthStats,
+  parseStatsYear,
+  sumMonthStats,
+} from "../services/transaction-stats.js";
+import {
+  BASELINE_TRANSACTION_TIPOS,
+  mergeTransactionTipos,
+} from "../services/transaction-tipos.js";
 import { requireUser } from "../auth.js";
 
 const MANUAL_IMPORT_HASH = "__manual__";
@@ -198,8 +207,11 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
     return { ok: true, id: removed.id };
   });
 
-  app.get("/transactions/stats", async (req, reply) => {
+  app.get<{ Querystring: { year?: string } }>("/transactions/stats", async (req, reply) => {
     const user = await requireUser(req, reply);
+    const year = parseStatsYear(req.query.year);
+    if (year == null) return reply.code(400).send({ error: "Ano invalido" });
+
     const [row] = await db
       .select({
         qtd: drizzleSql<number>`count(*)::int`,
@@ -207,9 +219,33 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
       })
       .from(transactions)
       .where(eq(transactions.userId, user.id));
+
+    const monthRows = await db
+      .select({
+        month: drizzleSql<number>`extract(month from ${transactions.data})::int`,
+        qtd: drizzleSql<number>`count(*)::int`,
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, user.id),
+          drizzleSql`extract(year from ${transactions.data}) = ${year}`,
+        ),
+      )
+      .groupBy(drizzleSql`extract(month from ${transactions.data})`);
+
+    const countsByMonth: Partial<Record<number, number>> = {};
+    for (const monthRow of monthRows) {
+      countsByMonth[monthRow.month] = monthRow.qtd;
+    }
+    const months = buildYearMonthStats(year, countsByMonth);
+
     return {
       qtd: row?.qtd ?? 0,
       saldo: Number(row?.saldo ?? 0).toFixed(2),
+      year,
+      months,
+      yearQtd: sumMonthStats(months),
     };
   });
 
@@ -224,28 +260,13 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
 
   app.get("/transactions/tipos", async (req, reply) => {
     const user = await requireUser(req, reply);
-    const baseline = [
-      "AplicaÃ§Ã£o RDB",
-      "Compra no dÃ©bito",
-      "DÃ©bito em conta",
-      "Estorno",
-      "Pagamento de boleto efetuado",
-      "Pagamento de fatura",
-      "Reembolso recebido pelo Pix",
-      "Resgate RDB",
-      "Saque",
-      "TransferÃªncia enviada pelo Pix",
-      "TransferÃªncia Recebida",
-      "TransferÃªncia recebida pelo Pix",
-    ];
     const rows = await db
       .selectDistinct({ tipo: transactions.tipo })
       .from(transactions)
       .where(eq(transactions.userId, user.id))
       .orderBy(transactions.tipo);
-    const set = new Set<string>(baseline);
-    for (const r of rows) if (r.tipo) set.add(r.tipo);
-    return [...set].sort((a, b) => a.localeCompare(b, "pt-BR"));
+    const fromDb = rows.map((r) => r.tipo).filter(Boolean) as string[];
+    return mergeTransactionTipos(BASELINE_TRANSACTION_TIPOS, fromDb);
   });
 
   app.get("/transactions/summary", async (req, reply) => {

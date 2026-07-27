@@ -5,74 +5,117 @@ import { categories, categoryRules, imports, transactions } from "../db/schema.j
 import { extractFileMetadata, parseCsv } from "../services/parser.js";
 import { categorizeAll, type CategoryRuleLite } from "../services/categorizer.js";
 import { indexCategories } from "../services/category-lookup.js";
-import { ConfirmRequestSchema } from "@financeiro/shared";
+import { expandUploadsToCsv } from "../services/import-files.js";
+import { ConfirmRequestSchema, type PreviewBatchResponse } from "@financeiro/shared";
 import { requireUser } from "../auth.js";
 
+async function loadCategoryContext(userId: string) {
+  const allRules = await db.query.categoryRules.findMany({
+    where: and(eq(categoryRules.userId, userId), eq(categoryRules.ativa, true)),
+  });
+  const allCategories = await db.query.categories.findMany();
+  const catIndex = indexCategories(allCategories);
+  const lite: CategoryRuleLite[] = allRules.map((r) => ({
+    id: r.id,
+    categoriaId: catIndex.codeOf(r.categoriaId),
+    tipoPadrao: r.tipoPadrao as "substring" | "regex",
+    padrao: r.padrao,
+    prioridade: r.prioridade,
+  }));
+  return { catIndex, lite };
+}
+
+async function buildPreviewForCsv(
+  userId: string,
+  nomeArquivo: string,
+  buffer: Buffer,
+  ctx: Awaited<ReturnType<typeof loadCategoryContext>>,
+) {
+  const metadata = extractFileMetadata(nomeArquivo, buffer);
+  const existingImport = await db.query.imports.findFirst({
+    where: and(eq(imports.userId, userId), eq(imports.hashSha256, metadata.hashSha256)),
+  });
+
+  const rows = parseCsv(buffer);
+  const categorizados = categorizeAll(rows, ctx.lite, ctx.catIndex.codes());
+
+  const ids = rows.map((r) => r.identificador);
+  const existentes = ids.length
+    ? await db
+        .select({ id: transactions.identificador })
+        .from(transactions)
+        .where(and(eq(transactions.userId, userId), inArray(transactions.identificador, ids)))
+    : [];
+  const existentesSet = new Set(existentes.map((e) => e.id));
+
+  return {
+    metadata: {
+      ...metadata,
+      totalLinhas: rows.length,
+      jaImportadoEm: existingImport ? existingImport.criadoEm.toISOString() : null,
+    },
+    itens: categorizados.map((c) => ({
+      identificador: c.identificador,
+      data: c.data,
+      valor: c.valor,
+      descricaoRaw: c.descricaoRaw,
+      tipo: c.tipo,
+      detalhe: c.detalhe,
+      chaveNormalizada: c.chaveNormalizada,
+      categoriaSugerida: c.categoriaSugerida,
+      categoryRuleId: c.categoryRuleId,
+      regraAplicada: c.regraAplicada,
+      jaExistente: existentesSet.has(c.identificador),
+      sourceHashSha256: metadata.hashSha256,
+    })),
+  };
+}
+
 export async function registerImportsRoutes(app: FastifyInstance) {
-  // POST /imports/preview (multipart) -> { metadata, itens[] }
+  // POST /imports/preview (multipart, 1+ arquivos CSV/ZIP) -> { sources, itens[] }
   app.post("/imports/preview", async (req, reply) => {
     const user = await requireUser(req, reply);
-    const data = await req.file();
-    if (!data) return reply.code(400).send({ error: "Arquivo obrigatorio" });
 
-    const buffer = await data.toBuffer();
-    let metadata;
+    const uploads: Array<{ filename: string; buffer: Buffer }> = [];
+    const parts = req.files();
+    for await (const part of parts) {
+      if (part.type !== "file") continue;
+      uploads.push({
+        filename: part.filename,
+        buffer: await part.toBuffer(),
+      });
+    }
+
+    if (!uploads.length) return reply.code(400).send({ error: "Arquivo obrigatorio" });
+
+    let csvFiles;
     try {
-      metadata = extractFileMetadata(data.filename, buffer);
+      csvFiles = expandUploadsToCsv(uploads);
     } catch (err) {
       return reply.code(400).send({ error: (err as Error).message });
     }
 
-    const existingImport = await db.query.imports.findFirst({
-      where: and(eq(imports.userId, user.id), eq(imports.hashSha256, metadata.hashSha256)),
-    });
+    const ctx = await loadCategoryContext(user.id);
+    const sources: PreviewBatchResponse["sources"] = [];
+    const itens: PreviewBatchResponse["itens"] = [];
+    const seenIds = new Set<string>();
 
-    const rows = parseCsv(buffer);
+    for (const csv of csvFiles) {
+      let preview;
+      try {
+        preview = await buildPreviewForCsv(user.id, csv.nomeArquivo, csv.buffer, ctx);
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+      sources.push(preview.metadata);
+      for (const item of preview.itens) {
+        if (seenIds.has(item.identificador)) continue;
+        seenIds.add(item.identificador);
+        itens.push(item);
+      }
+    }
 
-    const allRules = await db.query.categoryRules.findMany({
-      where: and(eq(categoryRules.userId, user.id), eq(categoryRules.ativa, true)),
-    });
-    const allCategories = await db.query.categories.findMany();
-    const catIndex = indexCategories(allCategories);
-    const lite: CategoryRuleLite[] = allRules.map((r) => ({
-      id: r.id,
-      categoriaId: catIndex.codeOf(r.categoriaId),
-      tipoPadrao: r.tipoPadrao as "substring" | "regex",
-      padrao: r.padrao,
-      prioridade: r.prioridade,
-    }));
-
-    const categorizados = categorizeAll(rows, lite, catIndex.codes());
-
-    const ids = rows.map((r) => r.identificador);
-    const existentes = ids.length
-      ? await db
-          .select({ id: transactions.identificador })
-          .from(transactions)
-          .where(and(eq(transactions.userId, user.id), inArray(transactions.identificador, ids)))
-      : [];
-    const existentesSet = new Set(existentes.map((e) => e.id));
-
-    return {
-      metadata: {
-        ...metadata,
-        totalLinhas: rows.length,
-        jaImportadoEm: existingImport ? existingImport.criadoEm.toISOString() : null,
-      },
-      itens: categorizados.map((c) => ({
-        identificador: c.identificador,
-        data: c.data,
-        valor: c.valor,
-        descricaoRaw: c.descricaoRaw,
-        tipo: c.tipo,
-        detalhe: c.detalhe,
-        chaveNormalizada: c.chaveNormalizada,
-        categoriaSugerida: c.categoriaSugerida,
-        categoryRuleId: c.categoryRuleId,
-        regraAplicada: c.regraAplicada,
-        jaExistente: existentesSet.has(c.identificador),
-      })),
-    };
+    return { sources, itens } satisfies PreviewBatchResponse;
   });
 
   // POST /imports/confirm

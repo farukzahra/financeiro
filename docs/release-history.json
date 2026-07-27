@@ -1,7 +1,15 @@
 {
-  "currentVersion": "0.21.0",
-  "updatedAt": "2026-07-27T12:55:00.000Z",
+  "currentVersion": "0.22.0",
+  "updatedAt": "2026-07-27T13:22:00.000Z",
   "entries": [
+    {
+      "version": "0.22.0",
+      "date": "2026-07-27",
+      "title": "Importação em lote e correções no cadastro manual",
+      "summary": "Importe vários CSVs ou um ZIP de extratos Nubank de uma vez. A combo de tipo na nova transação manual exibe acentos corretos e salva ao selecionar na lista. A aba Dados inclui estatísticas mensais por ano.",
+      "type": "feat",
+      "commit": null
+    },
     {
       "version": "0.21.0",
       "date": "2026-07-27",

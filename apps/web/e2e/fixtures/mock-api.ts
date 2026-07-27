@@ -44,6 +44,7 @@ export const mockPreviewItem = {
   categoryRuleId: null,
   regraAplicada: "heuristica",
   jaExistente: false,
+  sourceHashSha256: "mock-hash",
 };
 
 export const mockPreviewMetadata = {
@@ -137,6 +138,31 @@ function saldoAtual(rows: (typeof mockTransaction)[]) {
   return rows.reduce((acc, r) => acc + Number(r.valor), 0).toFixed(2);
 }
 
+function buildMockTransactionStats(state: MockApiState, year: number) {
+  const countsByMonth: Partial<Record<number, number>> = {};
+  for (const row of state.transactions) {
+    const [rowYear, rowMonth] = row.data.split("-").map(Number);
+    if (rowYear !== year) continue;
+    countsByMonth[rowMonth] = (countsByMonth[rowMonth] ?? 0) + 1;
+  }
+  const months = Array.from({ length: 12 }, (_, index) => {
+    const month = index + 1;
+    return {
+      month,
+      mes: `${year}-${String(month).padStart(2, "0")}`,
+      qtd: countsByMonth[month] ?? 0,
+    };
+  });
+  const yearQtd = months.reduce((acc, row) => acc + row.qtd, 0);
+  return {
+    qtd: state.transactions.length,
+    saldo: saldoAtual(state.transactions),
+    year,
+    months,
+    yearQtd,
+  };
+}
+
 function filterTransactions(
   rows: (typeof mockTransaction)[],
   url: URL,
@@ -208,7 +234,15 @@ function syncCreditCardBudgetMock(state: MockApiState) {
   });
 }
 
-export async function installMockApi(page: Page, state: MockApiState) {
+export type MockApiOptions = {
+  statsDelayMs?: number;
+};
+
+export async function installMockApi(
+  page: Page,
+  state: MockApiState,
+  options: MockApiOptions = {},
+) {
   await page.route("**/api/**", async (route: Route) => {
     const url = new URL(route.request().url());
     const path = url.pathname.replace(/^\/api/, "");
@@ -222,11 +256,19 @@ export async function installMockApi(page: Page, state: MockApiState) {
     }
 
     if (method === "POST" && path === "/auth/login") {
+      const body = route.request().postDataJSON() as { email?: string; password?: string };
+      if (body.password === "__wrong__") {
+        return route.fulfill({ status: 401, json: { error: "Email ou senha invalidos" } });
+      }
       state.authenticated = true;
       return route.fulfill({ json: state.user });
     }
 
     if (method === "POST" && path === "/auth/register") {
+      const body = route.request().postDataJSON() as { email?: string };
+      if (body.email === "existente@example.com") {
+        return route.fulfill({ status: 409, json: { error: "Email ja cadastrado" } });
+      }
       state.authenticated = true;
       return route.fulfill({ json: state.user });
     }
@@ -311,12 +353,18 @@ export async function installMockApi(page: Page, state: MockApiState) {
     }
 
     if (method === "GET" && path === "/transactions/stats") {
-      return route.fulfill({
-        json: {
-          qtd: state.transactions.length,
-          saldo: saldoAtual(state.transactions),
-        },
-      });
+      const yearParam = url.searchParams.get("year");
+      const year =
+        yearParam != null && yearParam !== ""
+          ? Number.parseInt(yearParam, 10)
+          : new Date().getFullYear();
+      if (!Number.isFinite(year) || year < 1970 || year > 2100) {
+        return route.fulfill({ status: 400, json: { error: "Ano invalido" } });
+      }
+      if (options.statsDelayMs) {
+        await new Promise((resolve) => setTimeout(resolve, options.statsDelayMs));
+      }
+      return route.fulfill({ json: buildMockTransactionStats(state, year) });
     }
 
     if (method === "DELETE" && path === "/transactions/all") {
@@ -495,7 +543,7 @@ export async function installMockApi(page: Page, state: MockApiState) {
     if (method === "POST" && path === "/imports/preview") {
       return route.fulfill({
         json: {
-          metadata: mockPreviewMetadata,
+          sources: [mockPreviewMetadata],
           itens: [structuredClone(mockPreviewItem)],
         },
       });
@@ -556,8 +604,12 @@ export async function installMockApi(page: Page, state: MockApiState) {
   });
 }
 
-export async function mockAuthenticatedApp(page: Page, state = createMockApiState()) {
-  await installMockApi(page, state);
+export async function mockAuthenticatedApp(
+  page: Page,
+  state = createMockApiState(),
+  options: MockApiOptions = {},
+) {
+  await installMockApi(page, state, options);
   return state;
 }
 

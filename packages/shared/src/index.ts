@@ -85,6 +85,17 @@ export const PreviewResponseSchema = z.object({
 });
 export type PreviewResponse = z.infer<typeof PreviewResponseSchema>;
 
+export const PreviewBatchItemSchema = PreviewItemSchema.extend({
+  sourceHashSha256: z.string(),
+});
+export type PreviewBatchItem = z.infer<typeof PreviewBatchItemSchema>;
+
+export const PreviewBatchResponseSchema = z.object({
+  sources: z.array(ImportMetadataSchema),
+  itens: z.array(PreviewBatchItemSchema),
+});
+export type PreviewBatchResponse = z.infer<typeof PreviewBatchResponseSchema>;
+
 export const ConfirmItemSchema = z.object({
   identificador: z.string(),
   data: z.string(),

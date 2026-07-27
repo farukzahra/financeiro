@@ -63,7 +63,14 @@ const subscriptionForm = ref({
 });
 const transactionStats = ref<TransactionStats | null>(null);
 const dataStatsLoading = ref(false);
+const dataStatsRefreshing = ref(false);
 const clearingTransactions = ref(false);
+const statsYear = ref(new Date().getFullYear());
+
+const monthCountHeaders = [
+  { title: "Mês", key: "label" },
+  { title: "Registros", key: "qtd", width: 120, align: "end" as const },
+];
 
 const showRuleDialog = ref(false);
 const ruleForm = ref({
@@ -135,13 +142,37 @@ async function loadSubscriptions() {
 }
 
 async function loadTransactionStats() {
-  dataStatsLoading.value = true;
+  const initial = transactionStats.value == null;
+  if (initial) {
+    dataStatsLoading.value = true;
+  } else {
+    dataStatsRefreshing.value = true;
+  }
   try {
-    transactionStats.value = await getTransactionStats();
+    transactionStats.value = await getTransactionStats(statsYear.value);
+    statsYear.value = transactionStats.value.year;
   } finally {
     dataStatsLoading.value = false;
+    dataStatsRefreshing.value = false;
   }
 }
+
+function shiftStatsYear(delta: number) {
+  if (dataStatsRefreshing.value) return;
+  statsYear.value += delta;
+  void loadTransactionStats();
+}
+
+const monthFormatter = new Intl.DateTimeFormat("pt-BR", { month: "long" });
+
+const monthCountRows = computed(() => {
+  if (!transactionStats.value) return [];
+  const year = transactionStats.value.year;
+  return transactionStats.value.months.map((row) => ({
+    ...row,
+    label: monthFormatter.format(new Date(year, row.month - 1, 1)),
+  }));
+});
 
 function confirmClearTransactions() {
   confirm.require({
@@ -154,13 +185,13 @@ function confirmClearTransactions() {
       clearingTransactions.value = true;
       try {
         const result = await clearAllTransactions();
-        await loadTransactionStats();
         snackbar.add({
           severity: "success",
           summary: "Transações apagadas",
           detail: `${result.removed} registro(s) removido(s)`,
-          life: 3000,
+          life: 1500,
         });
+        await loadTransactionStats();
       } catch (err) {
         snackbar.add({
           severity: "error",
@@ -660,14 +691,67 @@ async function saveSalaryCycle() {
             <v-progress-circular indeterminate size="24" width="2" />
             <span>Carregando…</span>
           </div>
-          <div v-else-if="transactionStats" class="data-stats-grid">
-            <div class="data-stat">
-              <span class="data-stat__label">Registros</span>
-              <strong class="data-stat__value">{{ transactionStats.qtd.toLocaleString("pt-BR") }}</strong>
+          <div
+            v-else-if="transactionStats"
+            class="data-stats-body"
+            :class="{ 'data-stats-body--refreshing': dataStatsRefreshing }"
+          >
+            <div class="data-stats-grid">
+              <div class="data-stat">
+                <span class="data-stat__label">Registros (total)</span>
+                <strong class="data-stat__value">{{ transactionStats.qtd.toLocaleString("pt-BR") }}</strong>
+              </div>
+              <div class="data-stat">
+                <span class="data-stat__label">Registros em {{ statsYear }}</span>
+                <strong class="data-stat__value">{{ transactionStats.yearQtd.toLocaleString("pt-BR") }}</strong>
+              </div>
+              <div class="data-stat">
+                <span class="data-stat__label">Saldo total</span>
+                <strong class="data-stat__value">{{ fmtMoney(transactionStats.saldo) }}</strong>
+              </div>
             </div>
-            <div class="data-stat">
-              <span class="data-stat__label">Saldo total</span>
-              <strong class="data-stat__value">{{ fmtMoney(transactionStats.saldo) }}</strong>
+            <div class="data-month-section">
+              <div class="data-month-nav">
+                <v-btn
+                  icon="mdi-chevron-left"
+                  variant="text"
+                  size="small"
+                  aria-label="Ano anterior"
+                  :disabled="dataStatsRefreshing"
+                  @click="shiftStatsYear(-1)"
+                />
+                <strong class="data-month-nav__year">{{ statsYear }}</strong>
+                <v-btn
+                  icon="mdi-chevron-right"
+                  variant="text"
+                  size="small"
+                  aria-label="Próximo ano"
+                  :disabled="dataStatsRefreshing"
+                  @click="shiftStatsYear(1)"
+                />
+                <v-progress-circular
+                  v-if="dataStatsRefreshing"
+                  class="data-month-nav__spinner"
+                  indeterminate
+                  size="18"
+                  width="2"
+                />
+              </div>
+              <v-data-table
+                class="month-count-table"
+                :headers="monthCountHeaders"
+                :items="monthCountRows"
+                density="compact"
+                :items-per-page="-1"
+                hide-default-footer
+              >
+                <template #item.label="{ item }">
+                  <span class="month-count-label">{{ item.label }}</span>
+                </template>
+                <template #item.qtd="{ item }">
+                  <span class="month-count-qtd">{{ item.qtd.toLocaleString("pt-BR") }}</span>
+                </template>
+              </v-data-table>
             </div>
           </div>
           <div class="data-actions">
@@ -947,9 +1031,50 @@ async function saveSalaryCycle() {
 
 .data-stats-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
   margin: 1rem 0 1.25rem;
+}
+
+.data-stats-body--refreshing {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.data-month-section {
+  margin-bottom: 1.25rem;
+}
+
+.data-month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.data-month-nav__spinner {
+  margin-left: 0.25rem;
+}
+
+.data-month-nav__year {
+  min-width: 4rem;
+  text-align: center;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.month-count-table :deep(table) {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.month-count-label {
+  text-transform: capitalize;
+}
+
+.month-count-qtd {
+  font-variant-numeric: tabular-nums;
 }
 
 .data-stat {

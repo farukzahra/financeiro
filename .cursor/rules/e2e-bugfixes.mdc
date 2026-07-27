@@ -1,18 +1,23 @@
 ---
-description: Ao corrigir bugs de UI, criar teste E2E Playwright correspondente
+description: Ao alterar componentes Vue ou corrigir bugs de UI, garantir cobertura E2E Playwright
 globs: apps/web/**/*
-alwaysApply: false
+alwaysApply: true
 ---
 
-# Bugfixes de UI com teste E2E
+# Componentes Vue e testes E2E
 
-Quando o usuário reportar um bug de tela/UI neste projeto:
+Ao **alterar ou criar** qualquer componente/tela Vue (`apps/web/src/**/*.vue`):
 
-1. Verificar se já existe spec E2E em `apps/web/e2e/` para essa tela.
-2. Se não existir, criar o spec base com mocks de API (`e2e/fixtures/mock-api.ts`).
-3. Se existir, adicionar um caso de teste que reproduza o bug reportado.
-4. Corrigir o bug.
-5. Executar `pnpm test:e2e` antes de concluir.
+1. Verificar se já existe spec E2E em `apps/web/e2e/` para esse fluxo (tabela abaixo).
+2. Se **não existir**, criar o spec base com mocks de API (`e2e/fixtures/mock-api.ts`) **antes de concluir**.
+3. Se existir, adicionar ou atualizar casos que cubram o comportamento alterado (especialmente bugs reportados).
+4. Executar `pnpm test:e2e` antes de concluir.
+
+Quando o usuário reportar um bug de tela/UI:
+
+1. Reproduzir em teste E2E (novo caso no spec existente ou spec novo).
+2. Corrigir o bug.
+3. Confirmar que o teste passa.
 
 ## Cobertura E2E por tela (manter atualizado)
 
