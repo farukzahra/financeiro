@@ -8,7 +8,7 @@
       "title": "Aba Dados para estatísticas e limpeza de transações",
       "summary": "Em Configurações, a aba Dados mostra quantidade de registros e saldo total. Botão com confirmação apaga todas as transações da conta de forma permanente.",
       "type": "feat",
-      "commit": null
+      "commit": "3100019"
     },
     {
       "version": "0.20.0",
