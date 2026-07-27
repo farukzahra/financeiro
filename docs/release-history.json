@@ -8,7 +8,7 @@
       "title": "Saldo atual ao editar valor inline",
       "summary": "Corrigido recálculo errado do saldo após alterar o valor de uma transação na tabela. O editor inline passa a manter o sinal (entrada/saída) e recarregar o resumo da API.",
       "type": "fix",
-      "commit": null
+      "commit": "fd9dc1b"
     },
     {
       "version": "0.22.0",
