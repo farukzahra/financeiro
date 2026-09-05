@@ -1,7 +1,15 @@
 {
-  "currentVersion": "0.22.2",
-  "updatedAt": "2026-07-27T13:40:00.000Z",
+  "currentVersion": "0.22.3",
+  "updatedAt": "2026-09-05T11:58:00.000Z",
   "entries": [
+    {
+      "version": "0.22.3",
+      "date": "2026-09-05",
+      "title": "Excluir regras de categorização",
+      "summary": "Na aba Regras em Configurações, cada linha ganhou botão de excluir com diálogo de confirmação antes de remover a regra.",
+      "type": "feat",
+      "commit": null
+    },
     {
       "version": "0.22.2",
       "date": "2026-07-27",

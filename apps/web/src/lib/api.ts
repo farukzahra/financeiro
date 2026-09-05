@@ -296,6 +296,10 @@ export async function createRule(body: {
   return data;
 }
 
+export async function deleteRule(id: string): Promise<void> {
+  await api.delete(`/rules/${id}`);
+}
+
 export async function previewRule(padrao: string, tipo: "substring" | "regex") {
   const { data } = await api.get<{ chaves: { chave: string; qtd: number }[] }>(
     "/rules/preview",

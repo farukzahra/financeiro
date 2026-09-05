@@ -49,4 +49,25 @@ test.describe("Configurações — regras", () => {
     expect((padraoBox?.width ?? 0)).toBeLessThan(520);
     expect(Math.abs((padraoBox?.y ?? 0) - (categoriaBox?.y ?? 0))).toBeLessThan(4);
   });
+
+  test("exclui regra com confirmação", async ({ page }) => {
+    const state = createMockApiState();
+    state.rules.push({
+      id: "rule-del",
+      categoriaId: CAT_ALIMENTACAO,
+      tipoPadrao: "substring",
+      padrao: "PADARIA TESTE",
+      prioridade: 100,
+      ativa: true,
+    });
+    await mockAuthenticatedApp(page, state);
+    await page.goto("/configuracoes");
+    await page.getByRole("tab", { name: "Regras" }).click();
+
+    await page.getByRole("row", { name: /PADARIA TESTE/ }).getByRole("button", { name: "Excluir regra" }).click();
+    await page.getByRole("button", { name: "Excluir", exact: true }).click();
+
+    await expect(page.getByRole("row", { name: /PADARIA TESTE/ })).toHaveCount(0);
+    expect(state.rules).toHaveLength(0);
+  });
 });

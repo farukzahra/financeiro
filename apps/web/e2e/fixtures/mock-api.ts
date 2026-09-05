@@ -348,6 +348,16 @@ export async function installMockApi(
       return route.fulfill({ json: row });
     }
 
+    const ruleDelete = path.match(/^\/rules\/([^/]+)$/);
+    if (method === "DELETE" && ruleDelete) {
+      const before = state.rules.length;
+      state.rules = state.rules.filter((r) => r.id !== ruleDelete[1]);
+      if (state.rules.length === before) {
+        return route.fulfill({ status: 404, json: { error: "Nao encontrada" } });
+      }
+      return route.fulfill({ json: { ok: true } });
+    }
+
     if (method === "GET" && path === "/transactions/tipos") {
       return route.fulfill({ json: ["Compra", "Transferência"] });
     }

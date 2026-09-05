@@ -46,6 +46,16 @@ export async function registerRulesRoutes(app: FastifyInstance) {
     return row;
   });
 
+  app.delete<{ Params: { id: string } }>("/rules/:id", async (req, reply) => {
+    const user = await requireUser(req, reply);
+    const [row] = await db
+      .delete(categoryRules)
+      .where(and(eq(categoryRules.userId, user.id), eq(categoryRules.id, req.params.id)))
+      .returning({ id: categoryRules.id });
+    if (!row) return reply.code(404).send({ error: "Nao encontrada" });
+    return { ok: true };
+  });
+
   // GET /rules/preview?padrao=&tipo=
   app.get<{ Querystring: { padrao?: string; tipo?: "substring" | "regex" } }>(
     "/rules/preview",

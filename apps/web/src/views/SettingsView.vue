@@ -12,6 +12,7 @@ import {
   patchSubscription,
   deleteSubscription,
   createRule,
+  deleteRule,
   createCategory,
   patchCategory,
   getTransactionStats,
@@ -19,6 +20,7 @@ import {
   type BudgetItem,
   type Subscription,
   type Category,
+  type CategoryRule,
   type TransactionStats,
 } from "../lib/api";
 import { useConfirm } from "../composables/useConfirm";
@@ -116,6 +118,7 @@ const ruleHeaders = [
   { title: "Padrão", key: "padrao", width: "36%" },
   { title: "Categoria", key: "categoriaId", width: "180px" },
   { title: "Ativa", key: "ativa", width: "80px" },
+  { title: "", key: "actions", sortable: false, width: 96, minWidth: "96" },
 ];
 
 const budgetHeaders = [
@@ -376,6 +379,20 @@ function openCreateRule() {
   showRuleDialog.value = true;
 }
 
+function confirmDeleteRule(row: CategoryRule) {
+  confirm.require({
+    message: `Excluir regra "${row.padrao}"?`,
+    header: "Confirmar",
+    acceptLabel: "Excluir",
+    rejectLabel: "Cancelar",
+    accept: async () => {
+      await deleteRule(row.id);
+      await ref_.reloadRules();
+      snackbar.add({ severity: "success", summary: "Excluído", life: 1500 });
+    },
+  });
+}
+
 async function saveRule() {
   if (!ruleForm.value.categoriaId || !ruleForm.value.padrao.trim()) {
     snackbar.add({
@@ -567,6 +584,18 @@ async function saveSalaryCycle() {
               <v-chip :color="item.ativa ? 'success' : 'default'" size="small">
                 {{ item.ativa ? "sim" : "não" }}
               </v-chip>
+            </template>
+            <template #item.actions="{ item }">
+              <div class="table-actions">
+                <v-btn
+                  icon="mdi-delete"
+                  variant="text"
+                  color="error"
+                  size="small"
+                  aria-label="Excluir regra"
+                  @click="confirmDeleteRule(item)"
+                />
+              </div>
             </template>
           </v-data-table>
         </div>
@@ -1180,6 +1209,13 @@ async function saveSalaryCycle() {
 .rules-table :deep(th:nth-child(5)),
 .rules-table :deep(td:nth-child(5)) {
   width: 80px !important;
+  white-space: nowrap;
+}
+
+.rules-table :deep(th:nth-child(6)),
+.rules-table :deep(td:nth-child(6)) {
+  width: 96px !important;
+  min-width: 96px !important;
   white-space: nowrap;
 }
 </style>
