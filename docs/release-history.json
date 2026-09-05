@@ -8,7 +8,7 @@
       "title": "Excluir regras de categorização",
       "summary": "Na aba Regras em Configurações, cada linha ganhou botão de excluir com diálogo de confirmação antes de remover a regra.",
       "type": "feat",
-      "commit": null
+      "commit": "9a7c8dd"
     },
     {
       "version": "0.22.2",
