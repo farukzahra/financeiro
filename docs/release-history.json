@@ -1,7 +1,14 @@
 {
-  "currentVersion": "0.22.3",
-  "updatedAt": "2026-09-05T11:58:00.000Z",
+  "currentVersion": "0.23.0",
+  "updatedAt": "2026-09-06T22:30:00.000Z",
   "entries": [
+    {
+      "version": "0.23.0",
+      "date": "2026-09-06",
+      "title": "Workflow Superpowers e /commit-push",
+      "summary": "Bootstrap do fluxo design → plano → implementação com /init, skills core atualizadas (incluindo test-driven-development) e comando /commit-push padronizado.",
+      "type": "chore"
+    },
     {
       "version": "0.22.3",
       "date": "2026-09-05",

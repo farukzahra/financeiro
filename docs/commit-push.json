@@ -1,0 +1,9 @@
+﻿{
+    "github":  {
+                   "owner":  "farukzahra",
+                   "repo":  "financeiro"
+               },
+    "productionUrl":  "https://financeiro.faruk.dev.br",
+    "verifyUrl":  "https://financeiro.faruk.dev.br/",
+    "expectInBody":  "Financeiro"
+}

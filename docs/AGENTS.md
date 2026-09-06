@@ -36,25 +36,32 @@ O fluxo central e:
 
 ### Skills do projeto
 
-| Skill | Quando usar |
-|-------|-------------|
-| `brainstorming` | Feature/UI nova — antes de codigo |
-| `writing-plans` | Apos design aprovado |
-| `tdd` | Implementacao com testes |
-| `systematic-debugging` | Bug / teste falhando |
-| `verification-before-completion` | Antes de declarar pronto |
-| `vue-best-practices` | Qualquer trabalho Vue |
-| `vuetify-ui` | Telas, tabelas, dialogs Vuetify |
-| `frontend-design` | Mudanca forte de identidade visual |
-| `fastify-api` | Rotas/auth/contratos da API |
-| `drizzle-orm` | Schema, migrations, queries |
-| `nodejs-backend-patterns` | Padroes de services (opcional) |
-| `playwright-best-practices` | E2E |
-| `caveman-commit` | Mensagens de commit |
-| `semantic-version` | Bump em `docs/release-history.json` (so no `/commit-push`) |
-| `find-skills` | Buscar skills externas |
+Skills em `.agents/skills/`; lock em `skills-lock.json`. Workflow **Superpowers**
+(`obra/superpowers`): manter atualizado com `pnpm skills:update` (ou `npx skills check`).
 
-Nao usar skills Prisma / React Next neste repo.
+| Skill | Fonte | Quando usar |
+|-------|-------|-------------|
+| `using-superpowers` | superpowers | Inicio de sessao — como achar e usar skills |
+| `brainstorming` | superpowers | Feature/UI nova — antes de codigo |
+| `writing-plans` | superpowers | Apos design aprovado |
+| `test-driven-development` | superpowers | Implementacao com testes (antes do codigo) |
+| `executing-plans` | superpowers | Executar plano em sessao separada |
+| `subagent-driven-development` | superpowers | Executar plano na sessao atual |
+| `using-git-worktrees` | superpowers | Isolar feature em worktree |
+| `systematic-debugging` | superpowers | Bug / teste falhando |
+| `verification-before-completion` | superpowers | Antes de declarar pronto |
+| `vue-best-practices` | hyf0/vue-skills | Qualquer trabalho Vue |
+| `vuetify-ui` | local | Telas, tabelas, dialogs Vuetify |
+| `frontend-design` | anthropics/skills | Mudanca forte de identidade visual |
+| `fastify-api` | local | Rotas/auth/contratos da API |
+| `drizzle-orm` | local | Schema, migrations, queries |
+| `nodejs-backend-patterns` | wshobson/agents | Padroes de services (opcional) |
+| `playwright-best-practices` | currents-dev | E2E |
+| `caveman-commit` | juliusbrussee/caveman | Mensagens de commit |
+| `semantic-version` | local | Bump em `docs/release-history.json` (so no `/commit-push`) |
+| `find-skills` | vercel-labs/skills | Buscar skills externas |
+
+Nao usar skills Prisma / React Next / mattpocock neste repo.
 
 Arquivos importantes:
 

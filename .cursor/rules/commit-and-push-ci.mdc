@@ -9,7 +9,7 @@ Quando o usuário pedir **commit and push** (ou equivalente):
 
 1. Fazer commit e push normalmente (versão + `docs/release-history.json` se `release:check` exigir).
 2. **Após o push**, verificar o workflow **Deploy VPS** no GitHub:
-   - PAT em `planos/vps-secrets/github-pat.txt` (gitignored; nunca commitar).
+   - PAT em `secrets/github/pat.txt` (gitignored; nunca commitar).
    - API: `GET /repos/farukzahra/financeiro/actions/runs?per_page=3` com `Authorization: Bearer <PAT>`.
    - Logs: `GET /repos/farukzahra/financeiro/actions/runs/{run_id}/logs`.
 3. Se o job **build** falhar: reproduzir com `pnpm build` local, corrigir, novo commit/push e reverificar CI.
