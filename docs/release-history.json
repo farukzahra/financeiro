@@ -7,7 +7,8 @@
       "date": "2026-09-06",
       "title": "Workflow Superpowers e /commit-push",
       "summary": "Bootstrap do fluxo design → plano → implementação com /init, skills core atualizadas (incluindo test-driven-development) e comando /commit-push padronizado.",
-      "type": "chore"
+      "type": "chore",
+      "commit": "9ea0b1a"
     },
     {
       "version": "0.22.3",
@@ -267,3 +268,4 @@
     }
   ]
 }
+
