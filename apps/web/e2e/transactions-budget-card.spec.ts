@@ -75,7 +75,7 @@ test.describe("Transações — orçamento cartão", () => {
     const cycle = page.getByRole("button", { name: "Filtrar pelo ciclo salarial" });
     await expect(cycle).toBeVisible();
 
-    const dateSpans = cycle.locator(".salary-cycle-dates span");
+    const dateSpans = page.locator(".salary-cycle-dates .salary-cycle-date");
     const startLabel = (await dateSpans.nth(0).textContent())?.trim() ?? "";
     const endLabel = (await dateSpans.nth(1).textContent())?.trim() ?? "";
     expect(startLabel.length).toBeGreaterThan(0);
@@ -101,6 +101,40 @@ test.describe("Transações — orçamento cartão", () => {
     await expect(page.getByPlaceholder("Selecione")).toHaveValue(
       new RegExp(`${escapeRegExp(startLabel)}.*${escapeRegExp(endLabel)}`),
     );
+  });
+
+  test("navega entre ciclos salariais com botões anterior e próximo", async ({ page }) => {
+    const state = createMockApiState();
+    state.user.settings = {
+      ...state.user.settings,
+      salaryCycle: {
+        paymentDay: {
+          mode: "dayOfMonth",
+          dayOfMonth: 10,
+          businessDayOrdinal: null,
+        },
+      },
+      transactionsFilters: {
+        activePanel: "budget",
+      },
+    };
+    await mockAuthenticatedApp(page, state);
+    await page.goto("/");
+
+    await expect(page.getByRole("button", { name: "Filtrar pelo ciclo salarial" })).toBeVisible();
+    const dateSpans = page.locator(".salary-cycle-dates .salary-cycle-date");
+    const initialStart = (await dateSpans.nth(0).textContent())?.trim() ?? "";
+    const initialEnd = (await dateSpans.nth(1).textContent())?.trim() ?? "";
+
+    await page.getByRole("button", { name: "Ciclo salarial anterior" }).click();
+    const prevStart = (await dateSpans.nth(0).textContent())?.trim() ?? "";
+    const prevEnd = (await dateSpans.nth(1).textContent())?.trim() ?? "";
+    expect(prevStart).not.toBe(initialStart);
+    expect(prevEnd).toBe(initialStart);
+
+    await page.getByRole("button", { name: "Próximo ciclo salarial" }).click();
+    await expect(dateSpans.nth(0)).toHaveText(initialStart);
+    await expect(dateSpans.nth(1)).toHaveText(initialEnd);
   });
 });
 

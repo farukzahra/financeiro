@@ -215,17 +215,16 @@ function resolvePaymentDate(
   return nthBusinessDayOfMonth(year, monthIndex, paymentDay.businessDayOrdinal);
 }
 
-function resolveSalaryCycleBounds(
-  today: Date,
-  paymentDay:
-    | {
-        mode?: "dayOfMonth" | "businessDayOfMonth" | null;
-        dayOfMonth?: number | null;
-        businessDayOrdinal?: number | null;
-      }
-    | null
-    | undefined,
-) {
+type SalaryCyclePaymentDay =
+  | {
+      mode?: "dayOfMonth" | "businessDayOfMonth" | null;
+      dayOfMonth?: number | null;
+      businessDayOrdinal?: number | null;
+    }
+  | null
+  | undefined;
+
+function resolveSalaryCycleBounds(today: Date, paymentDay: SalaryCyclePaymentDay) {
   const currentPayment = resolvePaymentDate(today.getFullYear(), today.getMonth(), paymentDay);
   if (!currentPayment) return null;
 
@@ -247,6 +246,37 @@ function resolveSalaryCycleBounds(
     start: currentPayment,
     end: nextPayment,
   };
+}
+
+function resolveSalaryCycleBoundsAtOffset(
+  today: Date,
+  paymentDay: SalaryCyclePaymentDay,
+  offset: number,
+) {
+  const current = resolveSalaryCycleBounds(today, paymentDay);
+  if (!current) return null;
+  if (offset === 0) return current;
+
+  let start = current.start;
+  let end = current.end;
+
+  if (offset < 0) {
+    for (let i = 0; i < -offset; i += 1) {
+      const previousPayment = resolvePaymentDate(start.getFullYear(), start.getMonth() - 1, paymentDay);
+      if (!previousPayment) return null;
+      end = start;
+      start = previousPayment;
+    }
+  } else {
+    for (let i = 0; i < offset; i += 1) {
+      const nextPayment = resolvePaymentDate(end.getFullYear(), end.getMonth() + 1, paymentDay);
+      if (!nextPayment) return null;
+      start = end;
+      end = nextPayment;
+    }
+  }
+
+  return { start, end };
 }
 
 function restoreSavedFilters() {
@@ -331,6 +361,12 @@ function applySalaryCycleFilter() {
   applyFilters();
 }
 
+const salaryCycleOffset = ref(0);
+
+function shiftSalaryCycle(delta: number) {
+  salaryCycleOffset.value += delta;
+}
+
 function scheduleApplyFilters() {
   if (restoringSettings) return;
   if (applyFiltersTimer) clearTimeout(applyFiltersTimer);
@@ -412,6 +448,13 @@ onMounted(async () => {
 
 watch([period, selectedCategories, search], scheduleApplyFilters, { deep: true });
 watch([period, selectedCategories, search, activePanel, sortField, sortOrder], scheduleSaveFilters, { deep: true });
+watch(
+  () => auth.user?.settings.salaryCycle?.paymentDay,
+  () => {
+    salaryCycleOffset.value = 0;
+  },
+  { deep: true },
+);
 
 function limparFiltros() {
   period.value = [];
@@ -649,13 +692,35 @@ const csvStaleMessage = computed(() => {
 
 const salaryCycle = computed(() => {
   const paymentDay = auth.user?.settings.salaryCycle?.paymentDay;
-  const bounds = resolveSalaryCycleBounds(new Date(), paymentDay);
+  const bounds = resolveSalaryCycleBoundsAtOffset(new Date(), paymentDay, salaryCycleOffset.value);
   if (!bounds) return null;
 
   const start = startOfDay(bounds.start);
   const end = startOfDay(bounds.end);
   const today = startOfDay(new Date());
   const totalMs = Math.max(86_400_000, end.getTime() - start.getTime());
+  const totalDays = Math.max(1, Math.ceil(totalMs / 86_400_000));
+
+  if (salaryCycleOffset.value < 0) {
+    return {
+      start,
+      end,
+      percent: 100,
+      elapsedDays: totalDays,
+      remainingDays: 0,
+    };
+  }
+
+  if (salaryCycleOffset.value > 0) {
+    return {
+      start,
+      end,
+      percent: 0,
+      elapsedDays: 0,
+      remainingDays: totalDays,
+    };
+  }
+
   const elapsedMs = today.getTime() - start.getTime();
   const elapsedDays = Math.max(0, Math.floor(elapsedMs / 86_400_000));
   const remainingDays = Math.max(0, Math.ceil((end.getTime() - today.getTime()) / 86_400_000));
@@ -1004,34 +1069,51 @@ async function commitBudgetValor(b: BudgetItem) {
             </div>
           </div>
         </div>
-        <div
-          class="salary-cycle"
-          :class="{ 'salary-cycle--clickable': salaryCycle }"
-          :role="salaryCycle ? 'button' : undefined"
-          :tabindex="salaryCycle ? 0 : undefined"
-          :title="salaryCycle ? 'Filtrar pelo ciclo salarial' : undefined"
-          :aria-label="salaryCycle ? 'Filtrar pelo ciclo salarial' : undefined"
-          @click="applySalaryCycleFilter"
-          @keydown.enter.prevent="applySalaryCycleFilter"
-          @keydown.space.prevent="applySalaryCycleFilter"
-        >
-          <div class="salary-cycle-meta">
-            <span>Ciclo salarial</span>
-            <span v-if="salaryCycle">{{ salaryCycle.remainingDays }} dias restantes</span>
-            <span v-else>Defina o ciclo em Preferências</span>
-          </div>
-          <div class="salary-cycle-bar-wrap">
-            <div
-              class="salary-cycle-bar"
-              :class="{ 'salary-cycle-bar--empty': !salaryCycle }"
-              :style="{ width: (salaryCycle?.percent ?? 0) + '%' }"
-            >
-              <span class="salary-cycle-label">{{ salaryCycle?.percent ?? 0 }}%</span>
+        <div class="salary-cycle">
+          <button
+            type="button"
+            class="salary-cycle-filter"
+            :class="{ 'salary-cycle-filter--clickable': salaryCycle }"
+            :disabled="!salaryCycle"
+            :title="salaryCycle ? 'Filtrar pelo ciclo salarial' : undefined"
+            :aria-label="salaryCycle ? 'Filtrar pelo ciclo salarial' : undefined"
+            @click="applySalaryCycleFilter"
+          >
+            <div class="salary-cycle-meta">
+              <span>Ciclo salarial</span>
+              <span v-if="salaryCycle">{{ salaryCycle.remainingDays }} dias restantes</span>
+              <span v-else>Defina o ciclo em Preferências</span>
             </div>
-          </div>
+            <div class="salary-cycle-bar-wrap">
+              <div
+                class="salary-cycle-bar"
+                :class="{ 'salary-cycle-bar--empty': !salaryCycle }"
+                :style="{ width: (salaryCycle?.percent ?? 0) + '%' }"
+              >
+                <span class="salary-cycle-label">{{ salaryCycle?.percent ?? 0 }}%</span>
+              </div>
+            </div>
+          </button>
           <div v-if="salaryCycle" class="salary-cycle-dates">
-            <span>{{ fmtDateBR(toIso(salaryCycle.start) ?? "") }}</span>
-            <span>{{ fmtDateBR(toIso(salaryCycle.end) ?? "") }}</span>
+            <v-btn
+              icon="mdi-chevron-left"
+              variant="text"
+              size="small"
+              aria-label="Ciclo salarial anterior"
+              @click="shiftSalaryCycle(-1)"
+            />
+            <span class="salary-cycle-date-range">
+              <span class="salary-cycle-date">{{ fmtDateBR(toIso(salaryCycle.start) ?? "") }}</span>
+              <span class="salary-cycle-date-sep" aria-hidden="true">–</span>
+              <span class="salary-cycle-date">{{ fmtDateBR(toIso(salaryCycle.end) ?? "") }}</span>
+            </span>
+            <v-btn
+              icon="mdi-chevron-right"
+              variant="text"
+              size="small"
+              aria-label="Próximo ciclo salarial"
+              @click="shiftSalaryCycle(1)"
+            />
           </div>
         </div>
         <ul v-if="activeBudgetItems.length" class="cat-list">
@@ -1775,22 +1857,31 @@ section {
   border-bottom: 1px solid var(--app-border);
 }
 
-.salary-cycle--clickable {
+.salary-cycle-filter {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: inherit;
+  font: inherit;
+  color: inherit;
+}
+
+.salary-cycle-filter--clickable {
   cursor: pointer;
 }
 
-.salary-cycle--clickable:hover .salary-cycle-meta,
-.salary-cycle--clickable:focus-visible .salary-cycle-meta,
-.salary-cycle--clickable:hover .salary-cycle-dates,
-.salary-cycle--clickable:focus-visible .salary-cycle-dates,
-.salary-cycle--clickable:active .salary-cycle-meta,
-.salary-cycle--clickable:active .salary-cycle-dates {
+.salary-cycle-filter--clickable:hover .salary-cycle-meta,
+.salary-cycle-filter--clickable:focus-visible .salary-cycle-meta,
+.salary-cycle-filter--clickable:active .salary-cycle-meta {
   color: var(--app-text, #1a1a1a);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
-.salary-cycle--clickable:focus-visible {
+.salary-cycle-filter--clickable:focus-visible {
   outline: 2px solid var(--app-border, #c5c5c5);
   outline-offset: -2px;
 }
@@ -1843,11 +1934,26 @@ section {
 
 .salary-cycle-dates {
   display: flex;
-  justify-content: space-between;
-  margin-top: 0.35rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  margin-top: 0.4rem;
   color: var(--app-text-muted);
+}
+
+.salary-cycle-date-range {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 0;
   font-size: 0.68rem;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.salary-cycle-date-sep {
+  opacity: 0.55;
 }
 
 .side-empty {
