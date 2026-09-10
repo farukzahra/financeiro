@@ -7,7 +7,8 @@
       "date": "2026-09-10",
       "title": "Navegar entre ciclos salariais",
       "summary": "No painel Orçamento, o bloco do ciclo salarial ganhou botões para ver ciclos anteriores e seguintes, respeitando o dia de pagamento configurado em Preferências.",
-      "type": "feat"
+      "type": "feat",
+      "commit": "3916ed6"
     },
     {
       "version": "0.23.0",
