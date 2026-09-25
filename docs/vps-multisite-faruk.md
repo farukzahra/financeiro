@@ -1,5 +1,7 @@
 # VPS multisite
 
+> **Infra atual (IP, SSH, secrets CI, inventário de apps):** repositório [`../vps`](../vps) e [`docs/deploy-vps.md`](./deploy-vps.md). Este doc foca DNS + Caddy + layout `/opt` do financeiro no host.
+
 Configuracao sugerida para publicar mais de um projeto na mesma VPS usando
 um Caddy central no host.
 
@@ -19,9 +21,9 @@ um Caddy central no host.
 ## DNS no Registro.br
 
 ```text
-A  @           66.23.231.218
-A  www         66.23.231.218
-A  financeiro  66.23.231.218
+A  @           92.112.177.249
+A  www         92.112.177.249
+A  financeiro  92.112.177.249
 ```
 
 ## Financeiro

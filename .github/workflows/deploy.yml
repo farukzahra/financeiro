@@ -7,6 +7,9 @@ on:
       - master
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,27 +34,56 @@ jobs:
     steps:
       - name: Deploy over SSH
         env:
-          VPS_HOST: ${{ secrets.VPS_HOST || vars.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER || vars.VPS_USER }}
-          VPS_PORT: ${{ secrets.VPS_PORT || vars.VPS_PORT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || vars.DEPLOY_PATH }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           DEPLOY_REF: origin/${{ github.ref_name }}
+          DOMAIN: ${{ vars.DOMAIN || 'financeiro.faruk.dev.br' }}
+          WEB_PORT: ${{ vars.WEB_PORT || '8081' }}
         run: |
           set -eu
-          : "${VPS_HOST:?Configure VPS_HOST in repository secrets or variables}"
+          : "${VPS_HOST:?Configure VPS_HOST in repository secrets}"
           : "${VPS_SSH_KEY:?Configure VPS_SSH_KEY in repository secrets}"
 
           USER="${VPS_USER:-root}"
-          PORT="${VPS_PORT:-22}"
+          PORT_SSH="${VPS_PORT:-22}"
           APP_DIR="${DEPLOY_PATH:-/opt/financeiro}"
 
           mkdir -p ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
+          FETCH_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
           ssh -i ~/.ssh/deploy_key \
-            -p "$PORT" \
+            -p "$PORT_SSH" \
             -o StrictHostKeyChecking=accept-new \
             "$USER@$VPS_HOST" \
-            "APP_DIR='$APP_DIR' DEPLOY_REF='$DEPLOY_REF' sh '$APP_DIR/scripts/deploy-vps.sh'"
+            "set -eu
+            if [ ! -d '$APP_DIR/.git' ]; then
+              if [ -d '$APP_DIR' ] && [ -n \"\$(ls -A '$APP_DIR' 2>/dev/null)\" ]; then
+                mv '$APP_DIR' \"\${APP_DIR}.pre-git-\$(date +%Y%m%d%H%M%S)\"
+              fi
+              mkdir -p '$APP_DIR'
+              git clone '$FETCH_URL' '$APP_DIR'
+            fi
+            cd '$APP_DIR'
+            chmod +x scripts/deploy-vps.sh
+            GITHUB_TOKEN='$GITHUB_TOKEN' \
+            GITHUB_REPO='$GITHUB_REPOSITORY' \
+            APP_DIR='$APP_DIR' \
+            DEPLOY_REF='$DEPLOY_REF' \
+            DOMAIN='$DOMAIN' \
+            WEB_PORT='$WEB_PORT' \
+            sh '$APP_DIR/scripts/deploy-vps.sh'"
+
+      - name: Verify production
+        env:
+          DOMAIN: ${{ vars.DOMAIN || 'financeiro.faruk.dev.br' }}
+        run: |
+          sleep 5
+          curl -sf "https://${DOMAIN}/" | grep -q 'Financeiro'

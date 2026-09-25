@@ -78,8 +78,10 @@ Arquivos importantes:
 - `apps/web/src/views/SettingsView.vue`: categorias/regras/configuracoes.
 - `docs/AGENTS.md`: guia operacional para agentes neste repositorio.
 - `docs/PLANO_SISTEMA.md`: desenho original do dominio e fluxo.
-- `docs/vps-multisite-faruk.md`: guia de VPS com `faruk.dev.br`,
-  `www.faruk.dev.br` e `financeiro.faruk.dev.br`.
+- `docs/deploy-vps.md`: deploy deste app (secrets `VPS_*`, path `/opt/financeiro`);
+  infra compartilhada em `../vps` e `C:\repo\secrets\`.
+- `docs/vps-multisite-faruk.md`: DNS + Caddy multi-site (`faruk.dev.br`,
+  `financeiro.faruk.dev.br`).
 - `docs/parser-categorizacao-nubank.md`: desenho do parser e categorizacao
   deterministica dos extratos Nubank.
 - `planos/`: planos novos solicitados pelo usuario, um arquivo Markdown por
