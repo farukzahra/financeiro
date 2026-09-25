@@ -44,6 +44,8 @@ const selectedCategories = ref<string[]>([]);
 const search = ref("");
 const showImport = ref(false);
 const showManual = ref(false);
+/** IDs importados nesta sessão (some no refresh da página). */
+const recentlyImportedIds = ref<Set<string>>(new Set());
 const categoryFilterOpen = ref(false);
 
 type ActivityPanel = "filters" | "cats" | "budget" | null;
@@ -553,14 +555,27 @@ async function onCreateRuleFromRow(row: Transaction) {
   }
 }
 
-function onImportFinished(stats: { totalImportadas: number; totalDuplicadas: number }) {
+async function onImportFinished(stats: {
+  totalImportadas: number;
+  totalDuplicadas: number;
+  identificadores: string[];
+}) {
   snackbar.add({
     severity: "success",
     summary: "Importado",
     detail: `${stats.totalImportadas} novas, ${stats.totalDuplicadas} duplicadas`,
     life: 3000,
   });
-  load();
+  if (stats.identificadores.length) {
+    const next = new Set(recentlyImportedIds.value);
+    for (const id of stats.identificadores) next.add(id);
+    recentlyImportedIds.value = next;
+  }
+  await load();
+  await nextTick();
+  document
+    .querySelector(".tx-table .tx-import-boundary-cell, .tx-table .tx-import-start-cell")
+    ?.scrollIntoView({ block: "center", behavior: "smooth" });
 }
 
 function onManualCreated() {
@@ -866,6 +881,29 @@ const sortedRows = computed(() => {
   );
   return list;
 });
+
+const importBoundaryIndex = computed(() => {
+  const ids = recentlyImportedIds.value;
+  if (!ids.size) return -1;
+  return sortedRows.value.findIndex((r) => ids.has(r.identificador));
+});
+
+function transactionCellProps(data: { index: number; column?: { key?: string } }) {
+  const boundary = importBoundaryIndex.value;
+  if (boundary < 0) return {};
+  const isDataCol = data.column?.key === "data";
+  if (boundary === 0 && data.index === 0) {
+    return {
+      class: isDataCol ? "tx-import-start-cell tx-import-start-cell--label" : "tx-import-start-cell",
+    };
+  }
+  if (boundary > 0 && data.index === boundary - 1) {
+    return {
+      class: isDataCol ? "tx-import-boundary-cell tx-import-boundary-cell--label" : "tx-import-boundary-cell",
+    };
+  }
+  return {};
+}
 
 /** Mantém a ordem de `sortedRows` (desempate SALÁRIO); a direção já foi aplicada. */
 const dateKeySort = () => 0;
@@ -1334,6 +1372,7 @@ async function commitBudgetValor(b: BudgetItem) {
           :loading="loading"
           v-model:sort-by="sortByModel"
           :custom-key-sort="{ data: dateKeySort }"
+          :cell-props="transactionCellProps"
           must-sort
           item-value="identificador"
           :items-per-page="-1"
@@ -2031,6 +2070,50 @@ section {
 
 .tx-table :deep(tbody tr:hover) {
   background: var(--app-highlight) !important;
+}
+
+.tx-table :deep(td.tx-import-boundary-cell) {
+  border-bottom: 2px solid #e11d48 !important;
+}
+
+.tx-table :deep(td.tx-import-boundary-cell--label) {
+  position: relative;
+  padding-bottom: 1.35rem;
+}
+
+.tx-table :deep(td.tx-import-boundary-cell--label::after) {
+  content: "↓ novos importados";
+  position: absolute;
+  left: 0;
+  bottom: 3px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #e11d48;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.tx-table :deep(td.tx-import-start-cell) {
+  border-top: 2px solid #e11d48 !important;
+}
+
+.tx-table :deep(td.tx-import-start-cell--label) {
+  position: relative;
+  padding-top: 1.35rem;
+}
+
+.tx-table :deep(td.tx-import-start-cell--label::before) {
+  content: "↓ novos importados";
+  position: absolute;
+  left: 0;
+  top: 3px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #e11d48;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .tx-table :deep(td) {

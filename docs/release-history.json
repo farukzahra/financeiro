@@ -1,7 +1,15 @@
 {
-  "currentVersion": "0.24.0",
-  "updatedAt": "2026-09-10T12:15:00.000Z",
+  "currentVersion": "0.25.0",
+  "updatedAt": "2026-09-25T11:15:00.000Z",
   "entries": [
+    {
+      "version": "0.25.0",
+      "date": "2026-09-25",
+      "title": "Marcador de linhas recém-importadas",
+      "summary": "Após confirmar um CSV, a tabela mostra uma linha vermelha e o texto \"novos importados\" no ponto em que começam as transações da importação. O destaque some ao atualizar a página.",
+      "type": "feat",
+      "commit": ""
+    },
     {
       "version": "0.24.0",
       "date": "2026-09-10",

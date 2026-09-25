@@ -14,7 +14,10 @@ import { categoryOptionLabel } from "../lib/categories";
 const props = defineProps<{ visible: boolean }>();
 const emit = defineEmits<{
   (e: "update:visible", v: boolean): void;
-  (e: "imported", stats: { totalImportadas: number; totalDuplicadas: number }): void;
+  (
+    e: "imported",
+    stats: { totalImportadas: number; totalDuplicadas: number; identificadores: string[] },
+  ): void;
 }>();
 
 const ref_ = useReferenceStore();
@@ -96,6 +99,7 @@ async function onConfirm() {
   step.value = "confirming";
   try {
     const totals = { totalImportadas: 0, totalDuplicadas: 0 };
+    const identificadores: string[] = [];
 
     for (const source of preview.value.sources) {
       const novos = preview.value.itens.filter(
@@ -131,9 +135,10 @@ async function onConfirm() {
       });
       totals.totalImportadas += result.totalImportadas;
       totals.totalDuplicadas += result.totalDuplicadas;
+      identificadores.push(...novos.map((i) => i.identificador));
     }
 
-    emit("imported", totals);
+    emit("imported", { ...totals, identificadores });
     visibleProxy.value = false;
     reset();
   } catch (err) {

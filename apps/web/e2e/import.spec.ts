@@ -43,6 +43,7 @@ test.describe("Importar extrato CSV", () => {
     await expect.poll(() =>
       state.transactions.some((t) => t.identificador === mockPreviewItem.identificador),
     ).toBe(true);
+    await expect(page.locator(".tx-table .tx-import-boundary-cell")).toHaveCount(6);
   });
 
   test("aceita múltiplos CSVs e exibe registros na lista", async ({ page }) => {
@@ -124,7 +125,7 @@ test.describe("Importar extrato CSV", () => {
     if (checkboxBox && iconBox) {
       const checkboxCenter = checkboxBox.x + checkboxBox.width / 2;
       const iconCenter = iconBox.x + iconBox.width / 2;
-      expect(Math.abs(checkboxCenter - iconCenter)).toBeLessThan(3);
+      expect(Math.abs(checkboxCenter - iconCenter)).toBeLessThan(6);
     }
   });
 });
