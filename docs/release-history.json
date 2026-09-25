@@ -8,7 +8,7 @@
       "title": "Marcador de linhas recém-importadas",
       "summary": "Após confirmar um CSV, a tabela mostra uma linha vermelha e o texto \"novos importados\" no ponto em que começam as transações da importação. O destaque some ao atualizar a página.",
       "type": "feat",
-      "commit": ""
+      "commit": "07a7ecc"
     },
     {
       "version": "0.24.0",
