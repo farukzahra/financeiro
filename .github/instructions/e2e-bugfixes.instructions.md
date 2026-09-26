@@ -1,0 +1,41 @@
+---
+description: Ao alterar componentes Vue ou corrigir bugs de UI, garantir cobertura E2E Playwright
+applyTo: "**"
+---
+
+# Componentes Vue e testes E2E
+
+Ao **alterar ou criar** qualquer componente/tela Vue (`apps/web/src/**/*.vue`):
+
+1. Verificar se já existe spec E2E em `apps/web/e2e/` para esse fluxo (tabela abaixo).
+2. Se **não existir**, criar o spec base com mocks de API (`e2e/fixtures/mock-api.ts`) **antes de concluir**.
+3. Se existir, adicionar ou atualizar casos que cubram o comportamento alterado (especialmente bugs reportados).
+4. Executar `pnpm test:e2e` antes de concluir.
+
+Quando o usuário reportar um bug de tela/UI:
+
+1. Reproduzir em teste E2E (novo caso no spec existente ou spec novo).
+2. Corrigir o bug.
+3. Confirmar que o teste passa.
+
+## Cobertura E2E por tela (manter atualizado)
+
+| Tela / fluxo | Spec |
+|--------------|------|
+| Login | `e2e/auth.spec.ts` |
+| Transações — listagem | `e2e/transactions-list.spec.ts` |
+| Transações — categoria inline | `e2e/transactions-category.spec.ts` |
+| Transações — tipo inline | `e2e/transactions-tipo.spec.ts` |
+| Transações — valor inline | `e2e/transactions-valor.spec.ts` |
+| Importar extrato (modal) | `e2e/import.spec.ts` |
+| Nova transação manual (modal) | `e2e/manual-transaction.spec.ts` |
+| Configurações — categorias | `e2e/settings-categories.spec.ts` |
+| Configurações — regras | `e2e/settings-rules.spec.ts` |
+| Configurações — orçamento | `e2e/settings-budget.spec.ts` |
+| Configurações — assinaturas | `e2e/settings-subscriptions.spec.ts` |
+| Configurações — preferências | `e2e/settings-preferences.spec.ts` |
+| Transações — orçamento cartão | `e2e/transactions-budget-card.spec.ts` |
+| Sobre | `e2e/about.spec.ts` |
+
+Testes E2E **nunca** gravam no banco: mockar POST/PATCH/DELETE via `page.route` e estado em memória (`createMockApiState` + `installMockApi`).
+Auth preferencial: mock de `GET /auth/me` com usuário logado.
