@@ -1,7 +1,14 @@
 {
-  "currentVersion": "0.25.0",
-  "updatedAt": "2026-09-25T11:15:00.000Z",
+  "currentVersion": "0.25.1",
+  "updatedAt": "2026-10-11T12:00:00.000Z",
   "entries": [
+    {
+      "version": "0.25.1",
+      "date": "2026-10-11",
+      "title": "Comandos de agente nativos no OpenCode",
+      "summary": "As triggerzinhas (/init, /recap, /commit-push, /handoff) passam a funcionar no OpenCode: comandos gerados em .opencode/commands por repositorio e em ~/.config/opencode/commands globalmente, pelo sync de convencoes.",
+      "type": "chore"
+    },
     {
       "version": "0.25.0",
       "date": "2026-09-25",
