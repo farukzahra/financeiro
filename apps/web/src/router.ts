@@ -8,7 +8,7 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: "/", component: TransactionsView },
-    { path: "/dashboard", component: DashboardView },
+    { path: "/dashboard", name: "dashboard", component: DashboardView, meta: { pageScroll: true } },
     { path: "/configuracoes", component: SettingsView },
     { path: "/sobre", component: AboutView },
   ],

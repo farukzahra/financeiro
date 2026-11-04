@@ -42,6 +42,24 @@ body {
   flex-direction: column;
 }
 
+/* Rotas com scroll de página (Dashboard): sem scroll interno nem horizontal */
+body.app-page-scroll {
+  height: auto;
+  min-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+body.app-page-scroll #app {
+  height: auto;
+  min-height: 100vh;
+}
+
+body.app-page-scroll .app-shell {
+  min-height: 0;
+  overflow: visible;
+}
+
 .app-shell {
   flex: 1;
   min-height: 0;

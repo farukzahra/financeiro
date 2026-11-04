@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { RouterLink, RouterView } from "vue-router";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { RouterLink, RouterView, useRoute } from "vue-router";
 import AppSnackbar from "./components/AppSnackbar.vue";
 import AppConfirmDialog from "./components/AppConfirmDialog.vue";
 import { useSnackbar } from "./composables/useSnackbar";
@@ -10,6 +10,7 @@ import { useReferenceStore } from "./stores/reference";
 const auth = useAuthStore();
 const refs = useReferenceStore();
 const snackbar = useSnackbar();
+const route = useRoute();
 
 const mode = ref<"login" | "register">("login");
 const name = ref("");
@@ -19,6 +20,16 @@ const showPassword = ref(false);
 
 onMounted(async () => {
   await auth.load();
+});
+
+watch(
+  () => route.meta.pageScroll === true,
+  (enabled) => document.body.classList.toggle("app-page-scroll", enabled),
+  { immediate: true },
+);
+
+onBeforeUnmount(() => {
+  document.body.classList.remove("app-page-scroll");
 });
 
 async function submitAuth() {

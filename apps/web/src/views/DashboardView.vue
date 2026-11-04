@@ -379,7 +379,7 @@ onMounted(load);
               <thead>
                 <tr>
                   <th scope="col">Categoria</th>
-                  <th scope="col" class="num">Lançamentos</th>
+                  <th scope="col" class="num count-col">Lançamentos</th>
                   <th scope="col" class="share-col">% das saídas</th>
                   <th scope="col" class="num">Valor</th>
                 </tr>
@@ -387,7 +387,7 @@ onMounted(load);
               <tbody>
                 <tr v-for="cat in selectedSaidas" :key="cat.categoriaId">
                   <td class="cat-cell">{{ cat.descricao }}</td>
-                  <td class="num">{{ cat.qtd }}</td>
+                  <td class="num count-col">{{ cat.qtd }}</td>
                   <td class="share-col">
                     <span class="share">
                       <span class="share__bar" aria-hidden="true">
@@ -463,8 +463,7 @@ onMounted(load);
 
 <style scoped>
 .dash {
-  height: 100%;
-  overflow-y: auto;
+  min-height: calc(100vh - 56px);
   padding: 1.25rem 1.5rem 2rem;
   display: flex;
   flex-direction: column;
@@ -1175,13 +1174,13 @@ onMounted(load);
 }
 
 .detail-table-wrap {
-  overflow-x: auto;
   margin-top: 0.35rem;
 }
 
 .detail-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
   font-size: 0.78rem;
 }
 
@@ -1212,17 +1211,30 @@ onMounted(load);
   white-space: nowrap;
 }
 
+.detail-table .count-col {
+  width: 120px;
+  padding-left: 1rem;
+  padding-right: 1.75rem;
+  text-align: center;
+}
+
 .detail-table .strong {
   font-weight: 600;
 }
 
 .cat-cell {
   font-weight: 500;
+  overflow-wrap: anywhere;
 }
 
 .share-col {
   width: 34%;
-  min-width: 150px;
+  min-width: 0;
+}
+
+.detail-table th:last-child,
+.detail-table td:last-child {
+  width: 130px;
 }
 
 .share {
@@ -1297,6 +1309,17 @@ onMounted(load);
 
   .share-col {
     display: none;
+  }
+
+  .detail-table .count-col {
+    width: 84px;
+    padding-left: 0.35rem;
+    padding-right: 0.5rem;
+  }
+
+  .detail-table th:last-child,
+  .detail-table td:last-child {
+    width: 100px;
   }
 
   .month-detail {
