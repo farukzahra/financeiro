@@ -1,7 +1,15 @@
 {
-  "currentVersion": "0.25.1",
-  "updatedAt": "2026-10-11T12:00:00.000Z",
+  "currentVersion": "0.26.0",
+  "updatedAt": "2026-11-04T12:00:00.000Z",
   "entries": [
+    {
+      "version": "0.26.0",
+      "date": "2026-11-04",
+      "title": "Dashboard anual de entradas e saídas",
+      "summary": "Nova aba Dashboard ao lado de Transações, com seletor de ano, totais do ano, gráfico mês a mês e detalhe por categoria ao clicar em cada mês. Inclui seed de demonstração com transações de janeiro a novembro.",
+      "type": "feat",
+      "commit": ""
+    },
     {
       "version": "0.25.1",
       "date": "2026-10-11",

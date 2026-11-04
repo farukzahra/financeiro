@@ -285,6 +285,57 @@ export async function clearAllTransactions(): Promise<{ ok: true; removed: numbe
   return data;
 }
 
+// ---------------------------------------------------------------------------
+// Dashboard anual
+// ---------------------------------------------------------------------------
+
+export type DashboardCategory = {
+  categoriaId: string;
+  code: string;
+  descricao: string;
+  entradas: string;
+  saidas: string;
+  qtd: number;
+};
+
+export type DashboardMonth = {
+  month: number;
+  mes: string;
+  entradas: string;
+  saidas: string;
+  saldo: string;
+  qtd: number;
+  categorias: DashboardCategory[];
+};
+
+export type Dashboard = {
+  year: number;
+  years: number[];
+  months: DashboardMonth[];
+  totals: {
+    entradas: string;
+    saidas: string;
+    saldo: string;
+    qtd: number;
+    mesesComSaidas: number;
+    mediaSaidas: string;
+  };
+  categorias: DashboardCategory[];
+  maiorGastoMes: {
+    month: number;
+    mes: string;
+    saidas: string;
+  } | null;
+  maiorCategoria: DashboardCategory | null;
+};
+
+export async function getDashboard(year?: number): Promise<Dashboard> {
+  const { data } = await api.get<Dashboard>("/dashboard", {
+    params: year != null ? { year } : undefined,
+  });
+  return data;
+}
+
 export async function createRule(body: {
   categoriaId: string;
   tipoPadrao: "substring" | "regex";

@@ -69,6 +69,10 @@ async function onLogout() {
           <v-icon icon="mdi-format-list-bulleted" size="small" />
           <span>Transações</span>
         </RouterLink>
+        <RouterLink to="/dashboard" class="app-nav-link" title="Dashboard">
+          <v-icon icon="mdi-view-dashboard-outline" size="small" />
+          <span>Dashboard</span>
+        </RouterLink>
         <RouterLink to="/configuracoes" class="app-nav-link" title="Configurações">
           <v-icon icon="mdi-cog" size="small" />
           <span>Configurações</span>

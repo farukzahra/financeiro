@@ -5,6 +5,7 @@ import multipart from "@fastify/multipart";
 import { registerAuthRoutes } from "./auth.js";
 import { registerImportsRoutes } from "./routes/imports.js";
 import { registerTransactionsRoutes } from "./routes/transactions.js";
+import { registerDashboardRoutes } from "./routes/dashboard.js";
 import { registerCategoriesRoutes } from "./routes/categories.js";
 import { registerRulesRoutes } from "./routes/rules.js";
 import { registerBudgetRoutes } from "./routes/budget.js";
@@ -21,6 +22,7 @@ async function main() {
   await registerAuthRoutes(app);
   await registerImportsRoutes(app);
   await registerTransactionsRoutes(app);
+  await registerDashboardRoutes(app);
   await registerCategoriesRoutes(app);
   await registerRulesRoutes(app);
   await registerBudgetRoutes(app);

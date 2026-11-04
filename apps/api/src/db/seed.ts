@@ -4,27 +4,7 @@ import { sql as drizzleSql } from "drizzle-orm";
 import { db, sql } from "./client.js";
 import { categories, subscriptions, users } from "./schema.js";
 import { syncCreditCardBudget } from "../services/credit-card-budget.js";
-
-const SEED_CATEGORIES = [
-  { code: "ALIMENTAÇÃO", descricao: "Alimentação (mercado e restaurante)" },
-  { code: "FARMACIA", descricao: "Farmácia / remédios" },
-  { code: "SAUDE", descricao: "Saúde (consultas, planos)" },
-  { code: "GASOLINA", descricao: "Gasolina / combustível" },
-  { code: "TRANSPORTE", descricao: "Transporte (estacionamento, app)" },
-  { code: "COMPRAS", descricao: "Compras gerais" },
-  { code: "AGRO", descricao: "Agropecuária" },
-  { code: "VIAGEM", descricao: "Viagem / hospedagem" },
-  { code: "ACADEMIA", descricao: "Academia / esporte" },
-  { code: "PIX", descricao: "Transferências Pix / TED" },
-  { code: "APLICACAO RDB", descricao: "Aplicação em RDB" },
-  { code: "RESGATE RDB", descricao: "Resgate de RDB" },
-  { code: "FATURA GENERICA", descricao: "Pagamento de fatura" },
-  { code: "DEBITO EM CONTA", descricao: "Débito automático" },
-  { code: "CARTAO DE CREDITO", descricao: "Cartão de Crédito" },
-  { code: "SALARIO", descricao: "Salário" },
-  { code: "SAQUE", descricao: "Saque em dinheiro" },
-  { code: "OUTROS", descricao: "Sem categoria definida" },
-];
+import { SEED_CATEGORIES } from "./seeds/categories.js";
 
 const SEED_SUBSCRIPTIONS_FARUK = [
   { nome: "Cursor AI Powered IDE", valorMensal: "110.53" },

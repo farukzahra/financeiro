@@ -22,6 +22,8 @@ function gitSha() {
 const appVersion = pkg.version;
 const appGitSha = gitSha();
 const buildTime = new Date().toISOString();
+const devPort = Number(process.env.VITE_PORT ?? 5173);
+const apiProxyTarget = process.env.VITE_API_PROXY_TARGET ?? "http://localhost:3001";
 
 export default defineConfig({
   plugins: [
@@ -39,13 +41,13 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: devPort,
     fs: {
       allow: [fileURLToPath(new URL("../..", import.meta.url))],
     },
     proxy: {
       "/api": {
-        target: "http://localhost:3001",
+        target: apiProxyTarget,
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api/, ""),
       },

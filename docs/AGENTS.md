@@ -189,6 +189,7 @@ e o Postgres externo na porta `5432`.
 - `pnpm db:generate`: gera migration Drizzle a partir do schema.
 - `pnpm db:migrate`: aplica migrations.
 - `pnpm db:seed`: cadastra categorias iniciais.
+- `pnpm db:seed:demo`: gera transações de demonstração para o ano atual (até o mês corrente) no usuário informado (`--email`, padrão `farukz@gmail.com`).
 - `.\scripts\windows\categorizar.bat <arquivo.csv>`: fluxo Python legado para categorizar CSV.
 
 ## Modelo de dominio
@@ -239,6 +240,7 @@ Rotas registradas em `apps/api/src/index.ts`:
 - `DELETE /transactions/:id`
 - `GET /transactions/tipos`
 - `GET /transactions/summary`
+- `GET /dashboard`
 - `GET /categories`
 - `POST /categories`
 - `PATCH /categories/:id`
@@ -286,8 +288,9 @@ A web usa Vue SFCs e Vuetify 3. O proxy do Vite envia `/api` para
 
 Pontos de orientacao:
 
-- `router.ts` tem rotas: `/`, `/configuracoes`, `/sobre`.
+- `router.ts` tem rotas: `/`, `/dashboard`, `/configuracoes`, `/sobre`.
 - `TransactionsView.vue` concentra a experiencia principal.
+- `DashboardView.vue` mostra entradas/saidas do ano, mes a mes, com detalhe de categorias.
 - `ImportModal.vue` cuida do upload/preview/confirmacao.
 - `ManualTransactionModal.vue` cria lancamentos manuais.
 - `SettingsView.vue` gerencia categorias, regras e orcamento.

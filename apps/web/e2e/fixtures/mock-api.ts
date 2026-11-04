@@ -163,6 +163,139 @@ function buildMockTransactionStats(state: MockApiState, year: number) {
   };
 }
 
+function buildMockDashboard(state: MockApiState, year: number) {
+  const toCents = (value: string | number) => Math.round(Number(value) * 100);
+  const toMoney = (cents: number) => (cents / 100).toFixed(2);
+
+  type CatAcc = {
+    categoriaId: string;
+    code: string;
+    descricao: string;
+    entradas: number;
+    saidas: number;
+    qtd: number;
+  };
+
+  const months = Array.from({ length: 12 }, (_, index) => ({
+    month: index + 1,
+    mes: `${year}-${String(index + 1).padStart(2, "0")}`,
+    entradas: 0,
+    saidas: 0,
+    qtd: 0,
+    cats: new Map<string, CatAcc>(),
+  }));
+  const yearCats = new Map<string, CatAcc>();
+
+  function addCat(map: Map<string, CatAcc>, categoriaId: string, entradas: number, saidas: number) {
+    const category = state.categories.find((cat) => cat.id === categoriaId);
+    const current = map.get(categoriaId);
+    if (current) {
+      current.entradas += entradas;
+      current.saidas += saidas;
+      current.qtd += 1;
+      return;
+    }
+    map.set(categoriaId, {
+      categoriaId,
+      code: category?.code ?? categoriaId,
+      descricao: category?.descricao ?? categoriaId,
+      entradas,
+      saidas,
+      qtd: 1,
+    });
+  }
+
+  for (const row of state.transactions) {
+    const [rowYear, rowMonth] = row.data.split("-").map(Number);
+    if (rowYear !== year || !rowMonth) continue;
+    const month = months[rowMonth - 1];
+    if (!month) continue;
+    const valor = toCents(row.valor);
+    const entradas = valor > 0 ? valor : 0;
+    const saidas = valor < 0 ? valor : 0;
+    month.entradas += entradas;
+    month.saidas += saidas;
+    month.qtd += 1;
+    addCat(month.cats, row.categoriaId, entradas, saidas);
+    addCat(yearCats, row.categoriaId, entradas, saidas);
+  }
+
+  const sortCats = (map: Map<string, CatAcc>) =>
+    [...map.values()]
+      .sort(
+        (a, b) =>
+          Math.abs(b.saidas) - Math.abs(a.saidas) ||
+          b.entradas - a.entradas ||
+          a.descricao.localeCompare(b.descricao, "pt-BR"),
+      )
+      .map((cat) => ({
+        categoriaId: cat.categoriaId,
+        code: cat.code,
+        descricao: cat.descricao,
+        entradas: toMoney(cat.entradas),
+        saidas: toMoney(cat.saidas),
+        qtd: cat.qtd,
+      }));
+
+  const outMonths = months.map((month) => ({
+    month: month.month,
+    mes: month.mes,
+    entradas: toMoney(month.entradas),
+    saidas: toMoney(month.saidas),
+    saldo: toMoney(month.entradas + month.saidas),
+    qtd: month.qtd,
+    categorias: sortCats(month.cats),
+  }));
+
+  const totals = outMonths.reduce(
+    (acc, month) => ({
+      entradas: acc.entradas + toCents(month.entradas),
+      saidas: acc.saidas + toCents(month.saidas),
+      qtd: acc.qtd + month.qtd,
+      mesesComSaidas: acc.mesesComSaidas + (toCents(month.saidas) < 0 ? 1 : 0),
+    }),
+    { entradas: 0, saidas: 0, qtd: 0, mesesComSaidas: 0 },
+  );
+
+  const categorias = sortCats(yearCats);
+  const maiorGastoMes =
+    outMonths
+      .filter((month) => toCents(month.saidas) < 0)
+      .sort((a, b) => toCents(a.saidas) - toCents(b.saidas))[0] ?? null;
+
+  const years = [
+    ...new Set([
+      ...state.transactions.map((row) => Number(row.data.slice(0, 4))),
+      new Date().getFullYear(),
+      year,
+    ]),
+  ].sort((a, b) => a - b);
+
+  return {
+    year,
+    years,
+    months: outMonths,
+    totals: {
+      entradas: toMoney(totals.entradas),
+      saidas: toMoney(totals.saidas),
+      saldo: toMoney(totals.entradas + totals.saidas),
+      qtd: totals.qtd,
+      mesesComSaidas: totals.mesesComSaidas,
+      mediaSaidas:
+        totals.mesesComSaidas > 0 ? toMoney(totals.saidas / totals.mesesComSaidas) : "0.00",
+    },
+    categorias,
+    maiorGastoMes: maiorGastoMes
+      ? {
+          month: maiorGastoMes.month,
+          mes: maiorGastoMes.mes,
+          saidas: maiorGastoMes.saidas,
+        }
+      : null,
+    maiorCategoria: categorias.find((cat) => toCents(cat.saidas) < 0) ?? null,
+  };
+}
+
 function filterTransactions(
   rows: (typeof mockTransaction)[],
   url: URL,
@@ -286,6 +419,18 @@ export async function installMockApi(
 
     if (!state.authenticated) {
       return route.fulfill({ status: 401, json: { error: "Nao autenticado" } });
+    }
+
+    if (method === "GET" && path === "/dashboard") {
+      const yearParam = url.searchParams.get("year");
+      const year =
+        yearParam != null && yearParam !== ""
+          ? Number.parseInt(yearParam, 10)
+          : new Date().getFullYear();
+      if (!Number.isFinite(year) || year < 1970 || year > 2100) {
+        return route.fulfill({ status: 400, json: { error: "Ano invalido" } });
+      }
+      return route.fulfill({ json: buildMockDashboard(state, year) });
     }
 
     if (method === "GET" && path === "/categories") {
