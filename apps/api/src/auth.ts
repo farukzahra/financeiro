@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { DEFAULT_MONTHLY_SPENDING_LIMIT } from "@financeiro/shared";
 import { db } from "./db/client.js";
 import { users } from "./db/schema.js";
 import { copyAdminConfigToNewUser } from "./services/admin-bootstrap.js";
@@ -23,6 +24,10 @@ const RegisterSchema = z.object({
 const UserSettingsSchema = z
   .object({
     budgetOrder: z.array(z.string().uuid()).optional(),
+    monthlySpendingLimit: z
+      .string()
+      .regex(/^\d+(\.\d{1,2})?$/, "Limite invalido")
+      .default(DEFAULT_MONTHLY_SPENDING_LIMIT),
     salaryCycle: z
       .object({
         paymentDay: z
@@ -222,6 +227,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         googleSub: `__local__:${body.data.email}`,
         passwordHash: hashPassword(body.data.password),
         role: "user",
+        settings: { monthlySpendingLimit: DEFAULT_MONTHLY_SPENDING_LIMIT },
       })
       .returning();
 

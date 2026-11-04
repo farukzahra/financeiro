@@ -26,6 +26,7 @@ import {
 import { useConfirm } from "../composables/useConfirm";
 import { useSnackbar } from "../composables/useSnackbar";
 import { categoryDisplayName, categoryOptionLabel, categoryPillLabel } from "../lib/categories";
+import { DEFAULT_MONTHLY_SPENDING_LIMIT } from "@financeiro/shared";
 
 const ref_ = useReferenceStore();
 const auth = useAuthStore();
@@ -39,6 +40,7 @@ onMounted(async () => {
   try {
     if (!ref_.loaded) await ref_.load();
     hydrateSalaryCycleForm();
+    hydrateMonthlyLimitForm();
     await loadBudget();
     await loadSubscriptions();
   } finally {
@@ -94,6 +96,7 @@ const salaryCycleForm = ref({
   dayOfMonth: null as number | null,
   businessDayOrdinal: 5 as number | null,
 });
+const monthlySpendingLimitForm = ref(Number(DEFAULT_MONTHLY_SPENDING_LIMIT));
 
 const ruleTypeOptions = [
   { title: "Substring", value: "substring" },
@@ -220,6 +223,12 @@ function hydrateSalaryCycleForm() {
     dayOfMonth: saved?.dayOfMonth ?? null,
     businessDayOrdinal: saved?.businessDayOrdinal ?? 5,
   };
+}
+
+function hydrateMonthlyLimitForm() {
+  const fallback = Number(DEFAULT_MONTHLY_SPENDING_LIMIT);
+  const saved = Number(auth.user?.settings.monthlySpendingLimit);
+  monthlySpendingLimitForm.value = Number.isFinite(saved) && saved > 0 ? saved : fallback;
 }
 
 const categoryOptions = computed(() =>
@@ -492,6 +501,30 @@ async function saveSalaryCycle() {
       },
     });
     snackbar.add({ severity: "success", summary: "Dia de pagamento salvo", life: 1500 });
+  } catch (err) {
+    snackbar.add({
+      severity: "error",
+      summary: "Erro",
+      detail: (err as Error).message,
+      life: 3000,
+    });
+  }
+}
+
+async function saveMonthlySpendingLimit() {
+  const value = Number(monthlySpendingLimitForm.value);
+  if (!Number.isFinite(value) || value <= 0) {
+    snackbar.add({
+      severity: "error",
+      summary: "Limite inválido",
+      detail: "Informe um valor maior que zero.",
+      life: 3000,
+    });
+    return;
+  }
+  try {
+    await auth.saveSettings({ monthlySpendingLimit: value.toFixed(2) });
+    snackbar.add({ severity: "success", summary: "Limite mensal salvo", life: 1500 });
   } catch (err) {
     snackbar.add({
       severity: "error",
@@ -836,6 +869,30 @@ async function saveSalaryCycle() {
             </v-btn>
           </div>
         </div>
+
+        <div class="app-panel prefs-panel limit-panel">
+          <div class="app-panel__title">Limite de gastos mensais</div>
+          <p class="app-panel__copy">
+            Teto de saídas por mês. O dashboard usa esse valor para mostrar o saldo com limite em cada mês.
+          </p>
+          <div class="limit-grid">
+            <div class="form-col">
+              <label>Limite mensal (R$)</label>
+              <v-number-input
+                v-model="monthlySpendingLimitForm"
+                :min="0"
+                :precision="2"
+                :step="100"
+                control-variant="hidden"
+              />
+            </div>
+          </div>
+          <div class="prefs-actions">
+            <v-btn color="primary" prepend-icon="mdi-check" @click="saveMonthlySpendingLimit">
+              Salvar limite
+            </v-btn>
+          </div>
+        </div>
       </v-window-item>
     </v-window>
 
@@ -1132,6 +1189,16 @@ async function saveSalaryCycle() {
 .salary-cycle-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.limit-panel {
+  margin-top: 1rem;
+}
+
+.limit-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 320px);
   gap: 1rem;
 }
 

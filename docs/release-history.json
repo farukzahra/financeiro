@@ -1,7 +1,15 @@
 {
-  "currentVersion": "0.26.0",
-  "updatedAt": "2026-11-04T10:45:38.000Z",
+  "currentVersion": "0.27.0",
+  "updatedAt": "2026-11-04T14:23:09.000Z",
   "entries": [
+    {
+      "version": "0.27.0",
+      "date": "2026-11-04",
+      "title": "Limite mensal de gastos no dashboard",
+      "summary": "Cada mês mostra o saldo com limite, calculado a partir de um teto mensal de gastos configurável em Preferências. O padrão é R$ 15.000,00 para todos os usuários, com detalhe do limite ao passar o mouse.",
+      "type": "feat",
+      "commit": ""
+    },
     {
       "version": "0.26.0",
       "date": "2026-11-04",

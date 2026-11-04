@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
-import { getDashboard, type Dashboard, type DashboardCategory } from "../lib/api";
+import { getDashboard, type Dashboard, type DashboardCategory, type DashboardMonth } from "../lib/api";
 import { fmtMoneyBR } from "../lib/format";
 
 const MONTH_NAMES = [
@@ -30,6 +30,7 @@ const selectedMonth = ref<number | null>(null);
 const showYearCategories = ref(false);
 
 const years = computed(() => (data.value?.years.length ? data.value.years : [year.value]));
+const monthlyLimit = computed(() => Number(data.value?.monthlySpendingLimit ?? 0));
 const yearIndex = computed(() => years.value.indexOf(year.value));
 const hasPreviousYear = computed(() => yearIndex.value > 0);
 const hasNextYear = computed(
@@ -91,6 +92,12 @@ function saldoClass(value: string | number): string {
   if (n > 0) return "is-positive";
   if (n < 0) return "is-negative";
   return "";
+}
+function limitBalance(month: DashboardMonth): number {
+  return monthlyLimit.value - Math.abs(Number(month.saidas));
+}
+function limitClass(month: DashboardMonth): string {
+  return limitBalance(month) >= 0 ? "is-positive" : "is-negative";
 }
 function monthAria(month: Dashboard["months"][number]): string {
   const label = `${MONTH_NAMES[month.month - 1]} de ${year.value}`;
@@ -309,6 +316,31 @@ onMounted(load);
                   <span>Saldo</span>
                   <span>{{ money(month.saldo) }}</span>
                 </span>
+
+                <v-tooltip v-if="monthlyLimit > 0" location="top" :max-width="280">
+                  <template #activator="{ props: tipProps }">
+                    <span v-bind="tipProps" class="month-card__limit">
+                      <span class="month-card__limit-label">Saldo com limite</span>
+                      <span class="month-card__limit-value" :class="limitClass(month)">
+                        {{ money(limitBalance(month)) }}
+                      </span>
+                    </span>
+                  </template>
+                  <div class="limit-tip">
+                    <div>
+                      <span>Limite mensal</span>
+                      <b>{{ money(monthlyLimit) }}</b>
+                    </div>
+                    <div>
+                      <span>Saídas em {{ MONTH_NAMES[month.month - 1] }}</span>
+                      <b>{{ absMoney(month.saidas) }}</b>
+                    </div>
+                    <div>
+                      <span>Saldo com limite</span>
+                      <b>{{ money(limitBalance(month)) }}</b>
+                    </div>
+                  </div>
+                </v-tooltip>
               </template>
 
               <span v-else class="month-card__empty">Sem transações</span>
@@ -733,7 +765,7 @@ onMounted(load);
 
 .months-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(205px, 1fr));
   gap: 0.55rem;
 }
 
@@ -858,6 +890,50 @@ onMounted(load);
   font-size: 0.68rem;
   font-weight: 500;
   color: var(--app-text-muted);
+}
+
+.month-card__limit {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding-top: 0.3rem;
+  border-top: 1px dashed var(--app-border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: help;
+}
+
+.month-card__limit-label {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--app-text-muted);
+}
+
+.month-card__limit-value {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.limit-tip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.limit-tip div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.limit-tip b {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .month-card__empty {

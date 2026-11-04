@@ -5,6 +5,7 @@ import { categories, transactions } from "../db/schema.js";
 import { parseStatsYear } from "../services/transaction-stats.js";
 import { buildDashboard } from "../services/dashboard.js";
 import { requireUser } from "../auth.js";
+import { DEFAULT_MONTHLY_SPENDING_LIMIT } from "@financeiro/shared";
 
 export async function registerDashboardRoutes(app: FastifyInstance) {
   app.get<{ Querystring: { year?: string } }>("/dashboard", async (req, reply) => {
@@ -56,6 +57,8 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
     return {
       ...buildDashboard(year, rows),
       years,
+      monthlySpendingLimit:
+        user.settings.monthlySpendingLimit ?? DEFAULT_MONTHLY_SPENDING_LIMIT,
     };
   });
 }

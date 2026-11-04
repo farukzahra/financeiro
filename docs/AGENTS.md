@@ -103,7 +103,8 @@ Autenticacao/multiusuario:
   o cadastro segue sem bootstrap.
 - Preferencias persistentes do usuario ficam em `app_user.settings` como JSONB.
   Hoje a tela inicial salva/restaura `transactionsFilters` com periodo,
-  categorias, busca e painel lateral ativo.
+  categorias, busca e painel lateral ativo; Preferencias guarda `salaryCycle` e
+  `monthlySpendingLimit` (padrao R$ 15.000,00).
 - `import`, `transaction`, `category_rule` e `budget_item` sao escopados por
   `user_id`.
 - Categorias continuam globais na fase atual; regras de categorizacao sao por
@@ -190,6 +191,7 @@ e o Postgres externo na porta `5432`.
 - `pnpm db:migrate`: aplica migrations.
 - `pnpm db:seed`: cadastra categorias iniciais.
 - `pnpm db:seed:demo`: gera transações de demonstração para o ano atual (até o mês corrente) no usuário informado (`--email`, padrão `farukz@gmail.com`).
+- `pnpm db:patch:spending-limit`: preenche `monthlySpendingLimit` (padrão R$ 15.000,00) nos usuários que ainda não têm o campo.
 - `.\scripts\windows\categorizar.bat <arquivo.csv>`: fluxo Python legado para categorizar CSV.
 
 ## Modelo de dominio

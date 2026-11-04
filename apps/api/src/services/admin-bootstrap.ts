@@ -1,6 +1,6 @@
 import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { BUDGET_ORIGEM_ASSINATURAS } from "@financeiro/shared";
+import { BUDGET_ORIGEM_ASSINATURAS, DEFAULT_MONTHLY_SPENDING_LIMIT } from "@financeiro/shared";
 import { db } from "../db/client.js";
 import { budgetItems, categoryRules, users } from "../db/schema.js";
 
@@ -59,7 +59,10 @@ export async function copyAdminConfigToNewUser(newUserId: string): Promise<void>
   }
 
   const adminSettings = UserSettingsSchema.parse(admin.settings ?? {});
-  const settings: Record<string, unknown> = { ...adminSettings };
+  const settings: Record<string, unknown> = {
+    monthlySpendingLimit: DEFAULT_MONTHLY_SPENDING_LIMIT,
+    ...adminSettings,
+  };
 
   if (adminSettings.budgetOrder?.length) {
     settings.budgetOrder = adminSettings.budgetOrder

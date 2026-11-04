@@ -280,3 +280,10 @@ export type SubscriptionCreate = z.infer<typeof SubscriptionCreateSchema>;
 
 export const SubscriptionUpdateSchema = SubscriptionCreateSchema.partial();
 export type SubscriptionUpdate = z.infer<typeof SubscriptionUpdateSchema>;
+
+// ---------------------------------------------------------------------------
+// Preferencias do usuario
+// ---------------------------------------------------------------------------
+
+export const DEFAULT_MONTHLY_SPENDING_LIMIT = "15000.00";
+

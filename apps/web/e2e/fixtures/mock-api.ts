@@ -274,6 +274,9 @@ function buildMockDashboard(state: MockApiState, year: number) {
   return {
     year,
     years,
+    monthlySpendingLimit:
+      (state.user.settings as { monthlySpendingLimit?: string }).monthlySpendingLimit ??
+      "15000.00",
     months: outMonths,
     totals: {
       entradas: toMoney(totals.entradas),
@@ -403,6 +406,10 @@ export async function installMockApi(
         return route.fulfill({ status: 409, json: { error: "Email ja cadastrado" } });
       }
       state.authenticated = true;
+      state.user.settings = {
+        monthlySpendingLimit: "15000.00",
+        ...state.user.settings,
+      };
       return route.fulfill({ json: state.user });
     }
 

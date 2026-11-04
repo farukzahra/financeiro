@@ -12,6 +12,7 @@ api.interceptors.response.use(
 );
 
 export type UserSettings = {
+  monthlySpendingLimit?: string;
   salaryCycle?: {
     paymentDay?: {
       mode?: "dayOfMonth" | "businessDayOfMonth" | null;
@@ -311,6 +312,7 @@ export type DashboardMonth = {
 export type Dashboard = {
   year: number;
   years: number[];
+  monthlySpendingLimit: string;
   months: DashboardMonth[];
   totals: {
     entradas: string;

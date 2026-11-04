@@ -103,6 +103,25 @@ test.describe("Dashboard — visão anual", () => {
     await expect(
       page.getByRole("button", { name: /Dezembro de 2026: sem movimento/ }),
     ).toBeVisible();
+
+    const juneCard = page.getByRole("button", { name: /Junho de 2026: entradas/ });
+    await expect(juneCard).toContainText("Saldo com limite");
+    await expect(juneCard).toContainText("R$ 14.749,50");
+  });
+
+  test("mostra o detalhe do limite mensal ao passar o mouse", async ({ page }) => {
+    await mockAuthenticatedApp(page, dashboardState());
+    await page.goto("/dashboard");
+
+    const juneCard = page.getByRole("button", { name: /Junho de 2026: entradas/ });
+    await juneCard.locator(".month-card__limit").hover();
+
+    const tip = page.locator(".limit-tip:visible");
+    await expect(tip).toContainText("Limite mensal");
+    await expect(tip).toContainText("R$ 15.000,00");
+    await expect(tip).toContainText("Saídas em Junho");
+    await expect(tip).toContainText("R$ 250,50");
+    await expect(tip).toContainText("R$ 14.749,50");
   });
 
   test("clica no mês e mostra as categorias das saídas", async ({ page }) => {

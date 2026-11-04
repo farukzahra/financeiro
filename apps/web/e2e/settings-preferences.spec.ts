@@ -7,9 +7,13 @@ test.describe("Configurações — preferências", () => {
     await page.goto("/configuracoes");
     await page.getByRole("tab", { name: "Preferências" }).click();
 
-    const panel = page.locator(".app-panel.prefs-panel");
+    const panel = page.locator(".app-panel.prefs-panel").first();
     await expect(panel).toBeVisible();
     await expect(panel.locator(".app-panel__title")).toHaveText("Dia de pagamento");
+    await expect(page.locator(".limit-panel .app-panel__title")).toHaveText(
+      "Limite de gastos mensais",
+    );
+    await expect(page.locator(".limit-grid input")).toHaveValue("15000,00");
     await expect
       .poll(async () => panel.evaluate((el) => getComputedStyle(el).backgroundColor))
       .toBe("rgb(255, 255, 255)");
@@ -31,5 +35,22 @@ test.describe("Configurações — preferências", () => {
       paymentDay?: { dayOfMonth?: number };
     };
     expect(saved.paymentDay?.dayOfMonth).toBe(10);
+  });
+
+  test("salva limite mensal de gastos via PATCH mockado", async ({ page }) => {
+    const state = createMockApiState();
+    await mockAuthenticatedApp(page, state);
+    await page.goto("/configuracoes");
+    await page.getByRole("tab", { name: "Preferências" }).click();
+
+    const limitInput = page.locator(".limit-grid .v-number-input input");
+    await limitInput.click();
+    await limitInput.press("Control+A");
+    await limitInput.fill("18000");
+    await limitInput.press("Tab");
+    await page.getByRole("button", { name: "Salvar limite" }).click();
+
+    await expect(page.getByText("Limite mensal salvo")).toBeVisible();
+    expect(state.user.settings.monthlySpendingLimit).toBe("18000.00");
   });
 });
