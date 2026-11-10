@@ -7,10 +7,7 @@ import {
 } from "./fixtures/mock-api";
 
 function saldoCard(page: import("@playwright/test").Page) {
-  return page
-    .locator(".summary-card")
-    .filter({ has: page.locator(".label", { hasText: /^Saldo atual$/ }) })
-    .locator(".value");
+  return page.locator(".summary-value--system");
 }
 
 function setupTwoTransactions() {
@@ -43,7 +40,7 @@ function setupTwoTransactions() {
 }
 
 test.describe("Transações — editar valor inline", () => {
-  test("saldo atual recalcula corretamente após alterar valor", async ({ page }) => {
+  test("saldo do sistema recalcula corretamente após alterar valor", async ({ page }) => {
     const state = setupTwoTransactions();
     await mockAuthenticatedApp(page, state);
     await page.goto("/");
@@ -63,7 +60,7 @@ test.describe("Transações — editar valor inline", () => {
     await expect(saldoValue).toHaveText(/R\$\s*920,00/);
   });
 
-  test("saldo atual recalcula corretamente com filtro ativo (sem recarregar)", async ({ page }) => {
+  test("saldo do sistema recalcula corretamente com filtro ativo (sem recarregar)", async ({ page }) => {
     const state = setupTwoTransactions();
     await mockAuthenticatedApp(page, state);
     await page.goto("/");

@@ -10,6 +10,7 @@ import {
   listTransactions,
   patchTransaction,
   deleteTransaction,
+  patchSaldoBancoVirtual,
   listBudget,
   patchBudgetItem,
   createRule,
@@ -17,7 +18,7 @@ import {
   type BudgetItem,
 } from "../lib/api";
 import { fmtMoneyBR, fmtDateBR, classMoney } from "../lib/format";
-import { categoryPillLabel, categoryCode } from "../lib/categories";
+import { categoryPillLabel, categoryCode, categoryDotColor } from "../lib/categories";
 import { compareTransactionsByDateThenSalario, csvStaleDays } from "@financeiro/shared";
 import ImportModal from "../components/ImportModal.vue";
 import ManualTransactionModal from "../components/ManualTransactionModal.vue";
@@ -32,10 +33,14 @@ const resumo = ref({
   totalEntradas: "0",
   totalSaidas: "0",
   saldo: "0",
+  saldoBancoVirtual: "0",
+  diferencaSaldo: "0",
   qtd: 0,
   ultimaData: null as string | null,
 });
 const loading = ref(false);
+const editingSaldoBancoVirtual = ref(false);
+const saldoBancoVirtualDraft = ref<number | null>(null);
 
 type PeriodValue = Date[];
 const period = ref<PeriodValue>([]);
@@ -76,33 +81,45 @@ function budgetRemaining(b: BudgetItem): number {
 const totalPrevistoRestante = computed(() =>
   budgetItems.value.filter((b) => b.ativo).reduce((s, b) => s + budgetRemaining(b), 0),
 );
+const saldoSistema = computed(() => Number(resumo.value.saldo));
+const saldoBancoVirtual = computed(() => Number(resumo.value.saldoBancoVirtual));
+const diferencaSaldo = computed(
+  () => saldoBancoVirtual.value - saldoSistema.value,
+);
 const saldoLiquido = computed(() =>
-  Number(resumo.value.saldo) - totalPrevistoRestante.value,
+  saldoSistema.value - totalPrevistoRestante.value,
 );
 const totalEntradasPeriodo = computed(() => Number(resumo.value.totalEntradas));
 const totalSaidasPeriodo = computed(() => Math.abs(Number(resumo.value.totalSaidas)));
-const saldoAtualTooltip = computed(() => {
-  const saldo = Number(resumo.value.saldo);
-  return {
-    linha1: "Saldo atual = soma de todas as entradas e saídas (sem filtro).",
-    linha2: `Total acumulado: ${fmtMoneyBR(saldo)}`,
-  };
-});
-const entradasTooltip = computed(() => ({
-  linha1: "Entradas = soma das transações positivas no período filtrado.",
-  linha2: `${fmtMoneyBR(totalEntradasPeriodo.value)} em entradas`,
+const saldoBancoVirtualTooltip = computed(() => ({
+  linha1:
+    "Saldo no banco virtual = valor real do extrato do banco. Clique para editar.",
+  linha2: `Ao importar ou lançar algo, ele volta a acompanhar o saldo do sistema: ${fmtMoneyBR(saldoBancoVirtual.value)}`,
 }));
-const saidasTooltip = computed(() => ({
-  linha1: "Saídas = soma absoluta das transações negativas no período filtrado.",
-  linha2: `${fmtMoneyBR(totalSaidasPeriodo.value)} em saídas`,
+const saldoSistemaTooltip = computed(() => ({
+  linha1:
+    "Saldo do sistema = soma automática de todas as transações importadas (sem filtro).",
+  linha2: `Total acumulado: ${fmtMoneyBR(saldoSistema.value)}`,
+}));
+const saldoPrincipalTooltip = computed(() => ({
+  linha1: "Soma automática das transações importadas.",
+  linha2: `Banco virtual ${fmtMoneyBR(saldoBancoVirtual.value)} · diferença ${fmtMoneyBR(diferencaSaldo.value)}`,
+}));
+const diferencaSaldoTooltip = computed(() => ({
+  linha1:
+    "Diferença = saldo no banco virtual - saldo do sistema. Zero significa conciliado.",
+  linha2: `${fmtMoneyBR(saldoBancoVirtual.value)} - ${fmtMoneyBR(saldoSistema.value)} = ${fmtMoneyBR(diferencaSaldo.value)}`,
+}));
+const fluxoTooltip = computed(() => ({
+  linha1: "Entradas e saídas do período filtrado.",
+  linha2: `${fmtMoneyBR(totalEntradasPeriodo.value)} em entradas · ${fmtMoneyBR(totalSaidasPeriodo.value)} em saídas`,
 }));
 const saldoLiquidoTooltip = computed(() => {
-  const saldoAtual = Number(resumo.value.saldo);
   const previstoRestante = totalPrevistoRestante.value;
   const liquido = saldoLiquido.value;
   return {
-    linha1: "Saldo líquido = saldo atual - previsto restante ativo.",
-    linha2: `${fmtMoneyBR(saldoAtual)} - ${fmtMoneyBR(previstoRestante)} = ${fmtMoneyBR(liquido)}`,
+    linha1: "Saldo do sistema menos o previsto restante.",
+    linha2: `${fmtMoneyBR(saldoSistema.value)} - ${fmtMoneyBR(previstoRestante)} = ${fmtMoneyBR(liquido)}`,
   };
 });
 
@@ -343,6 +360,59 @@ async function load() {
     resumo.value = r.resumo;
   } finally {
     loading.value = false;
+  }
+}
+
+function startEditSaldoBancoVirtual() {
+  saldoBancoVirtualDraft.value = saldoBancoVirtual.value;
+  editingSaldoBancoVirtual.value = true;
+  nextTick(() => {
+    const input = document.querySelector<HTMLInputElement>(
+      ".summary-inline-input input",
+    );
+    input?.focus();
+    input?.select();
+  });
+}
+
+function cancelEditSaldoBancoVirtual() {
+  editingSaldoBancoVirtual.value = false;
+  saldoBancoVirtualDraft.value = null;
+}
+
+async function commitSaldoBancoVirtual() {
+  if (!editingSaldoBancoVirtual.value) return;
+  const value = saldoBancoVirtualDraft.value;
+  editingSaldoBancoVirtual.value = false;
+  if (value == null || !Number.isFinite(Number(value))) {
+    saldoBancoVirtualDraft.value = null;
+    return;
+  }
+
+  const valor = Number(value).toFixed(2);
+  if (valor === Number(resumo.value.saldoBancoVirtual).toFixed(2)) {
+    saldoBancoVirtualDraft.value = null;
+    return;
+  }
+
+  try {
+    const r = await patchSaldoBancoVirtual(valor);
+    resumo.value.saldoBancoVirtual = r.saldoBancoVirtual;
+    resumo.value.diferencaSaldo = r.diferencaSaldo;
+    snackbar.add({
+      severity: "success",
+      summary: "Saldo atualizado",
+      life: 1500,
+    });
+  } catch (err) {
+    snackbar.add({
+      severity: "error",
+      summary: "Erro ao salvar saldo",
+      detail: (err as Error).message,
+      life: 3000,
+    });
+  } finally {
+    saldoBancoVirtualDraft.value = null;
   }
 }
 
@@ -1306,27 +1376,75 @@ async function commitBudgetValor(b: BudgetItem) {
         </div>
         <div class="summary-cards">
           <div
-            class="summary-card summary-card--primary summary-card--tooltip"
+            class="summary-card summary-card--tooltip"
             tabindex="0"
-            :aria-label="`${saldoAtualTooltip.linha1} ${saldoAtualTooltip.linha2}`"
+            :aria-label="`${saldoPrincipalTooltip.linha1} ${saldoPrincipalTooltip.linha2}`"
           >
-            <div class="label">Saldo atual</div>
-            <div class="value" :class="classMoney(resumo.saldo)">
-              {{ fmtMoneyBR(resumo.saldo) }}
+            <div class="label">Saldo do sistema</div>
+            <div
+              class="value summary-value--system"
+              :class="classMoney(saldoSistema)"
+              :title="saldoSistemaTooltip.linha1"
+            >
+              {{ fmtMoneyBR(saldoSistema) }}
+            </div>
+            <div
+              class="summary-balance-meta summary-balance-meta--virtual"
+              :title="saldoBancoVirtualTooltip.linha1"
+            >
+              <span>Banco virtual</span>
+              <v-number-input
+                v-if="editingSaldoBancoVirtual"
+                v-model="saldoBancoVirtualDraft"
+                :precision="2"
+                control-variant="hidden"
+                density="compact"
+                hide-details
+                class="summary-inline-input summary-inline-input--meta"
+                @blur="commitSaldoBancoVirtual"
+                @keydown.enter.prevent="commitSaldoBancoVirtual"
+                @keydown.esc.prevent="cancelEditSaldoBancoVirtual"
+              />
+              <strong
+                v-else
+                class="summary-value--editable"
+                :class="classMoney(saldoBancoVirtual)"
+                title="Clique para editar"
+                @click="startEditSaldoBancoVirtual"
+              >
+                {{ fmtMoneyBR(saldoBancoVirtual) }}
+              </strong>
+            </div>
+            <div
+              class="summary-balance-meta summary-balance-meta--diff"
+              :title="diferencaSaldoTooltip.linha1"
+            >
+              <span>Diferença</span>
+              <strong :class="classMoney(diferencaSaldo)">{{ fmtMoneyBR(diferencaSaldo) }}</strong>
             </div>
             <div class="summary-tooltip summary-tooltip--left" role="tooltip">
-              <div>{{ saldoAtualTooltip.linha1 }}</div>
-              <div>{{ saldoAtualTooltip.linha2 }}</div>
+              <div>{{ saldoPrincipalTooltip.linha1 }}</div>
+              <div>{{ saldoPrincipalTooltip.linha2 }}</div>
             </div>
           </div>
           <div
-            class="summary-card summary-card--emphasis summary-card--tooltip"
+            class="summary-card summary-card--tooltip"
             tabindex="0"
             :aria-label="`${saldoLiquidoTooltip.linha1} ${saldoLiquidoTooltip.linha2}`"
           >
             <div class="label">Saldo líquido</div>
             <div class="value" :class="classMoney(saldoLiquido)">
               {{ fmtMoneyBR(saldoLiquido) }}
+            </div>
+            <div class="summary-balance-meta">
+              <span>Saldo do sistema</span>
+              <strong>{{ fmtMoneyBR(saldoSistema) }}</strong>
+            </div>
+            <div class="summary-balance-meta summary-balance-meta--divider">
+              <span>Previsto restante</span>
+              <strong :class="classMoney(-totalPrevistoRestante)">
+                {{ totalPrevistoRestante > 0 ? `- ${fmtMoneyBR(totalPrevistoRestante)}` : fmtMoneyBR(0) }}
+              </strong>
             </div>
             <div class="summary-tooltip" role="tooltip">
               <div>{{ saldoLiquidoTooltip.linha1 }}</div>
@@ -1335,32 +1453,23 @@ async function commitBudgetValor(b: BudgetItem) {
           </div>
 
           <div
-            class="summary-card summary-card--secondary summary-card--tooltip"
+            class="summary-card summary-card--tooltip"
             tabindex="0"
-            :aria-label="`${entradasTooltip.linha1} ${entradasTooltip.linha2}`"
+            :aria-label="`${fluxoTooltip.linha1} ${fluxoTooltip.linha2}`"
           >
-            <div class="label">Entradas</div>
-            <div class="value money-cell summary-value--positive">
-              {{ fmtMoneyBR(totalEntradasPeriodo) }}
+            <div class="summary-flow-grid">
+              <div class="summary-flow-item">
+                <span>Entradas</span>
+                <strong class="money-pos">{{ fmtMoneyBR(totalEntradasPeriodo) }}</strong>
+              </div>
+              <div class="summary-flow-item">
+                <span>Saídas</span>
+                <strong class="money-neg">{{ fmtMoneyBR(totalSaidasPeriodo) }}</strong>
+              </div>
             </div>
             <div class="summary-tooltip" role="tooltip">
-              <div>{{ entradasTooltip.linha1 }}</div>
-              <div>{{ entradasTooltip.linha2 }}</div>
-            </div>
-          </div>
-
-          <div
-            class="summary-card summary-card--secondary summary-card--tooltip"
-            tabindex="0"
-            :aria-label="`${saidasTooltip.linha1} ${saidasTooltip.linha2}`"
-          >
-            <div class="label">Saídas</div>
-            <div class="value money-cell summary-value--negative">
-              {{ fmtMoneyBR(totalSaidasPeriodo) }}
-            </div>
-            <div class="summary-tooltip" role="tooltip">
-              <div>{{ saidasTooltip.linha1 }}</div>
-              <div>{{ saidasTooltip.linha2 }}</div>
+              <div>{{ fluxoTooltip.linha1 }}</div>
+              <div>{{ fluxoTooltip.linha2 }}</div>
             </div>
           </div>
         </div>
@@ -1532,10 +1641,14 @@ async function commitBudgetValor(b: BudgetItem) {
               v-else
               type="button"
               class="cat-pill"
-              :style="{ background: colorForCategoria(item.categoriaId) }"
               :title="'Clique para trocar (' + categoryCode(item.categoriaId, ref_.categories) + ')'"
               @click="startEditCategoria(item)"
             >
+              <span
+                class="cat-pill-dot"
+                :style="{ background: categoryDotColor(item.categoriaId, ref_.categories) }"
+                aria-hidden="true"
+              />
               <span class="cat-pill-nome">{{ categoryPillLabel(item.categoriaId, ref_.categories) }}</span>
             </button>
           </template>
@@ -1680,7 +1793,7 @@ section {
 
 .summary-cards {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
 }
 
@@ -1697,33 +1810,97 @@ section {
   transition: border-color 140ms ease;
 }
 
-.summary-card--primary {
-  border-color: rgba(30, 90, 168, 0.28);
-  background: linear-gradient(180deg, var(--app-primary-wash) 0%, var(--app-surface) 72%);
-}
-
-.summary-card--primary .value {
-  font-size: 1.4rem;
-}
-
-.summary-card--emphasis {
-  border-color: rgba(226, 196, 173, 0.95);
-}
-
-.summary-card--secondary .value {
-  font-size: 1.1rem;
-  font-weight: 500;
-}
-
 .summary-card .label {
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--app-text-muted);
+  text-align: right;
 }
 
 .summary-card .value {
   font-size: 1.25rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-value--editable {
+  cursor: pointer;
+  user-select: none;
+  border-radius: 4px;
+}
+
+.summary-value--editable:hover,
+.summary-value--editable:focus-visible {
+  text-decoration: underline dotted;
+  outline: none;
+}
+
+.summary-inline-input {
+  max-width: 12rem;
+  margin-top: 0.1rem;
+}
+
+.summary-inline-input--meta {
+  max-width: 8.5rem;
+  margin: 0 0 0 auto;
+}
+
+.summary-balance-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.76rem;
+  color: var(--app-text-muted);
+}
+
+.summary-balance-meta strong {
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--app-text);
+}
+
+.summary-balance-meta strong.money-pos {
+  color: #16a34a;
+}
+
+.summary-balance-meta strong.money-neg {
+  color: #dc2626;
+}
+
+.summary-balance-meta--diff,
+.summary-balance-meta--divider {
+  padding-top: 0.25rem;
+  border-top: 1px dashed var(--app-border);
+}
+
+.summary-flow-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0;
+}
+
+.summary-flow-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  min-width: 0;
+  text-align: right;
+}
+
+.summary-flow-item span {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--app-text-muted);
+}
+
+.summary-flow-item strong {
+  font-size: 1rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -2426,22 +2603,42 @@ section {
 .cat-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.15rem 0.55rem 0.15rem 0.45rem;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
   border-radius: 999px;
-  border: 0;
-  color: #1f2937;
+  border: 1px solid var(--app-border);
+  background: #f5f7fa;
+  color: #344054;
   cursor: pointer;
   font: inherit;
-  font-size: 0.72rem;
-  line-height: 1.15;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
   max-width: none;
-  transition: transform 120ms, filter 120ms;
+  white-space: nowrap;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .cat-pill:hover {
-  filter: brightness(0.95);
-  transform: translateY(-1px);
+  background: #eef3f9;
+  border-color: #cdd8e5;
+}
+
+.cat-pill:focus-visible {
+  outline: none;
+  border-color: var(--app-primary);
+  box-shadow: 0 0 0 2px rgba(30, 90, 168, 0.14);
+}
+
+.cat-pill-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
 }
 
 .cat-pill-nome {

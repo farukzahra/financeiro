@@ -13,6 +13,7 @@ api.interceptors.response.use(
 
 export type UserSettings = {
   monthlySpendingLimit?: string;
+  saldoBancoVirtual?: string;
   salaryCycle?: {
     paymentDay?: {
       mode?: "dayOfMonth" | "businessDayOfMonth" | null;
@@ -137,6 +138,8 @@ export type TransactionsResponse = {
     totalEntradas: string;
     totalSaidas: string;
     saldo: string;
+    saldoBancoVirtual: string;
+    diferencaSaldo: string;
     qtd: number;
     ultimaData: string | null;
   };
@@ -242,6 +245,22 @@ export async function patchTransaction(
   },
 ): Promise<Transaction> {
   const { data } = await api.patch<Transaction>(`/transactions/${id}`, body);
+  return data;
+}
+
+export type SaldoBancoVirtualResponse = {
+  saldoBancoVirtual: string;
+  saldoSistema: string;
+  diferencaSaldo: string;
+};
+
+export async function patchSaldoBancoVirtual(
+  valor: string,
+): Promise<SaldoBancoVirtualResponse> {
+  const { data } = await api.patch<SaldoBancoVirtualResponse>(
+    "/transactions/saldo-banco-virtual",
+    { valor },
+  );
   return data;
 }
 

@@ -19,7 +19,7 @@ test.describe("Transações — listagem", () => {
     await expect(page.getByText("1 transação")).toBeVisible();
   });
 
-  test("saldo atual ignora filtros e soma todas as transações", async ({ page }) => {
+  test("saldo do sistema ignora filtros e soma todas as transações", async ({ page }) => {
     const state = createMockApiState();
     state.transactions = [
       {
@@ -51,9 +51,9 @@ test.describe("Transações — listagem", () => {
     await expect(page.getByText("Salário")).toBeVisible();
     await expect(page.getByText("Mercado Central")).toBeVisible();
 
-    const saldoValue = page.locator(".summary-card").filter({ has: page.locator(".label", { hasText: /^Saldo atual$/ }) }).locator(".value");
-    const entradasValue = page.locator(".summary-card").filter({ has: page.locator(".label", { hasText: /^Entradas$/ }) }).locator(".value");
-    const saidasValue = page.locator(".summary-card").filter({ has: page.locator(".label", { hasText: /^Saídas$/ }) }).locator(".value");
+    const saldoValue = page.locator(".summary-value--system");
+    const entradasValue = page.locator(".summary-flow-item").filter({ has: page.locator("span", { hasText: /^Entradas$/ }) }).locator("strong");
+    const saidasValue = page.locator(".summary-flow-item").filter({ has: page.locator("span", { hasText: /^Saídas$/ }) }).locator("strong");
 
     await expect(saldoValue).toHaveText(/R\$\s*950,00/);
     await expect(entradasValue).toHaveText(/R\$\s*1\.000,00/);
@@ -66,7 +66,7 @@ test.describe("Transações — listagem", () => {
     await expect(page.getByText("Mercado Central")).toBeVisible();
     await expect(page.getByText("1 transação")).toBeVisible();
 
-    // Bug: saldo atual não pode virar só o recorte filtrado (-50).
+    // Bug: saldo do sistema não pode virar só o recorte filtrado (-50).
     await expect(saldoValue).toHaveText(/R\$\s*950,00/);
     await expect(entradasValue).toHaveText(/R\$\s*0,00/);
     await expect(saidasValue).toHaveText(/R\$\s*50,00/);

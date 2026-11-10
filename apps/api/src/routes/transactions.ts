@@ -1,11 +1,15 @@
 import type { FastifyInstance } from "fastify";
 import { and, between, eq, gte, ilike, inArray, lte, or, sql as drizzleSql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { transactions, imports, categories } from "../db/schema.js";
-import { TransactionUpdateSchema, TransactionCreateSchema } from "@financeiro/shared";
+import { transactions, imports, categories, users } from "../db/schema.js";
+import { TransactionUpdateSchema, TransactionCreateSchema, SaldoBancoVirtualUpdateSchema } from "@financeiro/shared";
 import { chaveAgrupamento } from "../services/normalize.js";
 import { indexCategories } from "../services/category-lookup.js";
 import { buildTransactionsResumo } from "../services/transaction-resumo.js";
+import {
+  getSystemBalance,
+  syncVirtualBalanceToSystem,
+} from "../services/virtual-balance.js";
 import {
   buildYearMonthStats,
   parseStatsYear,
@@ -86,7 +90,7 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
       .where(and(...filters))
       .orderBy(transactions.data);
 
-    // Saldo atual = soma de todas as transações do usuário (bate com extrato do banco).
+    // Saldo do aplicativo = soma de todas as transações do usuário (bate com extrato do banco).
     // Entradas/saídas/qtd continuam no recorte filtrado.
     const [totalsRow] = await db
       .select({
@@ -102,11 +106,23 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
         data: r.data as unknown as string,
         importadoEm: r.importadoEm.toISOString(),
       })),
-      resumo: buildTransactionsResumo(
-        rows,
-        Number(totalsRow?.saldo ?? 0),
-        totalsRow?.ultimaData ?? null,
-      ),
+      resumo: (() => {
+        const saldoSistema = Number(totalsRow?.saldo ?? 0);
+        const stored = user.settings.saldoBancoVirtual;
+        const storedNumber = stored != null ? Number(stored) : Number.NaN;
+        const saldoBancoVirtual = Number.isFinite(storedNumber)
+          ? storedNumber
+          : saldoSistema;
+        return {
+          ...buildTransactionsResumo(
+            rows,
+            saldoSistema,
+            totalsRow?.ultimaData ?? null,
+          ),
+          saldoBancoVirtual: saldoBancoVirtual.toFixed(2),
+          diferencaSaldo: (saldoBancoVirtual - saldoSistema).toFixed(2),
+        };
+      })(),
     };
   });
 
@@ -140,7 +156,33 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
         observacao: d.observacao ?? null,
       })
       .returning();
+    await syncVirtualBalanceToSystem(user.id);
     return created;
+  });
+
+  app.patch("/transactions/saldo-banco-virtual", async (req, reply) => {
+    const user = await requireUser(req, reply);
+    const parsed = SaldoBancoVirtualUpdateSchema.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+
+    const saldoBancoVirtual = Number(parsed.data.valor).toFixed(2);
+    await db
+      .update(users)
+      .set({
+        settings: {
+          ...(user.settings as Record<string, unknown>),
+          saldoBancoVirtual,
+        },
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, user.id));
+
+    const saldoSistema = await getSystemBalance(user.id);
+    return {
+      saldoBancoVirtual,
+      saldoSistema: saldoSistema.toFixed(2),
+      diferencaSaldo: (Number(saldoBancoVirtual) - saldoSistema).toFixed(2),
+    };
   });
 
   app.patch<{ Params: { id: string } }>("/transactions/:id", async (req, reply) => {
@@ -255,6 +297,7 @@ export async function registerTransactionsRoutes(app: FastifyInstance) {
       .delete(transactions)
       .where(eq(transactions.userId, user.id))
       .returning({ id: transactions.identificador });
+    await syncVirtualBalanceToSystem(user.id);
     return { ok: true, removed: removed.length };
   });
 

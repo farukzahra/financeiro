@@ -28,6 +28,10 @@ const UserSettingsSchema = z
       .string()
       .regex(/^\d+(\.\d{1,2})?$/, "Limite invalido")
       .default(DEFAULT_MONTHLY_SPENDING_LIMIT),
+    saldoBancoVirtual: z
+      .string()
+      .regex(/^-?\d+(\.\d{1,2})?$/, "Saldo invalido")
+      .optional(),
     salaryCycle: z
       .object({
         paymentDay: z

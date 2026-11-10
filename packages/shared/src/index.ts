@@ -182,6 +182,12 @@ export const TransactionsQuerySchema = z.object({
 });
 export type TransactionsQuery = z.infer<typeof TransactionsQuerySchema>;
 
+/** Saldo informado manualmente pelo usuário (banco virtual). */
+export const SaldoBancoVirtualUpdateSchema = z.object({
+  valor: z.string().regex(/^-?\d+(\.\d{1,2})?$/),
+});
+export type SaldoBancoVirtualUpdate = z.infer<typeof SaldoBancoVirtualUpdateSchema>;
+
 // ---------------------------------------------------------------------------
 // Categoria salário (desempate na lista por data)
 // ---------------------------------------------------------------------------

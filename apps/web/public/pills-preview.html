@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Preview — Pílulas de categoria</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f8fafc;
+        --surface: #ffffff;
+        --surface-soft: #f5f7fa;
+        --border: #e4e9f0;
+        --border-soft: #edf1f6;
+        --text: #1f2937;
+        --muted: #667085;
+        --muted-soft: #98a2b3;
+        --primary: #1e5aa8;
+        --dark-bg: #16171f;
+        --dark-surface: #1e1f29;
+        --dark-elevated: #262833;
+        --dark-border: rgba(242, 243, 247, 0.08);
+        --dark-text: #8f93a1;
+        font-family: "IBM Plex Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 2rem 1.25rem 4rem;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .page {
+        max-width: 1080px;
+        margin: 0 auto;
+      }
+
+      .page-head {
+        margin-bottom: 1.5rem;
+      }
+
+      .eyebrow {
+        margin: 0 0 0.35rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--primary);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.6rem;
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+      }
+
+      .page-head p {
+        margin: 0.5rem 0 0;
+        max-width: 62ch;
+        font-size: 0.9rem;
+        line-height: 1.55;
+        color: var(--muted);
+      }
+
+      .panel {
+        padding: 1.25rem;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface);
+        margin-bottom: 1rem;
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .panel h2 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+
+      .panel-note {
+        font-size: 0.75rem;
+        color: var(--muted-soft);
+        text-align: right;
+      }
+
+      .pill-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 22px;
+        padding: 0 8px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--surface-soft);
+        color: #344054;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1;
+        white-space: nowrap;
+        max-width: 100%;
+        cursor: pointer;
+        transition:
+          background 120ms ease,
+          border-color 120ms ease,
+          box-shadow 120ms ease;
+      }
+
+      .pill:hover,
+      .pill.is-hover {
+        background: #eef3f9;
+        border-color: #cdd8e5;
+      }
+
+      .pill:focus-visible {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(30, 90, 168, 0.14);
+      }
+
+      .pill.is-selected {
+        border-color: var(--primary);
+        background: #f1f6fc;
+        box-shadow: 0 0 0 2px rgba(30, 90, 168, 0.1);
+      }
+
+      .pill-dot {
+        width: 6px;
+        height: 6px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+      }
+
+      .pill-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .pill--filter {
+        padding-right: 5px;
+      }
+
+      .pill-remove {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: rgba(15, 23, 42, 0.06);
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1;
+      }
+
+      .pill-remove:hover {
+        background: rgba(15, 23, 42, 0.12);
+        color: var(--text);
+      }
+
+      .panel--dark {
+        border-color: #2a2c38;
+        background: var(--dark-bg);
+      }
+
+      .panel--dark h2 {
+        color: #f2f3f7;
+      }
+
+      .panel--dark .panel-note {
+        color: #6c7080;
+      }
+
+      .panel--dark .pill {
+        border-color: var(--dark-border);
+        background: var(--dark-elevated);
+        color: #c9cdd6;
+      }
+
+      .panel--dark .pill:hover {
+        background: #2f3140;
+        border-color: rgba(242, 243, 247, 0.16);
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+      }
+
+      th {
+        padding: 0.55rem 0.75rem;
+        text-align: left;
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--muted-soft);
+        background: #fbfcfe;
+        border-bottom: 1px solid var(--border-soft);
+      }
+
+      td {
+        padding: 0.55rem 0.75rem;
+        border-bottom: 1px solid var(--border-soft);
+        vertical-align: middle;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .money {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      .money--out {
+        color: #b42318;
+      }
+
+      .money--in {
+        color: #15803d;
+      }
+
+      .current-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.15rem 0.55rem 0.15rem 0.45rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 500;
+        line-height: 1.15;
+        color: #1f2937;
+        white-space: nowrap;
+      }
+
+      .states {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.85rem;
+        padding-top: 0.85rem;
+        border-top: 1px solid var(--border-soft);
+      }
+
+      .legend {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.75rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-soft);
+      }
+
+      .legend p {
+        margin: 0;
+        font-size: 0.78rem;
+        line-height: 1.45;
+        color: var(--muted);
+      }
+
+      .legend strong {
+        color: var(--text);
+      }
+
+      code {
+        padding: 0.1rem 0.3rem;
+        border-radius: 4px;
+        background: var(--surface-soft);
+        border: 1px solid var(--border-soft);
+        font-size: 0.75rem;
+      }
+
+      @media (max-width: 640px) {
+        body {
+          padding: 1.25rem 0.75rem 3rem;
+        }
+
+        .panel {
+          padding: 1rem;
+        }
+
+        .panel-head {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.25rem;
+        }
+
+        .panel-note {
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="page-head">
+        <p class="eyebrow">Preview de UI</p>
+        <h1>Pílulas de categoria</h1>
+        <p>
+          Adaptação do estilo <strong>StatusPill</strong> do Maco para o tema
+          claro do Financeiro: fundo neutro, borda discreta, 22px de altura e uma
+          bolinha de 6px com a cor da categoria. O texto continua sendo o sinal
+          principal.
+        </p>
+      </header>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Maco adaptado ao tema claro</h2>
+          <span class="panel-note">22px · dot 6px · raio 999 · IBM Plex Sans 12px</span>
+        </div>
+        <div id="pills-light" class="pill-grid"></div>
+
+        <div class="states">
+          <span class="pill" style="cursor: default">
+            <span class="pill-dot" style="background: #4f8a3d"></span>
+            <span class="pill-name">normal</span>
+          </span>
+          <span class="pill is-hover" style="cursor: default">
+            <span class="pill-dot" style="background: #2e7fb8"></span>
+            <span class="pill-name">hover</span>
+          </span>
+          <span class="pill is-selected" style="cursor: default">
+            <span class="pill-dot" style="background: #b65e8e"></span>
+            <span class="pill-name">selecionada</span>
+          </span>
+        </div>
+
+        <div class="legend">
+          <p>
+            <strong>Mudança principal:</strong> a pílula deixa de ser um bloco
+            pastel e passa a ser neutra. A cor fica só na bolinha.
+          </p>
+          <p>
+            <strong>Vantagem:</strong> todas as categorias mantêm o mesmo peso
+            visual e a tabela fica menos arco-íris, sem perder a identificação.
+          </p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Em contexto — tabela de transações</h2>
+          <span class="panel-note">mesmo tamanho usado dentro da linha</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Detalhe</th>
+                <th>Categoria</th>
+                <th class="money">Valor</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel panel--dark">
+        <div class="panel-head">
+          <h2>Maco original — tema escuro</h2>
+          <span class="panel-note">referência: StatusPill do Maco</span>
+        </div>
+        <div id="pills-dark" class="pill-grid"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Mesmo componente em outros pontos</h2>
+          <span class="panel-note">status · importação · filtros</span>
+        </div>
+        <div class="pill-grid">
+          <span class="pill" style="cursor: default">
+            <span class="pill-dot" style="background: #2f8f5b"></span>
+            <span class="pill-name">Ativa</span>
+          </span>
+          <span class="pill" style="cursor: default">
+            <span class="pill-dot" style="background: #98a2b3"></span>
+            <span class="pill-name">Inativa</span>
+          </span>
+          <span class="pill" style="cursor: default">
+            <span class="pill-dot" style="background: #2f8f5b"></span>
+            <span class="pill-name">Novas: 12</span>
+          </span>
+          <span class="pill" style="cursor: default">
+            <span class="pill-dot" style="background: #c58a1a"></span>
+            <span class="pill-name">Duplicadas: 3</span>
+          </span>
+          <span class="pill" style="cursor: default">
+            <span class="pill-dot" style="background: #2e7fb8"></span>
+            <span class="pill-name">Selecionadas: 9</span>
+          </span>
+          <button class="pill pill--filter" type="button" title="Remover filtro">
+            <span class="pill-dot" style="background: #4f8a3d"></span>
+            <span class="pill-name">ALIMENTAÇÃO</span>
+            <span class="pill-remove" aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="legend">
+          <p>
+            <strong>Status:</strong> a bolinha resolve o estado sem precisar
+            pintar a pílula inteira.
+          </p>
+          <p>
+            <strong>Filtro ativo:</strong> a mesma estrutura ganha um “×” para
+            remover o filtro.
+          </p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Como está hoje no Financeiro</h2>
+          <span class="panel-note">fundo pastel sólido · sem bolinha</span>
+        </div>
+        <div id="pills-current" class="pill-grid"></div>
+        <div class="legend">
+          <p>
+            <strong>Atual:</strong> cada categoria tem um fundo pastel gerado por
+            hash. Funciona, mas como todas as pílulas ficam coloridas ao mesmo
+            tempo, a tabela perde hierarquia.
+          </p>
+          <p>
+            <strong>Proposta:</strong> manter o hash só para a cor da bolinha,
+            com saturação e luminosidade controladas para leitura no tema claro.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const categories = [
+        { label: "ALIMENTAÇÃO", hue: 100, dot: "#4f8a3d" },
+        { label: "FARMÁCIA", hue: 175, dot: "#2f7f7a" },
+        { label: "SAÚDE", hue: 205, dot: "#2e7fb8" },
+        { label: "GASOLINA", hue: 38, dot: "#c58a1a" },
+        { label: "TRANSPORTE", hue: 220, dot: "#4c6fb3" },
+        { label: "COMPRAS", hue: 330, dot: "#b65e8e" },
+        { label: "AGRO", hue: 80, dot: "#6a8f2f" },
+        { label: "VIAGEM", hue: 265, dot: "#7a5bb5" },
+        { label: "ACADEMIA", hue: 22, dot: "#c4692f" },
+        { label: "PIX", hue: 190, dot: "#2f9bb3" },
+        { label: "APLICAÇÃO RDB", hue: 215, dot: "#245e9e" },
+        { label: "RESGATE RDB", hue: 200, dot: "#557c9e" },
+        { label: "FATURA GENÉRICA", hue: 350, dot: "#b4535f" },
+        { label: "DÉBITO EM CONTA", hue: 215, dot: "#6b7280" },
+        { label: "CARTÃO DE CRÉDITO", hue: 280, dot: "#8b5bb5" },
+        { label: "SALÁRIO", hue: 145, dot: "#2f8f5b" },
+        { label: "SAQUE", hue: 28, dot: "#8f6b4a" },
+        { label: "OUTROS", hue: 220, dot: "#7c8494" },
+      ];
+
+      function pillMarkup(category, className = "pill") {
+        return `
+          <button class="${className}" type="button" title="${category.label}">
+            <span class="pill-dot" style="background: ${category.dot}"></span>
+            <span class="pill-name">${category.label}</span>
+          </button>
+        `;
+      }
+
+      function renderPills(id) {
+        const target = document.getElementById(id);
+        target.innerHTML = categories.map((c) => pillMarkup(c)).join("");
+      }
+
+      function renderCurrentPills() {
+        const target = document.getElementById("pills-current");
+        target.innerHTML = categories
+          .map(
+            (c) => `
+              <span
+                class="current-pill"
+                style="background: hsl(${c.hue} 45% 82%)"
+                title="${c.label}"
+              >${c.label}</span>
+            `,
+          )
+          .join("");
+      }
+
+      function renderTable() {
+        const rows = [
+          { date: "01/06", detail: "Mercado Central", category: categories[0], value: "-50,00", tone: "out" },
+          { date: "02/06", detail: "Farmácia São Paulo", category: categories[1], value: "-34,90", tone: "out" },
+          { date: "03/06", detail: "Posto Ipiranga", category: categories[3], value: "-180,00", tone: "out" },
+          { date: "05/06", detail: "Salário", category: categories[15], value: "+5.000,00", tone: "in" },
+          { date: "07/06", detail: "Pix para João", category: categories[9], value: "-120,00", tone: "out" },
+        ];
+
+        document.getElementById("table-body").innerHTML = rows
+          .map(
+            (row) => `
+              <tr>
+                <td>${row.date}</td>
+                <td>${row.detail}</td>
+                <td>${pillMarkup(row.category)}</td>
+                <td class="money money--${row.tone}">R$ ${row.value}</td>
+              </tr>
+            `,
+          )
+          .join("");
+      }
+
+      renderPills("pills-light");
+      renderPills("pills-dark");
+      renderCurrentPills();
+      renderTable();
+    </script>
+  </body>
+</html>

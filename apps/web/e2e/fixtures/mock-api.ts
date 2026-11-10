@@ -138,6 +138,19 @@ function saldoAtual(rows: (typeof mockTransaction)[]) {
   return rows.reduce((acc, r) => acc + Number(r.valor), 0).toFixed(2);
 }
 
+function saldoVirtual(state: MockApiState) {
+  const stored = (state.user.settings as { saldoBancoVirtual?: string })
+    .saldoBancoVirtual;
+  return stored != null ? Number(stored).toFixed(2) : saldoAtual(state.transactions);
+}
+
+function rebaseSaldoVirtual(state: MockApiState) {
+  state.user.settings = {
+    ...state.user.settings,
+    saldoBancoVirtual: saldoAtual(state.transactions),
+  };
+}
+
 function buildMockTransactionStats(state: MockApiState, year: number) {
   const countsByMonth: Partial<Record<number, number>> = {};
   for (const row of state.transactions) {
@@ -532,6 +545,7 @@ export async function installMockApi(
     if (method === "DELETE" && path === "/transactions/all") {
       const removed = state.transactions.length;
       state.transactions = [];
+      rebaseSaldoVirtual(state);
       return route.fulfill({ json: { ok: true, removed } });
     }
 
@@ -543,12 +557,16 @@ export async function installMockApi(
           if (!max || row.data > max) return row.data;
           return max;
         }, null);
+      const saldo = saldoAtual(state.transactions);
+      const saldoBancoVirtual = saldoVirtual(state);
       return route.fulfill({
         json: {
           itens: filtered,
           resumo: {
             ...period,
-            saldo: saldoAtual(state.transactions),
+            saldo,
+            saldoBancoVirtual,
+            diferencaSaldo: (Number(saldoBancoVirtual) - Number(saldo)).toFixed(2),
             ultimaData,
           },
         },
@@ -582,7 +600,29 @@ export async function installMockApi(
         observacao: body.observacao ?? null,
       };
       state.transactions.push(row);
+      rebaseSaldoVirtual(state);
       return route.fulfill({ json: row });
+    }
+
+    if (method === "PATCH" && path === "/transactions/saldo-banco-virtual") {
+      const body = route.request().postDataJSON() as { valor?: string };
+      const valor = Number(body.valor);
+      if (!Number.isFinite(valor)) {
+        return route.fulfill({ status: 400, json: { error: "Saldo invalido" } });
+      }
+      const saldoBancoVirtual = valor.toFixed(2);
+      state.user.settings = {
+        ...state.user.settings,
+        saldoBancoVirtual,
+      };
+      const saldoSistema = saldoAtual(state.transactions);
+      return route.fulfill({
+        json: {
+          saldoBancoVirtual,
+          saldoSistema,
+          diferencaSaldo: (Number(saldoBancoVirtual) - Number(saldoSistema)).toFixed(2),
+        },
+      });
     }
 
     const txPatch = path.match(/^\/transactions\/([^/]+)$/);
@@ -751,6 +791,7 @@ export async function installMockApi(
         });
         inseridas++;
       }
+      rebaseSaldoVirtual(state);
       return route.fulfill({
         json: {
           importId: uuid(),

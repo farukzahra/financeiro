@@ -8,6 +8,7 @@ import { indexCategories } from "../services/category-lookup.js";
 import { expandUploadsToCsv } from "../services/import-files.js";
 import { ConfirmRequestSchema, type PreviewBatchResponse } from "@financeiro/shared";
 import { requireUser } from "../auth.js";
+import { syncVirtualBalanceToSystem } from "../services/virtual-balance.js";
 
 async function loadCategoryContext(userId: string) {
   const allRules = await db.query.categoryRules.findMany({
@@ -187,6 +188,7 @@ export async function registerImportsRoutes(app: FastifyInstance) {
       return { importId: imp.id, ...totais };
     });
 
+    await syncVirtualBalanceToSystem(user.id);
     return result;
   });
 }

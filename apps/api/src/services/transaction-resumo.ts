@@ -2,7 +2,7 @@ import { csvStaleDays } from "@financeiro/shared";
 
 export { csvStaleDays };
 
-/** Period totals from filtered rows; saldo atual and ultimaData are always all-time. */
+/** Period totals from filtered rows; saldo do aplicativo and ultimaData are always all-time. */
 export function buildTransactionsResumo(
   filteredRows: Array<{ valor: string | number }>,
   allTimeSaldo: number,
