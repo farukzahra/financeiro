@@ -8,7 +8,7 @@
       "title": "Saldo no banco virtual e pílulas no estilo Maco",
       "summary": "A tela de transações separa saldo do sistema, banco virtual editável com um clique e diferença de conciliação. O banco virtual é reancorado ao importar ou lançar e a diferença fica visível. Os cards de resumo foram reorganizados e as pílulas de categoria ganharam o estilo neutro com bolinha colorida do Maco, com preview em /pills-preview.html.",
       "type": "feat",
-      "commit": ""
+      "commit": "a6652b5"
     },
     {
       "version": "0.27.1",
