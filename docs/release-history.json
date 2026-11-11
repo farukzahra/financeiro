@@ -1,7 +1,15 @@
 {
-  "currentVersion": "0.28.0",
-  "updatedAt": "2026-11-10T20:06:42.224Z",
+  "currentVersion": "0.28.1",
+  "updatedAt": "2026-11-11T19:32:45.567Z",
   "entries": [
+    {
+      "version": "0.28.1",
+      "date": "2026-11-11",
+      "title": "Pílulas de categoria em tinta suave",
+      "summary": "As pílulas de categoria passam a usar a variante tinta suave: fundo com 12% da cor, borda com 30%, bolinha de 8px e texto forte. A paleta foi revisada para 18 cores únicas por categoria, reduzindo cores repetidas.",
+      "type": "fix",
+      "commit": ""
+    },
     {
       "version": "0.28.0",
       "date": "2026-11-10",

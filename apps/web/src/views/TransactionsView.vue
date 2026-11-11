@@ -18,7 +18,7 @@ import {
   type BudgetItem,
 } from "../lib/api";
 import { fmtMoneyBR, fmtDateBR, classMoney } from "../lib/format";
-import { categoryPillLabel, categoryCode, categoryDotColor } from "../lib/categories";
+import { categoryPillLabel, categoryCode, categoryPillColor } from "../lib/categories";
 import { compareTransactionsByDateThenSalario, csvStaleDays } from "@financeiro/shared";
 import ImportModal from "../components/ImportModal.vue";
 import ManualTransactionModal from "../components/ManualTransactionModal.vue";
@@ -1641,14 +1641,11 @@ async function commitBudgetValor(b: BudgetItem) {
               v-else
               type="button"
               class="cat-pill"
+              :style="{ '--cat-color': categoryPillColor(item.categoriaId, ref_.categories) }"
               :title="'Clique para trocar (' + categoryCode(item.categoriaId, ref_.categories) + ')'"
               @click="startEditCategoria(item)"
             >
-              <span
-                class="cat-pill-dot"
-                :style="{ background: categoryDotColor(item.categoriaId, ref_.categories) }"
-                aria-hidden="true"
-              />
+              <span class="cat-pill-dot" aria-hidden="true" />
               <span class="cat-pill-nome">{{ categoryPillLabel(item.categoriaId, ref_.categories) }}</span>
             </button>
           </template>
@@ -2603,13 +2600,13 @@ section {
 .cat-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   height: 22px;
-  padding: 0 8px;
+  padding: 0 9px;
   border-radius: 999px;
-  border: 1px solid var(--app-border);
-  background: #f5f7fa;
-  color: #344054;
+  border: 1px solid color-mix(in srgb, var(--cat-color, #94a3b8) 30%, #e4e9f0);
+  background: color-mix(in srgb, var(--cat-color, #94a3b8) 12%, #ffffff);
+  color: #1f2937;
   cursor: pointer;
   font: inherit;
   font-size: 12px;
@@ -2624,21 +2621,22 @@ section {
 }
 
 .cat-pill:hover {
-  background: #eef3f9;
-  border-color: #cdd8e5;
+  border-color: color-mix(in srgb, var(--cat-color, #94a3b8) 55%, #e4e9f0);
+  background: color-mix(in srgb, var(--cat-color, #94a3b8) 18%, #ffffff);
 }
 
 .cat-pill:focus-visible {
   outline: none;
-  border-color: var(--app-primary);
-  box-shadow: 0 0 0 2px rgba(30, 90, 168, 0.14);
+  border-color: var(--cat-color, var(--app-primary));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cat-color, #1e5aa8) 22%, transparent);
 }
 
 .cat-pill-dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   flex: 0 0 auto;
   border-radius: 50%;
+  background: var(--cat-color, #94a3b8);
 }
 
 .cat-pill-nome {

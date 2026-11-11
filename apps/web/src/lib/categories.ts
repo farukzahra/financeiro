@@ -22,39 +22,39 @@ const CATEGORY_LABELS: Record<string, string> = {
   OUTROS: "OUTROS",
 };
 
-const CATEGORY_DOT_COLORS: Record<string, string> = {
-  "ALIMENTAÇÃO": "#4f8a3d",
-  ALIMENTACAO: "#4f8a3d",
-  FARMACIA: "#2f7f7a",
-  SAUDE: "#2e7fb8",
-  GASOLINA: "#c58a1a",
-  TRANSPORTE: "#4c6fb3",
-  COMPRAS: "#b65e8e",
-  AGRO: "#6a8f2f",
-  VIAGEM: "#7a5bb5",
-  ACADEMIA: "#c4692f",
-  PIX: "#2f9bb3",
-  "APLICACAO RDB": "#245e9e",
-  "RESGATE RDB": "#557c9e",
-  "FATURA GENERICA": "#b4535f",
-  "DEBITO EM CONTA": "#6b7280",
-  "CARTAO DE CREDITO": "#8b5bb5",
-  SALARIO: "#2f8f5b",
-  SAQUE: "#8f6b4a",
-  OUTROS: "#7c8494",
+const CATEGORY_PILL_COLORS: Record<string, string> = {
+  "ALIMENTAÇÃO": "#22c55e",
+  ALIMENTACAO: "#22c55e",
+  FARMACIA: "#14b8a6",
+  SAUDE: "#0ea5e9",
+  GASOLINA: "#f59e0b",
+  TRANSPORTE: "#6366f1",
+  COMPRAS: "#d946ef",
+  AGRO: "#84cc16",
+  VIAGEM: "#8b5cf6",
+  ACADEMIA: "#f97316",
+  PIX: "#06b6d4",
+  "APLICACAO RDB": "#3b82f6",
+  "RESGATE RDB": "#fb7185",
+  "FATURA GENERICA": "#ef4444",
+  "DEBITO EM CONTA": "#cbd5e1",
+  "CARTAO DE CREDITO": "#a855f7",
+  SALARIO: "#10b981",
+  SAQUE: "#eab308",
+  OUTROS: "#64748b",
 };
 
-export function categoryDotColor(
+export function categoryPillColor(
   categoryId: string,
   catalog?: Category[],
 ): string {
   const code = categoryCode(categoryId, catalog).toUpperCase();
-  const hit = CATEGORY_DOT_COLORS[code];
+  const hit = CATEGORY_PILL_COLORS[code];
   if (hit) return hit;
 
   let h = 0;
   for (let i = 0; i < code.length; i++) h = (h * 31 + code.charCodeAt(i)) >>> 0;
-  return `hsl(${h % 360} 52% 42%)`;
+  return `hsl(${h % 360} 65% 48%)`;
 }
 
 function findCategory(categoryId: string, catalog?: Category[]): Category | undefined {
