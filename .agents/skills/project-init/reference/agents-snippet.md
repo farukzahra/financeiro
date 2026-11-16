@@ -15,8 +15,9 @@
 | Verify | `verification-before-completion` | Evidence before "done" |
 | Debug | `systematic-debugging` | Root cause before fix |
 | Ship | `/commit-push` | `semantic-version` → `caveman-commit` → push → Actions → prod URL |
-| Handoff | `/recap` + `recap` | Session summary HTML when closing a long chat |
+| Delivery recap | `/recap` + `recap` | HTML “pedido vs entregue” in `docs/session-recaps/` |
+| Next-agent handoff | `/handoff` + `handoff` | Compact doc in OS temp dir for a fresh session |
 
-**Gates:** no feature without approved spec; no "done" without verification; version bump only on `/commit-push`; obligations that must not be forgotten → automate (`dont-forget`).
+**Gates:** no feature without approved spec; no "done" without verification; version bump only on `/commit-push`; obligations that must not be forgotten → automate (`dont-forget`); every combo/select backed by the database reloads its options on open (`fresh-options-on-open`).
 
 Invoke `/init` to (re)bootstrap skills and folders.

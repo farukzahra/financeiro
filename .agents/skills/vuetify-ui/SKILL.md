@@ -22,6 +22,7 @@ description: Vuetify 3 UI patterns for apps/web in this monorepo. Use when build
 5. Money/date formatting via `apps/web/src/lib/format.ts` (`fmtMoneyBR`, `fmtDateBR`, `classMoney`).
 6. Category labels: short code via `categoryPillLabel` / `categoryCode` in lists; description only where explicitly needed (filters/settings).
 7. **Surfaces:** page background stays cool blue `#F8FAFC`; any form or settings content block on that background must use global `.app-panel` (white surface + border). Do not place bare fields on the page background. Single UI font: IBM Plex Sans + `tabular-nums` for money (no second font family).
+8. **Combos always refetch on open:** every `v-combobox` / `v-select` / `v-autocomplete` / filter backed by the database reloads its options from the API every time the user opens it (including inline editors and modals). Never rely only on the store loaded at login/mount. On failure keep the previous list and open anyway. Dedupe concurrent requests in the store. See `apps/web/src/stores/reference.ts` and `TransactionsView.vue` (`startEditCell`).
 
 ## Patterns
 

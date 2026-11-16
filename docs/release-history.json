@@ -1,7 +1,14 @@
 {
-  "currentVersion": "0.28.1",
-  "updatedAt": "2026-11-11T19:32:45.567Z",
+  "currentVersion": "0.28.2",
+  "updatedAt": "2026-11-16T20:54:56.335Z",
   "entries": [
+    {
+      "version": "0.28.2",
+      "date": "2026-11-16",
+      "title": "Combo de tipo sempre busca dados atuais",
+      "summary": "O combo de tipo da tabela de transações e do cadastro manual passa a buscar a lista atualizada na API toda vez que abre. Tipos criados ou editados em outra tela aparecem na próxima abertura, sem o usuário recarregar a página.",
+      "type": "fix"
+    },
     {
       "version": "0.28.1",
       "date": "2026-11-11",

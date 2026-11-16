@@ -14,9 +14,19 @@ export const useReferenceStore = defineStore("reference", () => {
   const rules = ref<CategoryRule[]>([]);
   const tipos = ref<string[]>([]);
   const loaded = ref(false);
+  let tiposInFlight: Promise<string[]> | null = null;
+
+  function fetchTipos(): Promise<string[]> {
+    if (!tiposInFlight) {
+      tiposInFlight = listTipos().finally(() => {
+        tiposInFlight = null;
+      });
+    }
+    return tiposInFlight;
+  }
 
   async function load() {
-    const [c, r, t] = await Promise.all([listCategories(), listRules(), listTipos()]);
+    const [c, r, t] = await Promise.all([listCategories(), listRules(), fetchTipos()]);
     categories.value = c;
     rules.value = r;
     tipos.value = t;
@@ -32,7 +42,7 @@ export const useReferenceStore = defineStore("reference", () => {
   }
 
   async function reloadTipos() {
-    tipos.value = await listTipos();
+    tipos.value = await fetchTipos();
   }
 
   function reset() {

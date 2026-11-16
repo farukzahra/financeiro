@@ -859,6 +859,9 @@ async function startEditCell(row: Transaction, field: EditField) {
   else if (field === "tipo") {
     tipoDraft.value = row.tipo;
     tipoMenuOpen.value = false;
+    // Rebusca a lista a cada abertura para refletir tipos criados ou
+    // alterados em outra tela/modal, sem esperar a próxima recarga da página.
+    void ref_.reloadTipos().catch(() => undefined);
     await nextTick();
     tipoMenuOpen.value = true;
   } else if (field === "valor") valorDraft.value = Math.abs(Number(row.valor));

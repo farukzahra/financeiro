@@ -1,0 +1,28 @@
+---
+description: Combos e selects buscam os dados atuais no banco toda vez que abrem
+applyTo: "**"
+---
+
+# Combo sempre busca dados atuais ao abrir
+
+Toda combo, select, autocomplete ou filtro cujo catálogo vem do banco (categorias,
+tipos, usuários, status, contas, itens etc.) deve buscar a lista de novo na API
+**toda vez que o usuário abrir o campo** (clique, foco ou edição inline). Não confiar
+apenas na lista carregada no login ou no mount da tela: ela fica velha quando alguém
+cria ou edita o item em outra tela/modal, e o usuário não deve precisar recarregar a
+página.
+
+1. Ao abrir, refaça a requisição em paralelo e atualize as opções. Se a requisição
+   falhar, mantenha a lista anterior e abra o menu normalmente.
+2. Vale para filtros e editores inline da tabela e para combos dentro de modais
+   (busque ao abrir o modal).
+3. Deduplicate requisições concorrentes: um `inFlight` por lista no store.
+4. Depois de criar/editar um item que alimenta a combo, garanta que a próxima
+   abertura já traga o item novo, sem refresh manual da tela.
+5. Cubra com E2E: o mock da API devolve uma opção nova e, ao abrir a combo, ela
+   aparece sem recarregar a página.
+
+Referência implementada (financeiro): `apps/web/src/stores/reference.ts`
+(`reloadTipos` com dedupe), `apps/web/src/views/TransactionsView.vue`
+(`startEditCell` para o campo `tipo`) e `apps/web/src/components/ManualTransactionModal.vue`
+(watch de `visible`).

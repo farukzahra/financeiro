@@ -224,14 +224,14 @@ Copy the convention files for **both** agents (paths under `C:\repo\agent-skills
 | From | To | Applies to |
 |------|----|------------|
 | `reference\commands\{init,commit-push,recap,handoff}.md` | `.cursor\commands\` | Cursor |
-| `reference\rules\automate-before-manual.mdc` | `.cursor\rules\` | Cursor |
+| `reference\rules\*.mdc` | `.cursor\rules\` | Cursor |
 | `.github\prompts\*.prompt.md` | `.github\prompts\` | VS Code Copilot |
 | `.github\instructions\*.instructions.md` | `.github\instructions\` | VS Code Copilot |
 
 ```powershell
 $p = $projectRoot; $repo = "C:\repo\agent-skills"
 New-Item -ItemType Directory -Force "$p\.cursor\rules","$p\.cursor\commands","$p\.github\instructions","$p\.github\prompts" | Out-Null
-Copy-Item "$repo\reference\rules\automate-before-manual.mdc" "$p\.cursor\rules\" -Force
+Copy-Item "$repo\reference\rules\*.mdc" "$p\.cursor\rules\" -Force
 foreach ($c in "init","commit-push","recap","handoff") { Copy-Item "$repo\reference\commands\$c.md" "$p\.cursor\commands\" -Force }
 Copy-Item "$repo\.github\instructions\*.instructions.md" "$p\.github\instructions\" -Force
 Copy-Item "$repo\.github\prompts\*.prompt.md" "$p\.github\prompts\" -Force
@@ -243,9 +243,9 @@ Copy-Item "$repo\.github\prompts\*.prompt.md" "$p\.github\prompts\" -Force
 
 `AGENTS.md` is read by both Cursor and VS Code Copilot, so it holds the workflow contract for either IDE.
 
-1. Cursor rule: copy `C:\repo\agent-skills\reference\rules\automate-before-manual.mdc` → `.cursor/rules/`.
+1. Cursor rule: copy `C:\repo\agent-skills\reference\rules\*.mdc` → `.cursor/rules/` (includes `automate-before-manual` and `fresh-options-on-open`).
 2. VS Code rule: copy `C:\repo\agent-skills\.github\instructions\*.instructions.md` → `.github/instructions/`. Copilot only reads `.instructions.md` (with `applyTo`) there — `.mdc` is ignored.
-3. Append to `AGENTS.md` the **Agent workflow (mandatory skills)** table from `C:\repo\agent-skills\skills\project-init\reference\agents-snippet.md` plus the **Agent automation (mandatory)** block from `C:\repo\agent-skills\reference\agents-automation-snippet.md`. Never replace a rich existing `AGENTS.md` — append or merge only.
+3. Append to `AGENTS.md` the **Agent workflow (mandatory skills)** table from `C:\repo\agent-skills\skills\project-init\reference\agents-snippet.md` plus the **Agent automation (mandatory)** block from `C:\repo\agent-skills\reference\agents-automation-snippet.md` and the **Dados frescos em combos (mandatory)** block from `C:\repo\agent-skills\reference\agents-data-freshness-snippet.md`. Never replace a rich existing `AGENTS.md` — append or merge only.
 
 Before any manual ask, agents must read **`automate-before-manual`**; if the user says lazy / "you do it", also **`dont-be-lazy`**.
 
@@ -292,6 +292,7 @@ Continue until the plan is done or the user stops. Use `verification-before-comp
 - Always create the GitHub repo as **private** and push the first commit during `/init-fmz` (after scaffold files).
 - Never expose or log PAT values; read only from `C:\faruk\secrets` or documented fallbacks.
 - For VPS-deployed apps: production app secrets live in **GitHub Actions Secrets**, not in Git or manual VPS `.env` alone.
+- Every combo/select backed by the database reloads its options on open (`fresh-options-on-open`) — never rely only on the login-time cache.
 - Keep the user informed with short status updates between phases.
 - Respond in Portuguese unless the user writes in another language.
 

@@ -40,6 +40,9 @@ watch(
   () => props.visible,
   (v) => {
     if (!v) return;
+    // Atualiza as sugestões de tipo ao abrir, para trazer o que mudou
+    // em outras telas desde a última carga.
+    void ref_.reloadTipos().catch(() => undefined);
     if (props.editing) {
       const e = props.editing;
       data.value = parseIso(e.data);

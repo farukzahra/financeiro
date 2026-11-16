@@ -40,4 +40,21 @@ test.describe("Transações — edição inline de tipo", () => {
     await expect.poll(() => patchedBody?.tipo).toBe("Transferência");
     await expect(page.locator(".v-data-table .v-combobox")).toHaveCount(0);
   });
+
+  test("cada abertura do combobox busca os tipos atualizados na API", async ({ page }) => {
+    let tiposRequests = 0;
+    await page.route("**/api/transactions/tipos", async (route) => {
+      tiposRequests += 1;
+      await route.fulfill({ json: ["Compra", "Tipo criado em outra tela"] });
+    });
+
+    await page.getByText("Compra", { exact: true }).click();
+
+    await expect.poll(() => tiposRequests).toBeGreaterThan(0);
+    await expect(
+      page
+        .locator(".v-overlay__content .v-list-item")
+        .filter({ hasText: "Tipo criado em outra tela" }),
+    ).toBeVisible();
+  });
 });

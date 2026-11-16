@@ -47,4 +47,28 @@ test.describe("Nova transação manual", () => {
     ).toBe(true);
     await expect(page.getByText("Pix E2E combobox")).toBeVisible();
   });
+
+  test("abrir o modal rebusca os tipos atualizados na API", async ({ page }) => {
+    const state = createMockApiState();
+    await mockAuthenticatedApp(page, state);
+    await page.goto("/");
+
+    let tiposRequests = 0;
+    await page.route("**/api/transactions/tipos", async (route) => {
+      tiposRequests += 1;
+      await route.fulfill({ json: ["Compra", "Tipo criado em outra tela"] });
+    });
+
+    await page.getByRole("button", { name: "Nova transação" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText("Nova transação manual")).toBeVisible();
+
+    await expect.poll(() => tiposRequests).toBeGreaterThan(0);
+    await dialog.locator(".v-combobox").click();
+    await expect(
+      page
+        .locator(".v-overlay__content .v-list-item")
+        .filter({ hasText: "Tipo criado em outra tela" }),
+    ).toBeVisible();
+  });
 });
