@@ -7,7 +7,8 @@
       "date": "2026-11-16",
       "title": "Combo de tipo sempre busca dados atuais",
       "summary": "O combo de tipo da tabela de transações e do cadastro manual passa a buscar a lista atualizada na API toda vez que abre. Tipos criados ou editados em outra tela aparecem na próxima abertura, sem o usuário recarregar a página.",
-      "type": "fix"
+      "type": "fix",
+      "commit": "6efd008"
     },
     {
       "version": "0.28.1",
